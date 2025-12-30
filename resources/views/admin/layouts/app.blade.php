@@ -9,8 +9,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- <style>
+        [x-cloak] { display: none !important; }
+    </style> -->
+
 </head>
-<body class="flex flex-col min-h-screen bg-gray-100">
+<body class="h-screen overflow-hidden bg-gray-100">
+
 
     {{-- Header --}}
     @include('admin.layouts.header')
@@ -20,7 +26,14 @@
          @include('admin.layouts.sidebar')
 
         {{-- Main Content --}}
-        <main class="flex-1 p-6 overflow-y-auto">
+        <main
+        class="fixed
+                top-16 bottom-12
+                left-64 right-0
+                px-6 py-6
+                overflow-y-auto
+                bg-gray-100">
+
             @yield('content')
         </main>
     </div>

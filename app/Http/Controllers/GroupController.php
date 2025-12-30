@@ -37,7 +37,7 @@ class GroupController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.group', $validated['id_activities'])
+        return redirect()->route('admin.groups', $validated['id_activities'])
                         ->with('success', 'Groups berhasil ditambahkan!');
     }
 
@@ -56,7 +56,7 @@ class GroupController extends Controller
 
         $group->update($validated);
 
-        return redirect()->route('admin.group', ['id' => $id])
+        return redirect()->route('admin.groups', ['id' => $group->id_activities])
             ->with('success', 'Group berhasil diperbarui.');
 
     }
@@ -66,9 +66,9 @@ class GroupController extends Controller
         $group->delete();
 
         return redirect()->back()->with('successdelete', 'Group berhasil dihapus.');
-        }
+    }
 
-        public function bulkDelete(Request $request){
+    public function bulkDelete(Request $request){
         $ids = $request->input('selected',[]);
         if (count($ids)>0){
             Group::whereIn('id', $ids)->delete();

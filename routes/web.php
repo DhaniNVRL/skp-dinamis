@@ -7,6 +7,8 @@ use App\Http\Controllers\Auth\RoleController;
 use App\Http\Controllers\DataUserController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\UnitController;
+use App\Http\Controllers\CatagoriesQuestions;
 
 // Login Routes
 Route::controller(LoginController::class)->group(function () {
@@ -80,8 +82,32 @@ Route::controller(GroupController::class)->group(function(){
     Route::delete('/groups/{id}', [GroupController::class, 'destroy'])
         ->name('groups.destroy');
     Route::get('/groups/{id}', 'index')
-        ->name('admin.group');
+        ->name('admin.groups');
 });
+
+Route::controller(UnitController::class)->group(function(){
+    Route::post('/units/storeunit', [UnitController::class, 'store'])
+        ->name('units.storegroup');
+    Route::delete('/units/bulkDelete', [UnitController::class , 'bulkDelete'])
+        ->name('units.bulkDelete');
+    Route::get('/export-units', [UnitController::class, 'export'])
+        ->name('units.export');
+    Route::post('/unit/{id}/import-unit', [UnitController::class, 'import'])
+        ->name('units.import');
+    Route::get('/units/{id}/edit', [UnitController::class, 'edit'])
+        ->name('units.edit');
+    Route::put('/unit/{id}/', [UnitController::class, 'update'])
+        ->name('units.update');
+    Route::delete('/units/{id}', [UnitController::class, 'destroy'])
+        ->name('units.destroy');
+    Route::get('/units/{id}', 'index')->name('admin.units');
+});
+
+Route::controller(QuestionTypeController::class)->group(function(){
+    Route::post('/catagoriesquestions/storecatagoriesquestions', [CatagoriesQuestions::class, 'store'])
+        ->name('catagoriesquestions.storecatagoriesquestions');
+});
+
 
 
 // Redirect root (/) to login or dashboard

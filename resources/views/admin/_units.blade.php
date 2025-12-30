@@ -1,9 +1,3 @@
-@extends('admin.layouts.app')
-
-@section('title', 'Activities')
-
-@section('content')
-
 <div class="container mx-auto px-4 py-6">
     @if(session('success') || session('successdelete'))
 
@@ -28,7 +22,6 @@
         @endif
 
         <script>
-            // Auto-hide setelah 5 detik
             setTimeout(() => {
                 document.querySelectorAll('.alert-box').forEach(box => {
                     box.style.opacity = 0;
@@ -36,7 +29,6 @@
                 });
             }, 5000);
 
-            // Close manual
             document.querySelectorAll('.close-alert').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const alertBox = btn.parentElement;
@@ -45,18 +37,18 @@
                 });
             });
         </script>
+
     @endif
-  <h1 class="text-2xl font-bold mb-4">Activities List</h1>
 
   <button id="openModalBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded mb-3">
-    Add Activities
+    Add Units
   </button>
 
   <!-- Modal -->
   <div id="multiModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
     <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 relative">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">Add Activities</h2>
+        <h2 class="text-xl font-bold">Add Units</h2>
         <button id="closeModalBtn" class="text-gray-500 hover:text-red-600 text-xl">&times;</button>
       </div>
 
@@ -72,52 +64,49 @@
 
       <!-- === FORM INPUT MANUAL === -->
       <div id="manualFormSection">
-        <form id="manualForm" action="{{ route('admin.storeactivity') }}" method="POST">
-          @csrf
-          <div id="multiInputs" class="w-full">
+        <form id="manualForm" action="{{ route('units.storegroup') }}" method="POST">
+            @csrf
 
-            <!-- Label Baris -->
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-2">
-              <div class="md:col-span-5">
-                <label class="block text-center font-medium text-gray-700">Name</label>
-              </div>
-              <div class="md:col-span-6">
-                <label class="block text-center font-medium text-gray-700">Description</label>
-              </div>
+            <!-- KIRIM id_groups -->
+            <input type="hidden" name="id_groups" value="{{ $groups->id }}">
+
+            <div id="multiInputs" class="w-full">
+
+                <!-- Label Baris -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-2">
+                    <div class="md:col-span-5">
+                        <label class="block text-center font-medium text-gray-700">Name</label>
+                    </div>
+                </div>
+
+                <!-- Input Rows -->
+                <div id="userRows" class="w-full">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-start user-row relative w-full">
+                        <div class="md:col-span-5 w-full">
+                            <input type="text" name="name[]" placeholder="Name" required class="border rounded px-4 py-2 w-full">
+                        </div>
+                        <div>
+                            <button type="button" class="deleteRowBtn text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- Input Rows -->
-            <div id="userRows" class="w-full">
-              <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-start user-row relative w-full">
-                <div class="md:col-span-5 w-full">
-                  <input type="text" name="name[]" placeholder="Name" required class="border rounded px-4 py-2 w-full">
-                </div>
-                <div class="md:col-span-6 w-full">
-                  <textarea name="description[]" placeholder="Description" required class="border rounded px-4 py-2 w-full resize-y" style="height: 50px;"></textarea>
-                </div>
-                <div>
-                  <button type="button" class="deleteRowBtn text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
-                </div>
-              </div>
+            <button type="button" id="addRowBtn" class="bg-gray-200 text-sm px-3 py-1 rounded hover:bg-gray-300 mb-4">
+                + Add
+            </button>
+
+            <div class="flex justify-end gap-2 mt-6">
+                <button type="button" id="closeModalBtn2" class="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100">Close</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
             </div>
-          </div>
-
-          <!-- Tombol tambah baris -->
-          <button type="button" id="addRowBtn" class="bg-gray-200 text-sm px-3 py-1 rounded hover:bg-gray-300 mb-4">
-            + Add
-          </button>
-
-          <!-- Footer -->
-          <div class="flex justify-end gap-2 mt-6">
-            <button type="button" id="closeModalBtn2" class="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100">Close</button>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-          </div>
         </form>
       </div>
 
       <!-- === FORM IMPORT EXCEL === -->
       <div id="excelFormSection" class="hidden">
-        <form action="{{ route('admin.import.activity') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{  route('units.import', $groups->id) }}" method="POST" enctype="multipart/form-data">
           @csrf
 
           <div class="mb-4">
@@ -127,7 +116,7 @@
           </div>
 
           <div class="flex justify-between items-center">
-            <a href="{{ route('admin.export.activity') }}" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded">
+            <a href="{{ route('units.export') }}" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded">
               Download Excel Template
             </a>
             <button type="submit" class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded">
@@ -144,12 +133,13 @@
   </div>
 
 
-  <form id="deleteForm" action="{{ route('activities.bulkDelete') }}" method="POST">
+  <form id="deleteForm" action="{{ route('units.bulkDelete') }}" method="POST">
+    @csrf
     @method('DELETE')
     <div class="text-end">
-      <button type="submit" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded mb-3">
-        Delete Selected
-      </button>
+        <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded mb-3">
+            Delete Selected
+        </button>
       <input
         type="text"
         id="searchInput"
@@ -167,36 +157,32 @@
             </th>
             <th class="py-2 px-4 border-b w-[50px] text-center">No</th>
             <th class="py-2 px-4 border-b w-[50px]">ID</th>
-            <th class="py-2 px-4 border-b w-[200px]">Activity Name</th>
-            <th class="py-2 px-4 border-b w-[400px]">Description</th>
+            <th class="py-2 px-4 border-b w-[200px]">Group Name</th>
             <!-- <th class="py-2 px-4 border-b w-[200px]">Update At</th> -->
             <th class="py-2 px-4 border-b w-[200px]">Action</th>
           </tr>
         </thead>
         <tbody id="activityTable">
-          @foreach($activities as $activity)
-          <tr class="cursor-pointer hover:bg-gray-100 transition" >
-            <td class="py-2 px-4 border-b text-center">
-              <input type="checkbox" name="selected[]" value="{{ $activity->id }}" class="rowCheckbox cursor-pointer">
-            </td>
-            <td class="py-2 px-4 border-b text-center">{{ $loop->iteration }}</td>
-            <td class="py-2 px-4 border-b">{{$activity->id}}</td>
-            <td class="py-2 px-4 border-b">{{$activity->name}}</td>
-            <td class="py-2 px-4 border-b ">{{$activity->description}}</td>
-            <!-- <td class="py-2 px-4 border-b">{{$activity->updated_at}}</td> -->
-            <td class="py-2 px-4 border-b text-center">
-              <form action="{{ route('activities.destroy', $activity->id) }}" method="POST" onsubmit="return confirm('Are you sure want to delete this?')">
-                <a href="{{ route('admin.groups', $activity->id) }}"
-                class="text-blue-600 hover:text-blue-800">Detail</a> |
-                <a href="{{ route('activities.edit', $activity->id) }}"
-                 class="text-blue-600 hover:text-blue-800">Edit</a> |
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="text-red-600 hover:text-red-800">Delete</button>
-              </form>
-            </td>
-          </tr>
-          @endforeach
+            @foreach($units as $index => $unit)
+                <tr class="text-center">
+                    <td class="border py-2 px-4">
+                        <input type="checkbox" name="selected[]" class="rowCheckbox" value="{{ $unit->id }}">
+                    </td>
+                    <td class="border py-2 px-4">{{ $index + 1 }}</td>
+                    <td class="border py-2 px-4">{{ $unit->id }}</td>
+                    <td class="border py-2 px-4 text-start">{{ $unit->name }}</td>
+                    <td class="border py-2 px-4">
+                    <form action="{{ route('units.destroy', $unit->id) }}" method="POST" onsubmit="return confirm('Are you sure want to delete this?')">
+                            <a href="{{ route('admin.units', $unit->id)}}" class="text-blue-600 hover:text-blue-800">Detail</a> |
+                            <a href="{{ route('units.edit', $unit->id) }}"
+                            class="text-blue-600 hover:text-blue-800">Edit</a> |
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-red-600 hover:text-red-800">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            @endforeach
         </tbody>
       </table>
     </div>
@@ -264,8 +250,8 @@ document.getElementById('deleteForm').addEventListener('submit', function(e) {
   const selected = document.querySelectorAll('.rowCheckbox:checked');
   if (selected.length === 0) {
     e.preventDefault();
-    alert('Select at least one activity before deleting.');
-  } else if (!confirm('Are you sure you want to delete the selected activity?')) {
+    alert('Select at least one unit before deleting.');
+  } else if (!confirm('Are you sure you want to delete the selected unit?')) {
     e.preventDefault();
   }
 });
@@ -280,7 +266,3 @@ document.getElementById('deleteForm').addEventListener('submit', function(e) {
     });
   });
 </script>
-
-
-
-@endsection

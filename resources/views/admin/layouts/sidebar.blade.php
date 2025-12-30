@@ -1,10 +1,14 @@
-<div x-data="{ open: true }" 
-     :class="open ? 'w-64' : 'w-16'" 
-     class="bg-gray-800 text-white transition-all duration-300 h-full min-h-[calc(100vh-64px)] flex flex-col">
+<div
+    :class="sidebarOpen ? 'w-64' : 'w-16'"
+    class="fixed top-16 bottom-12 left-0
+           bg-gray-800 text-white
+           transition-all duration-300
+           flex flex-col overflow-hidden z-40"
+>
 
     <!-- Toggle Button -->
-    <button @click="open = !open"
-            class="p-3 hover:bg-gray-700 focus:outline-none">
+    <button @click="sidebarOpen = !sidebarOpen"
+        class="p-3 hover:bg-gray-700 focus:outline-none">
         <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M4 6h16M4 12h16M4 18h16"/>
@@ -12,7 +16,7 @@
     </button>
 
     <!-- Menu Items -->
-    <nav class="mt-4 space-y-4 text-white text-sm flex-1">
+    <nav class="mt-4 space-y-4 text-white text-sm flex-1 overflow-y-auto">
 
         <!-- Dashboard Group -->
         <div>

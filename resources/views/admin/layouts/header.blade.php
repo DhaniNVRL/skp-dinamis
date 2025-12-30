@@ -1,4 +1,4 @@
-<header class="bg-blue-700 text-white px-6 py-4 flex justify-between items-center">
+<<header class="fixed top-0 left-0 right-0 h-16 bg-blue-700 text-white px-6 flex justify-between items-center z-50">
     <div class="text-xl font-bold">Dashboard</div>
 
     <div x-data="{ open: false }" class="relative">

@@ -46,7 +46,11 @@
 
     @endif
 
-
+    <ul>
+      <li>
+        {{ $activity->name }}
+      </li>
+    </ul>
     <a href="{{ route('admin.activity')}}">
         <p class="w-max text-start px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded mb-3">
             Back
@@ -184,9 +188,10 @@
                 </td>
                 <td class="border py-2 px-4">{{ $index + 1 }}</td>
                 <td class="border py-2 px-4">{{ $group->id }}</td>
-                <td class="border py-2 px-4">{{ $group->name }}</td>
+                <td class="border py-2 px-4 text-start">{{ $group->name }}</td>
                 <td class="border py-2 px-4">
                    <form action="{{ route('groups.destroy', $group->id) }}" method="POST" onsubmit="return confirm('Are you sure want to delete this?')">
+                        <a href="{{ route('admin.units', $group->id)}}" class="text-blue-600 hover:text-blue-800">Detail</a> |
                         <a href="{{ route('groups.edit', $group->id) }}"
                         class="text-blue-600 hover:text-blue-800">Edit</a> |
                         @csrf
