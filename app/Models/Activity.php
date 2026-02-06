@@ -13,4 +13,9 @@ class Activity extends Model
     // public $timestamps = false;
 
     protected $fillable = ['name', 'description'];
+
+    public function groups()
+    {
+        return $this->hasMany(Group::class, 'activity_id');
+    }
 }

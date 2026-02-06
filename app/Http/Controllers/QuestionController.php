@@ -12,7 +12,15 @@ class QuestionController extends Controller
      */
     public function index()
     {
-        //
+        $group = Group::findOrFail($id);
+        $questions = Unit::where('id_groups', $id)->get();
+        $form = Form::where('id_groups', $id)->get();
+
+        return view ('admin.unit', [
+            'groups' => $group,
+            'questions' => $questions,
+            'forms' => $form,
+        ]);
     }
 
     /**

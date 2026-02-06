@@ -1,10 +1,41 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Units')
+@section('title', 'Units & Questions')
 
 @section('content')
+<div
+    x-data="{
+        tab: new URLSearchParams(window.location.search).get('tab') || 'units',
+        questionsInitialized: false,
 
-<div x-data="{ tab: new URLSearchParams(window.location.search).get('tab') || 'units' }">
+        init() {
+            if (this.tab === 'questions') {
+                this.initQuestions();
+            }
+        },
+
+        changeTab(name) {
+            this.tab = name;
+            history.replaceState(null, '', '?tab=' + name);
+
+            if (name === 'questions') {
+                this.initQuestions();
+            }
+        },
+
+        initQuestions() {
+            if (this.questionsInitialized) return;
+
+            this.$nextTick(() => {
+                if (typeof initQuestionsJS === 'function') {
+                    initQuestionsJS();
+                    this.questionsInitialized = true;
+                }
+            });
+        }
+    }"
+    x-init="init()"
+>
 
     <!-- BACK -->
     <a href="{{ route('admin.groups', $groups->id_activities) }}">
@@ -14,47 +45,46 @@
     </a>
 
     <!-- TABS -->
-    <div class="flex gap-2 border-b mb-4">
+    <div class="flex gap-4 border-b mb-6">
         <button
-             @click="
-              tab = 'units';
-              history.replaceState(null, '', '?tab=units')
-          "
-          :class="tab === 'units'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500'"
-          class="px-4 py-2 font-medium border-b-2">
-          Units
+            @click.prevent="changeTab('units')"
+            class="pb-2 border-b-2 transition"
+            :class="tab === 'units'
+                ? 'border-blue-600 text-blue-600 font-semibold'
+                : 'border-transparent text-gray-500 hover:text-gray-700'">
+            Units
         </button>
 
         <button
-             @click="
-            tab = 'questions';
-            history.replaceState(null, '', '?tab=questions')
-        "
-        :class="tab === 'questions'
-            ? 'border-blue-600 text-blue-600'
-            : 'border-transparent text-gray-500'"
-        class="px-4 py-2 font-medium border-b-2">
-        Pertanyaan
+            @click.prevent="changeTab('questions')"
+            class="pb-2 border-b-2 transition"
+            :class="tab === 'questions'
+                ? 'border-blue-600 text-blue-600 font-semibold'
+                : 'border-transparent text-gray-500 hover:text-gray-700'">
+            Questions
         </button>
     </div>
 
     <!-- TITLE -->
-    <h1 class="text-2xl font-bold mb-4">
+    <h1 class="text-2xl font-bold mb-6">
         <span x-show="tab === 'units'">Units List</span>
-        <span x-show="tab === 'questions'">Daftar Pertanyaan</span>
+        <span x-show="tab === 'questions'">Questions List</span>
     </h1>
 
-    <!-- CONTENT -->
-    <template x-if="tab === 'units'">
-      @include('admin._units')
-    </template>
+    <!-- TAB CONTENT -->
+    <div x-show="tab === 'units'" x-cloak>
+        @include('admin._units')
+    </div>
 
-    <template x-if="tab === 'questions'">
-      @include('admin._questions')
-    </template>
+    <div x-show="tab === 'questions'" x-cloak>
+        @include('admin._questions')
+    </div>
 
+    <!-- 🔥 TEMPLATE WAJIB DI LUAR TAB -->
+    @include('admin.components.unit-form')
+    @include('admin.components.question-form')
+
+    <!-- GLOBAL MODAL -->
+    @include('admin.components.global-modal')
 </div>
-
 @endsection

@@ -10,9 +10,14 @@
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <!-- <style>
+    <style>
         [x-cloak] { display: none !important; }
-    </style> -->
+    </style>
+
+    <style>
+        const modal = document.getElementById('globalModal');
+    </style>
+
 
 </head>
 <body class="h-screen overflow-hidden bg-gray-100">
@@ -35,11 +40,13 @@
                 bg-gray-100">
 
             @yield('content')
+
         </main>
     </div>
 
     {{-- Footer --}}
     @include('admin.layouts.footer')
-
+    <script src="{{ asset('js/global-modal.js') }}"></script>
+    <script src="{{ asset('js/global-modal-tab.js') }}"></script>
 </body>
 </html>

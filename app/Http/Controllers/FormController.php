@@ -2,17 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CatagoriesQuestion;
+use App\Models\Form;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Excel as ExcelFormat;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
-class CatagoriesQuestionController extends Controller
+class FormController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
+        $group = Group::findOrFail($id);
+        $forms = Form::where('id_groups', $id)->get();
     }
 
     /**
@@ -28,7 +34,20 @@ class CatagoriesQuestionController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'id_groups' => 'required|integer|exists:groups,id',
+            'name' => 'required|array',
+            'name.*' => 'required|string|max:255',
+        ]);
+
+        foreach ($validated['name'] as $name){
+            Form::create([
+                'id_groups' => $validated['id_groups'],
+                'name' => $name,
+            ]);
+        }
+        return redirect()->route('admin.units', $validated['id_groups'])
+                        ->with('success', 'Form berhasil ditambahkan!');
     }
 
     /**

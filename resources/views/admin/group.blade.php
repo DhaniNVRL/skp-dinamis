@@ -58,97 +58,97 @@
     </a>
     <h1 class="text-2xl font-bold mb-4">Groups List</h1>
 
-  <button id="openModalBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded mb-3">
-    Add Groups
+  <button
+      type="button"
+      class="openModal bg-green-600 text-white px-4 py-2 rounded"
+      data-title="Add Group"
+      data-manual="{{ route('groups.storegroup') }}"
+      data-excel="{{ route('groups.import') }}"
+      data-group="{{ $activity->id }}"
+  >
+      Add Group
   </button>
 
-  <!-- Modal -->
-  <div id="multiModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 relative">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">Add Groups</h2>
-        <button id="closeModalBtn" class="text-gray-500 hover:text-red-600 text-xl">&times;</button>
-      </div>
 
-      <!-- Tabs Manual / Excel -->
-      <div class="flex mb-4 border-b">
-        <button id="tabManual" class="flex-1 py-2 text-center font-medium border-b-2 border-blue-600 text-blue-600">
-          Manual Entry
-        </button>
-        <button id="tabExcel" class="flex-1 py-2 text-center font-medium border-b-2 border-transparent hover:text-blue-600">
-          Import Data (Excel)
-        </button>
-      </div>
+    
+  <!-- GLOBAL MODAL -->
+  <div id="globalModal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 items-center justify-center">
+      <div class="bg-white w-full max-w-xl rounded shadow-lg">
 
-      <!-- === FORM INPUT MANUAL === -->
-      <div id="manualFormSection">
-        <form id="manualForm" action="{{ route('groups.storegroup') }}" method="POST">
-            @csrf
-
-            <!-- KIRIM id_activities -->
-            <input type="hidden" name="id_activities" value="{{ $activity->id }}">
-
-            <div id="multiInputs" class="w-full">
-
-                <!-- Label Baris -->
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-2">
-                    <div class="md:col-span-5">
-                        <label class="block text-center font-medium text-gray-700">Name</label>
-                    </div>
-                </div>
-
-                <!-- Input Rows -->
-                <div id="userRows" class="w-full">
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-start user-row relative w-full">
-                        <div class="md:col-span-5 w-full">
-                            <input type="text" name="name[]" placeholder="Name" required class="border rounded px-4 py-2 w-full">
-                        </div>
-                        <div>
-                            <button type="button" class="deleteRowBtn text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <button type="button" id="addRowBtn" class="bg-gray-200 text-sm px-3 py-1 rounded hover:bg-gray-300 mb-4">
-                + Add
-            </button>
-
-            <div class="flex justify-end gap-2 mt-6">
-                <button type="button" id="closeModalBtn2" class="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100">Close</button>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-            </div>
-        </form>
-      </div>
-
-      <!-- === FORM IMPORT EXCEL === -->
-      <div id="excelFormSection" class="hidden">
-        <form action="{{ route('groups.import') }}" method="POST" enctype="multipart/form-data">
-          @csrf
-
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Import from Excel</label>
-            <input type="file" name="file" id="excelFile" accept=".xls,.xlsx" class="block w-full text-sm text-gray-700 border border-gray-300 rounded cursor-pointer">
-            <p class="text-xs text-gray-500 mt-1">Upload Excel file (.xls or .xlsx)</p>
+          <!-- HEADER -->
+          <div class="flex justify-between items-center px-4 py-3 border-b">
+              <h2 id="modalTitle" class="text-lg font-semibold"></h2>
+              <button data-close class="text-gray-600 hover:text-black text-xl">&times;</button>
           </div>
 
-          <div class="flex justify-between items-center">
-            <a href="{{ route('groups.export') }}" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded">
-              Download Excel Template
-            </a>
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded">
-              Import Excel
-            </button>
+          <!-- TABS -->
+          <div class="flex border-b">
+              <button
+                  class="tab-btn flex-1 py-2 border-b-2 border-blue-600 text-blue-600"
+                  data-tab="manual">
+                  Manual
+              </button>
+              <button
+                  class="tab-btn flex-1 py-2"
+                  data-tab="excel">
+                  Excel
+              </button>
           </div>
 
-          <div class="flex justify-end mt-6">
-            <button type="button" id="closeModalBtn3" class="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100">Close</button>
+          <!-- CONTENT -->
+          <div class="p-4">
+
+              <!-- MANUAL -->
+              <div data-content="manual">
+                  <form id="manualForm" method="POST">
+                      @csrf
+                      
+                      <!-- IMPORTANT: ALIAS -->
+                      <input type="hidden" id="groupId" name="id_activities">
+
+                      <div id="rows">
+                          <div class="row flex gap-2 mb-2">
+                              <input type="text" name="name[]" placeholder="Name Group" class="border p-2 w-full" required>
+                              <button type="button" class="remove text-red-600 font-bold">
+                                  X
+                              </button>
+                          </div>
+                      </div>
+
+                      <button type="button" id="addRow" class="text-blue-600 mb-3">
+                          + Add Row
+                      </button>
+
+                      <div class="text-right">
+                          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">
+                              Save
+                          </button>
+                      </div>
+                  </form>
+              </div>
+
+              <!-- EXCEL -->
+              <div data-content="excel" class="hidden">
+                  <form id="excelForm" method="POST" enctype="multipart/form-data">
+                      @csrf
+
+                      <input type="file" name="file" class="border p-2 w-full mb-3" required>
+                      <input type="hidden" name="id_activities" value="{{ $activity->id }}">
+
+                      <div class="text-right">
+                          <a href="{{ route('groups.export') }}" class="bg-blue-600 text-white px-4 py-2 me-5 rounded" >
+                            Download Excel Template
+                          </a>
+                          <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">
+                              Import
+                          </button>
+                      </div>
+                  </form>
+              </div>
           </div>
-        </form>
       </div>
-    </div>
   </div>
+
 
 
   <form id="deleteForm" action="{{ route('groups.bulkDelete') }}" method="POST">
@@ -158,12 +158,7 @@
         <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded mb-3">
             Delete Selected
         </button>
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Search Activities...."
-        class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
-      >
+      <input type="text" id="searchInput" placeholder="Search Activities...." class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200">
     </div>
 
     <div class="overflow-x-auto pt-2">
@@ -208,61 +203,10 @@
 
 <!-- Script -->
 <script>
-  const openModalBtn = document.getElementById('openModalBtn');
-  const closeBtns = [document.getElementById('closeModalBtn'), document.getElementById('closeModalBtn2'), document.getElementById('closeModalBtn3')];
-  const multiModal = document.getElementById('multiModal');
-  const addRowBtn = document.getElementById('addRowBtn');
-
-  const tabManual = document.getElementById('tabManual');
-  const tabExcel = document.getElementById('tabExcel');
-  const manualFormSection = document.getElementById('manualFormSection');
-  const excelFormSection = document.getElementById('excelFormSection');
-
-  // Modal
-  openModalBtn.onclick = () => {
-    multiModal.classList.remove('hidden');
-    multiModal.classList.add('flex');
-  };
-  closeBtns.forEach(btn => btn.onclick = () => {
-    multiModal.classList.add('hidden');
-    multiModal.classList.remove('flex');
-  });
-
-  // Tabs
-  tabManual.onclick = () => {
-    tabManual.classList.add('border-blue-600', 'text-blue-600');
-    tabExcel.classList.remove('border-blue-600', 'text-blue-600');
-    manualFormSection.classList.remove('hidden');
-    excelFormSection.classList.add('hidden');
-  };
-  tabExcel.onclick = () => {
-    tabExcel.classList.add('border-blue-600', 'text-blue-600');
-    tabManual.classList.remove('border-blue-600', 'text-blue-600');
-    excelFormSection.classList.remove('hidden');
-    manualFormSection.classList.add('hidden');
-  };
-
-  // Tambah baris input manual
-  addRowBtn.onclick = () => {
-    const newRow = document.querySelector('.user-row').cloneNode(true);
-    newRow.querySelectorAll('input, textarea').forEach(el => el.value = '');
-    newRow.querySelector('.deleteRowBtn').onclick = () => newRow.remove();
-    document.getElementById('userRows').appendChild(newRow);
-  };
-
-  // Delete row pertama
-  document.querySelectorAll('.deleteRowBtn').forEach(btn => {
-    btn.onclick = function () {
-      const rows = document.querySelectorAll('.user-row');
-      if (rows.length > 1) this.closest('.user-row').remove();
-      else alert("Minimum one input row must be provided.");
-    };
-  });
-
  document.getElementById('selectAll').addEventListener('change', function() {
-  const checked = this.checked;
-  document.querySelectorAll('.rowCheckbox').forEach(cb => cb.checked = checked);
-});
+    const checked = this.checked;
+    document.querySelectorAll('.rowCheckbox').forEach(cb => cb.checked = checked);
+  });
 
 document.getElementById('deleteForm').addEventListener('submit', function(e) {
   const selected = document.querySelectorAll('.rowCheckbox:checked');

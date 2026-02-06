@@ -8,7 +8,7 @@ use App\Http\Controllers\DataUserController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\UnitController;
-use App\Http\Controllers\CatagoriesQuestions;
+use App\Http\Controllers\FormController;
 
 // Login Routes
 Route::controller(LoginController::class)->group(function () {
@@ -87,12 +87,12 @@ Route::controller(GroupController::class)->group(function(){
 
 Route::controller(UnitController::class)->group(function(){
     Route::post('/units/storeunit', [UnitController::class, 'store'])
-        ->name('units.storegroup');
+        ->name('units.storeunit');
     Route::delete('/units/bulkDelete', [UnitController::class , 'bulkDelete'])
         ->name('units.bulkDelete');
     Route::get('/export-units', [UnitController::class, 'export'])
         ->name('units.export');
-    Route::post('/unit/{id}/import-unit', [UnitController::class, 'import'])
+    Route::post('/unit/import-unit', [UnitController::class, 'import'])
         ->name('units.import');
     Route::get('/units/{id}/edit', [UnitController::class, 'edit'])
         ->name('units.edit');
@@ -104,8 +104,21 @@ Route::controller(UnitController::class)->group(function(){
 });
 
 Route::controller(QuestionTypeController::class)->group(function(){
-    Route::post('/catagoriesquestions/storecatagoriesquestions', [CatagoriesQuestions::class, 'store'])
-        ->name('catagoriesquestions.storecatagoriesquestions');
+    Route::post('/forms/storeforms', [FormController::class, 'store'])
+        ->name('forms.storeforms');
+    Route::post('/forms/import-form', [FormController::class, 'import'])
+        ->name('forms.import');
+    Route::get('/export-forms', [FormController::class, 'export'])
+        ->name('forms.export');
+    Route::delete('/forms/bulkDelete', [FormController::class , 'bulkDelete'])
+        ->name('forms.bulkDelete');
+    Route::get('/forms/{id}/edit', [FormController::class, 'edit'])
+        ->name('forms.edit');
+    Route::put('/forms/{id}/', [FormController::class, 'update'])
+        ->name('forms.update');
+    Route::delete('/forms/{id}', [FormController::class, 'destroy'])
+        ->name('forms.destroy');
+    Route::get('/forms/{id}', 'index')->name('admin.forms');
 });
 
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Unit;
 use App\Models\Group;
+use App\Models\Form;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Excel as ExcelFormat;
@@ -19,10 +20,12 @@ class UnitController extends Controller
     public function index($id){
         $group = Group::findOrFail($id);
         $unit = Unit::where('id_groups', $id)->get();
+        $form = Form::where('id_groups', $id)->get();
 
         return view ('admin.unit', [
             'groups' => $group,
-            'units' => $unit
+            'units' => $unit,
+            'forms' => $form,
         ]);
     }
 
@@ -103,32 +106,34 @@ class UnitController extends Controller
         }, $filename);
     }
 
-    public function import(Request $request, $id)
-{
-    // pastikan group ada
-    Group::findOrFail($id);
+    public function import(Request $request)
+    {
+        // dd($request->all());
 
-    $request->validate([
-        'file' => 'required|mimes:xlsx,xls'
-    ]);
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls',
+            'id_groups' => 'required|exists:groups,id',
+        ]);
 
-    $rows = IOFactory::load(
-        $request->file('file')->getRealPath()
-    )->getActiveSheet()->toArray();
+        $file = $request->file('file');
 
-    foreach ($rows as $index => $row) {
-        if ($index === 0) continue;
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
 
-        $name = trim($row[0] ?? '');
+        foreach ($rows as $index => $row) {
+            if ($index === 0) continue; // skip header
 
-        if ($name !== '') {
-            Unit::create([
-                'name' => $name,
-                'id_groups' => $id // ← KUNCI UTAMA
-            ]);
+            $name = $row[0] ?? null;
+
+            if (!empty($name)) {
+                Unit::create([
+                    'id_groups' => $request->id_groups,
+                    'name' => $name,
+                ]);
+            }
         }
-    }
 
-    return back()->with('success', 'Unit berhasil diimport!');
-}
+        return back()->with('success', 'Unit berhasil diimport!');
+    }
 }

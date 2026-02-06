@@ -23,23 +23,26 @@ class GroupController extends Controller
         ]);
     }
 
-    public function store(Request $request){
-        $validated = $request->validate([
-            'id_activities' => 'required|integer|exists:activities,id',
+    public function store(Request $request)
+    {
+        // dd($request->all());
+
+        $request->validate([
+            'id_activities' => 'required|exists:activities,id',
             'name' => 'required|array',
             'name.*' => 'required|string|max:255',
         ]);
 
-        foreach ($validated['name'] as $name) {
+        foreach ($request->name as $name) {
             Group::create([
-                'id_activities' => $validated['id_activities'],
+                'id_activities' => $request->id_activities,
                 'name' => $name,
             ]);
         }
 
-        return redirect()->route('admin.groups', $validated['id_activities'])
-                        ->with('success', 'Groups berhasil ditambahkan!');
+        return back()->with('success', 'Group berhasil ditambahkan');
     }
+
 
 
     public function edit($id){
@@ -94,9 +97,13 @@ class GroupController extends Controller
         }, $filename);
     }
 
-    public function import(Request $request){
-        $request -> validate([
-            'file'=> 'required|mimes::xlsx,xls'
+    public function import(Request $request)
+    {
+        // dd($request->all());
+
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls',
+            'id_activities' => 'required|exists:activities,id',
         ]);
 
         $file = $request->file('file');
@@ -105,18 +112,20 @@ class GroupController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $rows = $sheet->toArray();
 
-        foreach($row as $index =>$row){
-            if ($index === 0) continue;
+        foreach ($rows as $index => $row) {
+            if ($index === 0) continue; // skip header
 
             $name = $row[0] ?? null;
 
-            if(!empty($name)){
+            if (!empty($name)) {
                 Group::create([
-                    'name' => $name
+                    'id_activities' => $request->id_activities,
+                    'name' => $name,
                 ]);
             }
         }
 
         return redirect()->back()->with('success', 'Data berhasil diimport dari Excel!');
     }
+
 }
