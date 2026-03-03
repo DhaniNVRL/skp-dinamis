@@ -8,8 +8,13 @@ class Unit extends Model
 {
     protected $table = 'units';
     
-     protected $fillable = [
+    protected $fillable = [
         'id_groups',
         'name',
     ];
+    
+    public function group()
+    {
+        return $this->belongsTo(Group::class);
+    }
 }

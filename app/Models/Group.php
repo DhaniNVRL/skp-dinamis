@@ -12,4 +12,14 @@ class Group extends Model
         'id_activities',
         'name',
     ];
+
+    public function activity()
+    {
+        return $this->belongsTo(Activity::class);
+    }
+
+    public function units()
+    {
+        return $this->hasMany(Unit::class);
+    }
 }

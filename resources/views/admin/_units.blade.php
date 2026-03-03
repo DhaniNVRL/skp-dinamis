@@ -74,7 +74,7 @@
                         </th>
                         <th class="py-2 px-4 border-b w-[50px]">No</th>
                         <th class="py-2 px-4 border-b w-[50px]">ID</th>
-                        <th class="py-2 px-4 border-b w-[200px]">Group Name</th>
+                        <th class="py-2 px-4 border-b w-[200px]">Unit Name</th>
                         <th class="py-2 px-4 border-b w-[200px]">Action</th>
                     </tr>
                 </thead>

@@ -48,5 +48,6 @@
     @include('admin.layouts.footer')
     <script src="{{ asset('js/global-modal.js') }}"></script>
     <script src="{{ asset('js/global-modal-tab.js') }}"></script>
+    <script src="{{ asset('js/global-form.js') }}"></script>
 </body>
 </html>

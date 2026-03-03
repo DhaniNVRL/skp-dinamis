@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Group;
 use App\Models\Activity;
+use App\Models\Unit;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Excel as ExcelFormat;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -21,6 +22,11 @@ class GroupController extends Controller
             'activity' => $activity,
             'groups' => $groups
         ]);
+    }
+
+    public function masterdata(){
+        $groups = Group::all();
+        return view('/admin/masterdata/group', compact('groups'));
     }
 
     public function store(Request $request)
@@ -126,6 +132,13 @@ class GroupController extends Controller
         }
 
         return redirect()->back()->with('success', 'Data berhasil diimport dari Excel!');
+    }
+
+    public function getGroups($activityID)
+    {
+        // sesuaikan nama foreign key di table groups
+        $groups = Group::where('id_activities', $activityID)->get();
+        return response()->json($groups);
     }
 
 }

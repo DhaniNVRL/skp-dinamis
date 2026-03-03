@@ -17,12 +17,20 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesTableSeeder::class,
         ]);
+        $this->call([
+            ActivityTableSeeder::class,
+        ]);
+        $this->call([
+            GroupsTableSeeder::class,
+        ]);
+        $this->call([
+            UnitsTableSeeder::class,
+        ]);
 
         // Buat user yang merujuk ke role id 1
         User::insert([
             [
                 'id' => 1,
-                'name' => 'Test Admin',
                 'username' => 'testadmin',
                 'password' => Hash::make('testpassword'),
                 'id_roles' => 1,
@@ -31,7 +39,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'id' => 2,
-                'name' => 'Test PM',
                 'username' => 'testpm',
                 'password' => Hash::make('testpassword'),
                 'id_roles' => 2,
@@ -40,7 +47,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'id' => 3,
-                'name' => 'Test Surveyor',
                 'username' => 'testsurveyor',
                 'password' => Hash::make('testpassword'),
                 'id_roles' => 3,
@@ -48,7 +54,6 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now(),
             ],[
                 'id' => 4,
-                'name' => 'Test User',
                 'username' => 'testuser',
                 'password' => Hash::make('testpassword'),
                 'id_roles' => 4,

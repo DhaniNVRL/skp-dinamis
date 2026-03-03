@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RoleController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\DataUserController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\GroupController;
@@ -43,14 +43,32 @@ Route::middleware('auth')->group(function () {
 
 Route::controller(DataUserController::class)->group(function () {
     Route::get('/datauser', 'index')->name('admin.datauser');
+    Route::post('/datauser/store', [DataUserController::class , 'store'])
+        ->name('admin.datauser.store');
     Route::get('/export-template-user', [DataUserController::class, 'export'])
         ->name('admin.export.usertemplate');
+    Route::delete('/datauser/{id}', [DataUserController::class, 'destroy'])
+        ->name('admin.datauser.destroy');
+    Route::get('/datauseredit/{id}/edit', [DataUserController::class, 'edit'])
+        ->name('admin.datauser.edit');
+    Route::put('/datauser/{id}', [DataUserController::class, 'update'])
+        ->name('admin.datauser.update');
+    Route::get('/datauseredit/{id}/editpassword', [DataUserController::class, 'edit_password'])
+        ->name('admin.datauser.editpassword');
+    Route::put('datauser/{id}/updatepassword', [DataUserController::class, 'update_password'])
+        ->name('admin.datauser.updatepassword');
+    Route::get('/datauser/{id}/detail', [DataUserController::class, 'show'])
+        ->name('admin.datauser.show');
+    Route::delete('/datauser/{id}/resetjawaban', [DataUserController::class, 'resetjawaban'])
+        ->name('admin.datauser.resetjawaban');
 });
 
 Route::controller(ActivityController::class)->group(function(){
     Route::get('/dataactivity', 'index')
         ->name('admin.activity');
-    Route::post('/store-activity', [ActivityController::class, 'store'])
+    Route::get('/masterdataactivity', 'masterdata')
+        ->name('admin.masterdata.activity');
+    Route::post('/activity/store', [ActivityController::class, 'store'])
         ->name('admin.storeactivity');
     Route::get('/export-activity', [ActivityController::class, 'export'])
         ->name('admin.export.activity');
@@ -67,6 +85,8 @@ Route::controller(ActivityController::class)->group(function(){
 });
 
 Route::controller(GroupController::class)->group(function(){
+    Route::get('/masterdatagroup', 'masterdata')
+        ->name('admin.masterdata.groups');
     Route::delete('/groups/bulk-delete', [GroupController::class, 'bulkDelete'])
          ->name('groups.bulkDelete');
     Route::post('/groups/storegroup', [GroupController::class, 'store'])
@@ -86,6 +106,8 @@ Route::controller(GroupController::class)->group(function(){
 });
 
 Route::controller(UnitController::class)->group(function(){
+    Route::get('/masterdataunit', 'masterdata')
+        ->name('admin.masterdata.unit');
     Route::post('/units/storeunit', [UnitController::class, 'store'])
         ->name('units.storeunit');
     Route::delete('/units/bulkDelete', [UnitController::class , 'bulkDelete'])
@@ -121,7 +143,42 @@ Route::controller(QuestionTypeController::class)->group(function(){
     Route::get('/forms/{id}', 'index')->name('admin.forms');
 });
 
+// Roles
+    Route::get('/roles', [RoleController::class, 'index'])
+        ->name('admin.roles');
+    Route::post('/roles/storeroles', [RoleController::class, 'store'])
+        ->name('roles.storeroles');
+    Route::get('/export-roles', [RoleController::class, 'export'])
+        ->name('roles.export');
+    Route::post('/import-roles', [RoleController::class, 'import'])
+        ->name('roles.import');
+    Route::delete('/roles.bulkDelete', [RoleController::class, 'bulkDelete'])
+        ->name('roles.bulkDelete');
+    Route::get('/roles/{id}/edit', [RoleController::class, 'edit'])
+        ->name('roles.edit');
+    Route::put('/roles/{id}', [RoleController::class, 'update'])
+        ->name('roles.update');
+    Route::delete('/roles/{id}', [RoleController::class, 'destroy'])
+        ->name('roles.destroy');
 
+// Form Type
+    Route::get('/formtype', [FormTypeController::class, 'index'])
+        ->name('admin.formtype');
+    Route::post('/formtype/store', [FormTypeController::class, 'store'])
+        ->name('formtype.store');
+    Route::get('/export-formtype', [FormTypeController::class, 'export'])
+        ->name('formtype.export');
+    Route::post('/formtype/import', [FormTypeController::class, 'import'])
+        ->name('formtype.import');
+    Route::get('/formtype/{id}/edit', [FormTypeController::class, 'edit'])
+        ->name('formtype.edit');
+    Route::put('/formtype/{id}', [FormTypeController::class, 'update'])
+        ->name('formtype.update');
+    Route::delete('/formtype/{id}', [FormTypeController::class, 'destroy'])
+        ->name('formtype.destroy');
+    Route::delete('/formtype/{id}', [FormTypeController::class, 'bulkDelete'])
+        ->name('formtype.blukDelete');
+    
 
 // Redirect root (/) to login or dashboard
 Route::get('/', function () {
@@ -133,3 +190,15 @@ Route::get('/', function () {
     }
     return redirect()->route('login');
 });
+
+Route::get('/check-email', function (Illuminate\Http\Request $request) {
+    $exists = \App\Models\User::where('email', $request->email)->exists();
+    return response()->json(['exists' => $exists]);
+});
+    Route::get('/dropdown', function(){
+        $activities = \App\Models\Activity::all();
+        return view('example', compact('activities'));
+    });
+    // Routes AJAX
+    Route::get('/get-groups/{activityID}', [GroupController::class, 'getGroups'])->name('get-groups');
+    Route::get('/get-units/{groupID}', [UnitController::class, 'getUnits'])->name('get-units');

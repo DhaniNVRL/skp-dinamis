@@ -18,6 +18,11 @@ class ActivityController extends Controller
         return view('/admin/activity', compact('activities'));
     }
 
+    public function masterdata(){
+        $activities = Activity::all();
+        return view('/admin/masterdata/activity', compact('activities'));
+    }
+
     public function store(Request $request){
 
         // dd('Masuk ke store()');
@@ -109,7 +114,7 @@ class ActivityController extends Controller
             return redirect()->back()->with('successdelete', 'Kegiatan terpilih berhasil dihapus.');
         }
 
-        return redirect()->back()->with('error', 'Tidak ada kegiatan yang dipilih.');
+        return redirect()->back()->with('error', 'Tidak ada data yang dipilih.');
     }
 
     public function edit($id)
@@ -129,7 +134,7 @@ class ActivityController extends Controller
 
         $activity->update($validated);
 
-        return redirect()->route('admin.activity')->with('success', 'Kegiatan berhasil diperbarui.');
+        return redirect()->route('admin.activity')->with('success', 'Data berhasil diperbarui.');
     }
 
    public function bulkEdit(Request $request)

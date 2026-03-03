@@ -15,9 +15,6 @@
         Add Form
     </button>
 
-
-
-
   <form id="deleteForm" action="{{ route('units.bulkDelete') }}" method="POST">
         @csrf
         @method('DELETE')
@@ -26,41 +23,75 @@
             <input type="text" id="searchInput" placeholder="Search Activities...." class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200">
         </div>
 
-        <div class="overflow-x-auto pt-2">
-            <table class="min-w-full bg-white border border-gray-200">
-                <thead>
-                    <tr class="bg-gray-100 text-center">
-                        <th class="py-2 px-4 border-b w-[50px]">
-                            <input type="checkbox" id="selectAll" class="cursor-pointer">
-                        </th>
-                        <th class="py-2 px-4 border-b w-[50px]">No</th>
-                        <th class="py-2 px-4 border-b w-[50px]">ID</th>
-                        <th class="py-2 px-4 border-b w-[200px]">Group Name</th>
-                        <th class="py-2 px-4 border-b w-[200px]">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="activityTable">
-                    @foreach($forms as $index => $form)
-                    <tr class="text-center">
-                        <td class="border py-2 px-4">
-                            <input type="checkbox" name="selected[]" class="rowCheckbox" value="{{ $unit->id }}">
-                        </td>
-                        <td class="border py-2 px-4">{{ $index + 1 }}</td>
-                        <td class="border py-2 px-4">{{ $unit->id }}</td>
-                        <td class="border py-2 px-4 text-start">{{ $unit->name }}</td>
-                        <td class="border py-2 px-4">
-                            <form action="{{ route('units.destroy', $unit->id) }}" method="POST" onsubmit="return confirm('Are you sure want to delete this?')">
-                                <a href="{{ route('admin.units', $unit->id)}}" class="text-blue-600 hover:text-blue-800">Detail</a> |
-                                <a href="{{ route('units.edit', $unit->id) }}" class="text-blue-600 hover:text-blue-800">Edit</a> |
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-800">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <div class="max-w-10xl mx-auto p-6 space-y-6">
+             <!-- Header -->
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-semibold text-gray-800">Form Builder</h1>
+                <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                    + Tambah Pertanyaan
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow border-l-4 border-indigo-500 p-6 space-y-5">
+                <!-- Top Row -->
+                <div class="flex justify-between items-center">
+                    <span class="text-sm px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full">
+                        Radio
+                    </span>
+
+                    <select class="rounded-md border-gray-300 text-sm">
+                        <option>Text</option>
+                        <option selected>Radio</option>
+                        <option>Checkbox</option>
+                        <option>Select</option>
+                    </select>
+                </div>
+
+                <!-- Question -->
+                <input
+                    type="text"
+                    placeholder="Tulis pertanyaan di sini..."
+                    class="w-full text-lg font-medium border-b border-gray-300 focus:border-indigo-500 focus:ring-0"
+                >
+
+                <!-- Options -->
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <input type="radio" disabled>
+                        <input type="text" placeholder="Opsi 1" class="w-full border-b border-gray-200 focus:ring-0">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="radio" disabled>
+                        <input type="text" placeholder="Opsi 2" class="w-full border-b border-gray-200 focus:ring-0">
+                    </div>
+                    <p class="text-sm text-gray-400 cursor-pointer">+ Tambah opsi</p>
+                </div>
+
+                <!-- Conditional Section -->
+                <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                    <p class="text-sm font-semibold text-gray-600">Pertanyaan Tambahan</p>
+
+                    <input
+                        type="text"
+                        placeholder="Muncul jika jawaban tertentu"
+                        class="w-full rounded-md border-gray-300"
+                    >
+
+                    <input
+                        type="text"
+                        placeholder='Jika jawaban "Lainnya"'
+                        class="w-full rounded-md border-gray-300"
+                    >
+                </div>
+
+                <!-- Footer -->
+                <div class="flex justify-end gap-4 text-gray-500">
+                    <button class="hover:text-red-500">🗑</button>
+                    <button class="hover:text-indigo-600">📄 Duplikat</button>
+                </div>
+            </div>
+
+
         </div>
     </form>
 </div>

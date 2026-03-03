@@ -29,6 +29,11 @@ class UnitController extends Controller
         ]);
     }
 
+    public function masterdata(){
+        $units = Unit::all();
+        return view('/admin/masterdata/unit', compact('units'));
+    }
+
     public function store(Request $request){
         $validated =$request->validate([
             'id_groups' => 'required|integer|exists:groups,id',
@@ -135,5 +140,12 @@ class UnitController extends Controller
         }
 
         return back()->with('success', 'Unit berhasil diimport!');
+    }
+
+    public function getUnits($groupID)
+    {
+        // sesuaikan nama foreign key di table units
+        $units = Unit::where('id_groups', $groupID)->get();
+        return response()->json($units);
     }
 }

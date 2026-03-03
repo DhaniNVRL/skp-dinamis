@@ -14,9 +14,12 @@ return new class extends Migration
         Schema::create('user_profiles', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id'); // foreign key ke users
-            $table->unsignedBigInteger('group_id'); // foreign key ke users
-            $table->unsignedBigInteger('unit_id'); // foreign key ke users
+            $table->unsignedBigInteger('activity_id'); // foreign key ke users
+            $table->unsignedBigInteger('group_id')->nullable();
+            $table->unsignedBigInteger('unit_id')->nullable(); // foreign key ke users
             $table->string('email')->unique();
+            $table->string('fullname')->nullable();
+            $table->string('no_handphone')->nullable();
             $table->timestamps();
         });
     }
