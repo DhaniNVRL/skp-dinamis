@@ -76,28 +76,34 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const numberInputs = document.querySelectorAll(".validate-number");
 
-    numberInputs.forEach(function (input) {
-        function validate() {
+numberInputs.forEach(function (input) {
+
+    let touched = false;
+
+    input.addEventListener("input", function () {
+        touched = true;
+
+        if (!isValidNumber(input.value)) {
+
+            showError(input, "Hanya boleh angka");
+            input.value = input.value.replace(/[^0-9]/g, "");
+
+        } else {
             clearError(input);
-
-            if (input.value.trim() === "") {
-                showError(input, "Field wajib diisi");
-                return;
-            }
-
-            if (!isValidNumber(input.value)) {
-                showError(input, "Hanya boleh angka");
-            }
-        }
-        input.addEventListener("input", validate);
-        if (input.value.trim() === "") {
-            validate();
         }
     });
 
+    input.addEventListener("blur", function () {
+        if (touched && input.value.trim() === "") {
+            showError(input, "Field wajib diisi");
+        }
+    });
+
+});
+
     // USERNAME VALIDATION
 
-    
+
     document.addEventListener("input", function (e) {
         if (e.target.classList.contains("validate-username")) {
             clearError(e.target);
@@ -108,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    const usernameInputs = document.querySelectorAll(".validate-username"); 
+    const usernameInputs = document.querySelectorAll(".validate-username");
     usernameInputs.forEach(function (input) {
         if (input.value.trim() === "") {
             const msg = validateUsername(input.value);

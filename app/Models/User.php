@@ -31,9 +31,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Activity::class, 'id_activity', 'id');
     }
-    
+
     public function profile()
     {
-        return $this->hasOne(UserProfile::class);
+        return $this->hasOne(UserProfile::class, 'user_id', 'id');
     }
 }

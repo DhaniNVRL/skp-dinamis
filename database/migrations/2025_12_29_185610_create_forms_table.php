@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('forms', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_groups')->constrained('groups');
+            $table->foreignId('groups_id')->constrained('groups');
             $table->string('name');
+            $table->string('formtype_id');
             $table->timestamps();
         });
     }

@@ -21,14 +21,24 @@
               <div data-content="manual">
                   <form id="manualForm" method="POST">
                       @csrf
-                      
+
                       <!-- IMPORTANT: ALIAS -->
                       <input type="hidden" id="groupId" name="id_groups">
 
                       <div id="rows">
                           <div class="row flex gap-2 mb-2">
-                              <input type="text" name="name[]" placeholder="Name Form" class="border p-2 w-full" required>
-                              <button type="button" class="remove text-red-600 font-bold">
+                            <div class="w-full">
+                                <input type="text" name="name[]" placeholder="Name Form" class="border p-2 w-full" required>
+                            </div>
+                            <div class="w-full">
+                                <select name="formtype[]" required class="validate-required border rounded px-4 py-2 w-full">
+                                    <option value="">Choose Form Type</option>
+                                        @foreach($formtypes as $formtype)
+                                    <option value="{{ $formtype->id }}">{{ $formtype->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type="button" class="remove text-red-600 font-bold">
                                   X
                               </button>
                           </div>

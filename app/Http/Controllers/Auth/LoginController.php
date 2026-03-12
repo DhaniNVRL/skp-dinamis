@@ -10,7 +10,7 @@ class LoginController extends Controller
 {
     public function showLoginForm()
     {
-        return view('auth.login'); 
+        return view('auth.login');
     }
 
     public function login(Request $request)
@@ -36,7 +36,7 @@ class LoginController extends Controller
                 case 'pm':
                     return redirect()->intended('/pm/dashboard');
                 case 'user':
-                    return redirect()->intended('/home');
+                    return redirect()->intended('/user/dashboard');
                 default:
                     Auth::logout();
                     return back()->withErrors([

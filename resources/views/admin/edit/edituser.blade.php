@@ -4,6 +4,43 @@
 
 @section('content')
 <div class="max-w-xl mx-auto mt-10 bg-white shadow-md rounded px-8 pt-6 pb-8">
+
+    {{-- Alert Messages --}}
+    @if(session('success') || session('successdelete') || session('error'))
+        @if(session('success'))
+            <div class="alert-box flex items-center justify-between bg-green-500 bg-opacity-30 border border-green-600 text-green-900 px-4 py-3 rounded mb-4 transition duration-300">
+                <span>{{ session('success') }}</span>
+                <button class="close-alert text-green-800 font-bold text-lg leading-none hover:text-green-900">&times;</button>
+            </div>
+        @endif
+        @if(session('successdelete'))
+            <div class="alert-box flex items-center justify-between bg-red-500 bg-opacity-30 border border-red-600 text-red-900 px-4 py-3 rounded mb-4 transition duration-300">
+                <span>{{ session('successdelete') }}</span>
+                <button class="close-alert text-red-800 font-bold text-lg leading-none hover:text-red-900">&times;</button>
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="bg-red-500 text-white px-4 py-2 rounded mb-4">
+                {{ session('error') }}
+            </div>
+        @endif
+        <script>
+            // Auto-hide
+            setTimeout(() => {
+                document.querySelectorAll('.alert-box').forEach(box => {
+                    box.style.opacity = 0;
+                    setTimeout(() => box.remove(), 300);
+                });
+            }, 5000);
+            document.querySelectorAll('.close-alert').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const box = btn.parentElement;
+                    box.style.opacity = 0;
+                    setTimeout(() => box.remove(), 300);
+                });
+            });
+        </script>
+    @endif
   <h2 class="text-2xl font-semibold mb-6 text-center">Edit User Profile</h2>
 
   <form action="{{ route('admin.datauser.update', $user->id) }}" method="POST">
@@ -45,7 +82,7 @@
         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
       @enderror
     </div>
-    
+
     <div class="mb-4">
       <label for="no_handphone" class="block text-gray-700 font-bold mb-2">No Handphone:</label>
       <input type="text" name="no_handphone" id="no_handphone" value="{{ old('no_handphone', $user->profile->no_handphone) }}"
@@ -54,13 +91,13 @@
         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
       @enderror
     </div>
-    
+
     <div class="mb-4">
       <label for="activity" class="block text-gray-700 font-bold mb-2">Activity</label>
       <select name="activity" required class="validate-required activity-dropdown border rounded px-4 py-2 w-full">
         <option value="">Choose Activity</option>
           @foreach($activities as $activity)
-              <option value="{{ $activity->id }}" 
+              <option value="{{ $activity->id }}"
                 {{ (old('activity') ?? ($user->profile->activity_id ?? '')) == $activity->id ? 'selected' : '' }}>
                 {{ $activity->name }}
               </option>
@@ -70,7 +107,7 @@
         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
       @enderror
     </div>
-    
+
     <div class="mb-4">
       <label for="group" class="block text-gray-700 font-bold mb-2">Group</label>
         <select name="group" class="validate-required group-dropdown border rounded px-4 py-2 w-full">
@@ -80,7 +117,7 @@
         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
       @enderror
     </div>
-    
+
     <div class="mb-4">
       <label for="name" class="block text-gray-700 font-bold mb-2">Unit</label>
         <select name="unit" class="validate-required unit-dropdown border rounded px-4 py-2 w-full">
@@ -118,7 +155,7 @@
           $element.removeClass('border-red-500');
           $element.parent().find('.input-error').remove();
       }
- 
+
       function loadGroups(activityID, selectedGroup = null) {
 
           $group.html('<option value="">Choose Group</option>');
@@ -140,12 +177,12 @@
                           );
                       });
 
-                      
+
                       if(selectedGroup){
                           clearSelectError($group);
                           loadUnits(selectedGroup, selectedUnit);
                       }
-                      
+
                   }
               });
           }
@@ -174,7 +211,7 @@
                       if(selectedUnit){
                           clearSelectError($unit);
                       }
-                     
+
                   }
               });
           }

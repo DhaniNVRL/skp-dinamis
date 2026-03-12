@@ -70,7 +70,7 @@
   </button>
 
 
-    
+
   <!-- GLOBAL MODAL -->
   <div id="globalModal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 items-center justify-center">
       <div class="bg-white w-full max-w-xl rounded shadow-lg">
@@ -102,7 +102,7 @@
               <div data-content="manual">
                   <form id="manualForm" method="POST">
                       @csrf
-                      
+
                       <!-- IMPORTANT: ALIAS -->
                       <input type="hidden" id="groupId" name="id_activities">
 

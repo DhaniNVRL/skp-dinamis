@@ -35,14 +35,19 @@ class ActivityController extends Controller
         $nameList = $request->input('name');
         $descriptionList = $request->input('description');
 
-        for ($i = 0; $i < count($nameList); $i++) {
-            Activity::create([
-                'name' => $nameList[$i],
-                'description' => $descriptionList[$i],
-            ]);
+        try {
+            for ($i = 0; $i < count($nameList); $i++) {
+                Activity::create([
+                    'name' => $nameList[$i],
+                    'description' => $descriptionList[$i],
+                ]);
+            }
+            return redirect()->back()->with('success', 'Data berhasil disimpan!');
+         } catch (\Exception $e) {
+            // Jika terjadi error, kembali ke halaman sebelumnya dengan pesan error
+            return redirect()->back()->with('error', $e->getMessage());
         }
 
-        return redirect()->back()->with('success', 'Data berhasil disimpan!');
     }
 
     public function export(){
@@ -102,7 +107,7 @@ class ActivityController extends Controller
         $activity = Activity::findOrFail($id);
         $activity->delete();
 
-        return redirect()->back()->with('successdelete', 'Kegiatan berhasil dihapus.');
+        return redirect()->back()->with('successdelete', 'data berhasil dihapus.');
     }
 
    public function bulkDelete(Request $request)
@@ -111,7 +116,7 @@ class ActivityController extends Controller
 
         if (count($ids) > 0) {
             Activity::whereIn('id', $ids)->delete();
-            return redirect()->back()->with('successdelete', 'Kegiatan terpilih berhasil dihapus.');
+            return redirect()->back()->with('successdelete', 'Data terpilih berhasil dihapus.');
         }
 
         return redirect()->back()->with('error', 'Tidak ada data yang dipilih.');

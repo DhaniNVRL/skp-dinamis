@@ -104,6 +104,18 @@
                 </svg>
                 <span x-show="open" class="ml-2">Sub Unit</span>
             </a>
+            <a href="{{ route('admin.formtype')}}" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
+                </svg>
+                <span x-show="open" class="ml-2">Form Type</span>
+            </a>
+            <a href="{{ route('admin.questtype')}}" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
+                </svg>
+                <span x-show="open" class="ml-2">Question Types</span>
+            </a>
         </div>
 
     </nav>

@@ -51,7 +51,7 @@
         class="openModal bg-blue-600 text-white px-4 py-2 rounded"
         data-title="Add Activities"
         data-manual="{{ route('admin.datauser.store') }}"
-        data-excel="{{ route('admin.import.activity') }}"
+        data-excel="{{ route('admin.import.datauser') }}"
         data-group=""
         >
         Add User
@@ -155,10 +155,10 @@
                         <input type="file" name="file" class="border p-2 w-full mb-3">
 
                         <div class="text-right">
-                            <a href="{{ route('admin.export.activity') }}" class="bg-blue-600 text-white px-4 py-2 me-5 rounded" >
+                            <a href="{{ route('admin.export.usertemplate') }}" class="bg-blue-600 text-white px-4 py-2 me-5 rounded" >
                                 Download Excel Template
                             </a>
-                            
+
                             <button class="bg-green-600 text-white px-4 py-2 rounded">
                                 Import
                             </button>
@@ -169,7 +169,7 @@
             </div>
         </div>
     </div>
-    
+
 
     {{-- Search --}}
     <div class="text-end">
@@ -185,6 +185,7 @@
                     <th class="py-2 px-4 border-b">Username</th>
                     <th class="py-2 px-4 border-b">Email</th>
                     <th class="py-2 px-4 border-b">Role</th>
+                    <th class="py-2 px-4 border-b">Activity</th>
                     <th class="py-2 px-4 border-b">Created At</th>
                     <th class="py-2 px-4 border-b"></th>
                 </tr>
@@ -196,16 +197,17 @@
                         <td class="py-2 px-4 border-b">{{ $user->username }}</td>
                         <td class="py-2 px-4 border-b">{{ $user->profile->email ?? '-' }}</td>
                         <td class="py-2 px-4 border-b">{{ $user->role->name ?? '-' }}</td>
+                        <td class="py-2 px-4 border-b">{{ $user->profile->activity->name ?? '-' }}</td>
                         <td class="py-2 px-4 border-b">{{ $user->created_at->format('Y-m-d') }}</td>
                         <td class="py-2 px-4 border-b">
                             <div class="flex items-center justify-center gap-2">
 
-                                <a href="{{ route('admin.groups', $activity->id) }}"
+                                <a href="{{ route('admin.datauser.show', $user->id) }}"
                                 class="inline-flex items-center rounded-md border border-blue-500 shadow-sm px-3 py-1 bg-blue-400 text-black hover:bg-blue-500 text-sm font-medium">Detail</a>
 
                                 <!-- EDIT -->
                                 <div class="relative inline-block text-left">
-                                    <button onclick="toggleDropdown(this)" 
+                                    <button onclick="toggleDropdown(this)"
                                         class="inline-flex items-center rounded-md border border-yellow-500 shadow-sm px-3 py-1 bg-yellow-400 text-black hover:bg-yellow-500 text-sm font-medium">
                                         Edit
                                         <svg class="ml-2 h-4 w-4 transition-transform duration-200"
@@ -216,8 +218,8 @@
                                         </svg>
                                     </button>
 
-                                    <div class="dropdownMenu hidden absolute right-0 mt-2 w-44 
-                                        rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 
+                                    <div class="dropdownMenu hidden absolute right-0 mt-2 w-44
+                                        rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5
                                         transform opacity-0 scale-95 transition-all duration-200 ease-out
                                         z-50">
 
@@ -234,7 +236,7 @@
 
                                 <!-- DELETE -->
                                 <div class="relative inline-block text-left">
-                                    <button onclick="toggleDropdown(this)" 
+                                    <button onclick="toggleDropdown(this)"
                                         class="inline-flex items-center rounded-md border border-red-500 shadow-sm px-3 py-1 bg-red-400 text-black hover:bg-red-500 text-sm font-medium">
                                         Action
                                         <svg class="ml-2 h-4 w-4 transition-transform duration-200"
@@ -245,15 +247,15 @@
                                         </svg>
                                     </button>
 
-                                    <div class="dropdownMenu hidden absolute right-0 mt-2 w-52 
-                                        rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 
+                                    <div class="dropdownMenu hidden absolute right-0 mt-2 w-52
+                                        rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5
                                         transform opacity-0 scale-95 transition-all duration-200 ease-out
                                         z-50">
 
                                         <div class="py-1">
 
                                             <!-- RESET QUESIONER -->
-                                            <form action="#" 
+                                            <form action="#"
                                                 method="POST"
                                                 onsubmit="return confirm('Reset semua jawaban user ini?')">
                                                 @csrf
@@ -264,7 +266,7 @@
                                             </form>
 
                                             <!-- DELETE USER -->
-                                            <form action="{{ route('admin.datauser.destroy', $user->id) }}" 
+                                            <form action="{{ route('admin.datauser.destroy', $user->id) }}"
                                                 method="POST"
                                                 onsubmit="return confirm('Are you sure want to delete this user?')">
                                                 @csrf

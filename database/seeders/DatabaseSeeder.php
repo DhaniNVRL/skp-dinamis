@@ -26,6 +26,12 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UnitsTableSeeder::class,
         ]);
+        $this->call([
+            FormTypeSeeder::class,
+        ]);
+        $this->call([
+            QuestionTypeSeeder::class,
+        ]);
 
         // Buat user yang merujuk ke role id 1
         User::insert([

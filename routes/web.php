@@ -9,6 +9,8 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\FormController;
+use App\Http\Controllers\FormTypeController;
+use App\Http\Controllers\QuestionTypeController;
 
 // Login Routes
 Route::controller(LoginController::class)->group(function () {
@@ -37,7 +39,7 @@ Route::middleware('auth')->group(function () {
         return view('pm.dashboard');
     })->name('pm.dashboard');
     Route::get('/home', function () {
-        return view('dashboard.user');
+        return view('user.dashboard');
     })->name('user.dashboard');
 });
 
@@ -47,6 +49,8 @@ Route::controller(DataUserController::class)->group(function () {
         ->name('admin.datauser.store');
     Route::get('/export-template-user', [DataUserController::class, 'export'])
         ->name('admin.export.usertemplate');
+    Route::post('/import-datauser', [DataUserController::class, 'import'])
+        ->name('admin.import.datauser');
     Route::delete('/datauser/{id}', [DataUserController::class, 'destroy'])
         ->name('admin.datauser.destroy');
     Route::get('/datauseredit/{id}/edit', [DataUserController::class, 'edit'])
@@ -61,6 +65,10 @@ Route::controller(DataUserController::class)->group(function () {
         ->name('admin.datauser.show');
     Route::delete('/datauser/{id}/resetjawaban', [DataUserController::class, 'resetjawaban'])
         ->name('admin.datauser.resetjawaban');
+    Route::get('/datauser/{id}/show', [DataUserController::class, 'show'])
+        ->name('admin.datauser.show');
+    Route::post('/datauser/{id}/resetprofile', [DataUserController::class, 'resetAccount'])
+        ->name('admin.datauser.resetaccount');
 });
 
 Route::controller(ActivityController::class)->group(function(){
@@ -168,17 +176,35 @@ Route::controller(QuestionTypeController::class)->group(function(){
         ->name('formtype.store');
     Route::get('/export-formtype', [FormTypeController::class, 'export'])
         ->name('formtype.export');
-    Route::post('/formtype/import', [FormTypeController::class, 'import'])
+    Route::post('/formtype-import', [FormTypeController::class, 'import'])
         ->name('formtype.import');
+    Route::delete('/formtype/bulkDelete', [FormTypeController::class, 'bulkDelete'])
+        ->name('formtype.blukDelete');
     Route::get('/formtype/{id}/edit', [FormTypeController::class, 'edit'])
         ->name('formtype.edit');
     Route::put('/formtype/{id}', [FormTypeController::class, 'update'])
         ->name('formtype.update');
     Route::delete('/formtype/{id}', [FormTypeController::class, 'destroy'])
         ->name('formtype.destroy');
-    Route::delete('/formtype/{id}', [FormTypeController::class, 'bulkDelete'])
-        ->name('formtype.blukDelete');
-    
+
+// Questation Type
+    Route::get('questtype', [QuestionTypeController::class, 'index'])
+        ->name('admin.questtype');
+    Route::post('/questtype/store', [QuestionTypeController::class, 'store'])
+        ->name('questtype.store');
+    Route::get('/export-questtype', [QuestionTypeController::class, 'export'])
+        ->name('questtype.export');
+    Route::post('/questtype-import', [QuestionTypeController::class, 'import'])
+        ->name('questtype.import');
+    Route::delete('/questtype/bulkDelete', [QuestionTypeController::class, 'bulkDelete'])
+        ->name('questtype.bulkDelete');
+    Route::get('/questtype/{id}', [QuestionTypeController::class, 'edit'])
+        ->name('questtype.edit');
+    Route::put('/questtype/{id}', [QuestionTypeController::class, 'update'])
+        ->name('questtype.update');
+    Route::delete('/questtype/{id}', [QuestionTypeController::class, 'destroy'])
+        ->name('questtype.destroy');
+
 
 // Redirect root (/) to login or dashboard
 Route::get('/', function () {

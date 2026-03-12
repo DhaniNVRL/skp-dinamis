@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Unit;
 use App\Models\Group;
 use App\Models\Form;
+use App\Models\FormType;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Excel as ExcelFormat;
@@ -21,11 +22,13 @@ class UnitController extends Controller
         $group = Group::findOrFail($id);
         $unit = Unit::where('id_groups', $id)->get();
         $form = Form::where('id_groups', $id)->get();
+        $formtype = FormType::all();
 
         return view ('admin.unit', [
             'groups' => $group,
             'units' => $unit,
             'forms' => $form,
+            'formtypes' => $formtype,
         ]);
     }
 

@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Activities')
+@section('title', 'Questions Types')
 
 @section('content')
 
@@ -46,17 +46,17 @@
             });
         </script>
     @endif
-  <h1 class="text-2xl font-bold mb-4">Activities List</h1>
+  <h1 class="text-2xl font-bold mb-4">Question Types List</h1>
 
   <button
     type="button"
     class="openModal bg-blue-600 text-white px-4 py-2 rounded"
-    data-title="Add Activities"
-    data-manual="{{ route('admin.storeactivity') }}"
-    data-excel="{{ route('admin.import.activity') }}"
+    data-title="Add Question Types"
+    data-manual="{{ route('questtype.store') }}"
+    data-excel="{{ route('questtype.import') }}"
     data-group=""
     >
-      Add Activities
+      Add Question Types
   </button>
 
   <!-- GLOBAL MODAL -->
@@ -94,11 +94,9 @@
 
                       <div id="rows">
                           <div class="row flex gap-2 mb-2">
-                              <input type="text" name="name[]" placeholder="Name Activity" class="border p-2 w-full">
+                              <input type="text" name="name[]" placeholder="Name Question Type" class="border p-2 w-full">
                               <input type="text" name="description[]" placeholder="Description" class="border p-2 w-full">
                               <button type="button" class="remove text-red-600">X</button>
-                          </div>
-                          <div class="row flex gap-2 mb-2">
                           </div>
                       </div>
 
@@ -108,7 +106,7 @@
                       </button>
 
                       <div class="text-right">
-                          <button class="bg-blue-600 text-white px-4 py-2 rounded">
+                          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">
                               Save
                           </button>
                       </div>
@@ -123,7 +121,7 @@
                       <input type="file" name="file" class="border p-2 w-full mb-3">
 
                       <div class="text-right">
-                          <a href="{{ route('admin.export.activity') }}" class="bg-blue-600 text-white px-4 py-2 me-5 rounded" >
+                          <a href="{{ route('questtype.export') }}" class="bg-blue-600 text-white px-4 py-2 me-5 rounded" >
                             Download Excel Template
                           </a>
 
@@ -138,7 +136,7 @@
       </div>
   </div>
 
-  <form id="deleteForm" action="{{ route('activities.bulkDelete') }}" method="POST">
+  <form id="deleteForm" action="{{ route('questtype.bulkDelete') }}" method="POST">
     @method('DELETE')
     <div class="text-end">
       <button type="submit" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded mb-3">
@@ -147,7 +145,7 @@
       <input
         type="text"
         id="searchInput"
-        placeholder="Search Activities...."
+        placeholder="Search Form Type...."
         class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
       >
     </div>
@@ -161,28 +159,28 @@
             </th>
             <th class="py-2 px-4 border-b w-[50px] text-center">No</th>
             <th class="py-2 px-4 border-b w-[50px]">ID</th>
-            <th class="py-2 px-4 border-b w-[200px]">Activity Name</th>
+            <th class="py-2 px-4 border-b w-[200px]">Question Type Name</th>
             <th class="py-2 px-4 border-b w-[400px]">Description</th>
-            <!-- <th class="py-2 px-4 border-b w-[200px]">Update At</th> -->
+            <th class="py-2 px-4 border-b w-[200px]">Update At</th>
             <th class="py-2 px-4 border-b w-[200px]">Action</th>
           </tr>
         </thead>
         <tbody id="activityTable">
-          @foreach($activities as $activity)
+          @foreach($questtypes as $questtype)
           <tr class="cursor-pointer hover:bg-gray-100 transition" >
             <td class="py-2 px-4 border-b text-center">
-              <input type="checkbox" name="selected[]" value="{{ $activity->id }}" class="rowCheckbox cursor-pointer">
+              <input type="checkbox" name="selected[]" value="{{ $questtype->id }}" class="rowCheckbox cursor-pointer">
             </td>
             <td class="py-2 px-4 border-b text-center">{{ $loop->iteration }}</td>
-            <td class="py-2 px-4 border-b">{{$activity->id}}</td>
-            <td class="py-2 px-4 border-b">{{$activity->name}}</td>
-            <td class="py-2 px-4 border-b ">{{$activity->description}}</td>
-            <!-- <td class="py-2 px-4 border-b">{{$activity->updated_at}}</td> -->
+            <td class="py-2 px-4 border-b">{{$questtype->id}}</td>
+            <td class="py-2 px-4 border-b">{{$questtype->name}}</td>
+            <td class="py-2 px-4 border-b ">{{$questtype->description}}</td>
+            <td class="py-2 px-4 border-b">{{$questtype->updated_at}}</td>
             <td class="py-2 px-4 border-b text-center">
-              <form action="{{ route('activities.destroy', $activity->id) }}" method="POST" onsubmit="return confirm('Are you sure want to delete this?')">
-                <a href="{{ route('admin.groups', $activity->id) }}"
-                class="text-blue-600 hover:text-blue-800">Detail</a> |
-                <a href="{{ route('activities.edit', $activity->id) }}"
+              <form action="{{ route('questtype.destroy', $questtype->id) }}" method="POST" onsubmit="return confirm('Are you sure want to delete this?')">
+                {{-- <a href="{{ route('admin.groups', $questtype->id) }}"
+                class="text-blue-600 hover:text-blue-800">Detail</a> | --}}
+                <a href="{{ route('questtype.edit', $questtype->id) }}"
                  class="text-blue-600 hover:text-blue-800">Edit</a> |
                 @csrf
                 @method('DELETE')

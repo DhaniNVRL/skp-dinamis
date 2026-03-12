@@ -73,11 +73,11 @@
 
     <!-- TAB CONTENT -->
     <div x-show="tab === 'units'" x-cloak>
-        @include('admin._units')
+        @include('admin.tab._units')
     </div>
 
     <div x-show="tab === 'questions'" x-cloak>
-        @include('admin._questions')
+        @include('admin.tab._questions')
     </div>
 
     <!-- 🔥 TEMPLATE WAJIB DI LUAR TAB -->

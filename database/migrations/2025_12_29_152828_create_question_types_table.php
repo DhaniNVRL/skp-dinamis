@@ -13,10 +13,8 @@ return new class extends Migration
     {
         Schema::create('question_types', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_groups')->constrained('groups');
-            $table->foreignId('id_categories_questions')->constrained('categories_questions');
             $table->string('name');
-            $table->string('anwser_type');
+            $table->string('description');
             $table->timestamps();
         });
     }
