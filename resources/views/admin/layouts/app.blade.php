@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <style>
         [x-cloak] { display: none !important; }
@@ -49,5 +50,6 @@
     <script src="{{ asset('js/global-modal.js') }}"></script>
     <script src="{{ asset('js/global-modal-tab.js') }}"></script>
     <script src="{{ asset('js/global-form.js') }}"></script>
+    
 </body>
 </html>

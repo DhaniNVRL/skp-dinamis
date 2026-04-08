@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('questions', function (Blueprint $table) {
+        Schema::create('options', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_groups')->constrained('groups');
-            $table->foreignId('form_id')->constrained('forms');
-            $table->string('no');
-            $table->string('name');
-            $table->foreignId('id_questiontypes')->constrained('question_types');
+            $table->foreignId('question_id')->constrained()->cascadeOnDelete();
+            $table->string('answer_text');
+            $table->integer('value')->nullable();
+            $table->integer('order')->default(0); // 🔥 penting
             $table->timestamps();
         });
     }
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('questions');
+        Schema::dropIfExists('options');
     }
 };

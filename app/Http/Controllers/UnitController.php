@@ -6,6 +6,8 @@ use App\Models\Unit;
 use App\Models\Group;
 use App\Models\Form;
 use App\Models\FormType;
+use App\Models\QuestionType;
+use App\Models\Question;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Excel as ExcelFormat;
@@ -21,14 +23,18 @@ class UnitController extends Controller
     public function index($id){
         $group = Group::findOrFail($id);
         $unit = Unit::where('id_groups', $id)->get();
-        $form = Form::where('id_groups', $id)->get();
+        $forms = Form::where('id_groups', $id)->with('questions')->get();
+        $questions = Question::where('id_groups', $id)->get();
         $formtype = FormType::all();
+        $questionype = QuestionType::all();
 
         return view ('admin.unit', [
             'groups' => $group,
             'units' => $unit,
-            'forms' => $form,
+            'forms' => $forms,
             'formtypes' => $formtype,
+            'questionypes' => $questionype,
+            'questions' => $questions,
         ]);
     }
 

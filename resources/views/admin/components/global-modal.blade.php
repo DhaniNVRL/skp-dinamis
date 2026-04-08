@@ -2,7 +2,7 @@
     id="globalModal"
     class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
 >
-    <div class="bg-white w-full max-w-lg rounded shadow-lg">
+    <div class="bg-white w-[90vw] max-w-[1000px] rounded shadow-lg">
 
         <!-- HEADER -->
         <div class="flex justify-between items-center px-4 py-3 border-b">
@@ -11,7 +11,7 @@
             <button type="button" data-close>&times;</button>
         </div>
 
-        <!-- 🔥🔥🔥 INI YANG HILANG / WAJIB ADA -->
+        <!-- CONTENT -->
         <div id="modalContent" class="p-4"></div>
 
     </div>

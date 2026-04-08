@@ -81,8 +81,9 @@
     </div>
 
     <!-- 🔥 TEMPLATE WAJIB DI LUAR TAB -->
-    @include('admin.components.unit-form')
-    @include('admin.components.question-form')
+    @include('admin.components.unit-template')
+    @include('admin.components.form-template')
+    @include('admin.components.question-template')
 
     <!-- GLOBAL MODAL -->
     @include('admin.components.global-modal')

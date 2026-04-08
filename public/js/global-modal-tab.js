@@ -1,105 +1,124 @@
-// 🔥 FILE FINAL: global-modal-tab.js (SUDAH DIPERBAIKI)
 document.addEventListener('alpine:init', () => {
 
     const modal = document.getElementById('globalModal');
-    if (!modal) {
-        console.error('globalModal not found');
-        return;
-    }
+    if (!modal) return console.error('globalModal not found');
 
     const title = document.getElementById('modalTitle');
     const content = document.getElementById('modalContent');
 
-    // ===============================
-    // OPEN MODAL
-    // ===============================
+    function updateNumbers(rowsContainer) {
+        rowsContainer.querySelectorAll('.row').forEach((row, i) => {
+            const dragHandle = row.querySelector('.drag');
+            if (dragHandle) dragHandle.innerText = i + 1;
+        });
+    }
+
+    function updatePreview(rowsContainer, previewContainer) {
+        if (!previewContainer) return;
+        previewContainer.innerHTML = '';
+        rowsContainer.querySelectorAll('.row').forEach(row => {
+            const text = row.querySelector('.answer-text')?.value || '';
+            if (text) {
+                const div = document.createElement('div');
+                div.innerHTML = `<label><input type="radio" disabled> ${text}</label>`;
+                previewContainer.appendChild(div);
+            }
+        });
+    }
+
     window.addEventListener('open-modal-tab', (e) => {
 
-        // 1️⃣ Set title
+        // Set title
         title.innerText = e.detail.title ?? '';
-
-        // 2️⃣ Inject HTML dari template
+        // Inject template
         content.innerHTML = e.detail.content ?? '';
 
-        // 3️⃣ Ambil form dan input group
         const manualForm = content.querySelector('form:not(#excelForm)');
-        const excelForm  = content.querySelector('#excelForm');
         const groupInput = content.querySelector('[name="id_groups"]');
+        const formIdInput = content.querySelector('[name="form_id"]');
+        const questionInput = content.querySelector('[name="question_id"]');
 
-        // ===============================
-        // 🔧 FIX 1: MANUAL FORM ACTION
-        // ===============================
-        if (manualForm && e.detail.manual) {
-            manualForm.action = e.detail.manual;
-        }
+        const rowsContainer = content.querySelector('#answerRows');
+        const previewContainer = content.querySelector('#answerPreview');
+        const addRowBtn = content.querySelector('#addAnswerRow');
 
-        // ===============================
-        // 🔧 FIX 2: EXCEL FORM ACTION (INI BUG UTAMA)
-        // ===============================
-        if (excelForm && e.detail.excel) {
-            excelForm.action = e.detail.excel; // ✅ SEBELUMNYA SALAH
-        }
+        // Set hidden inputs
+        if (groupInput && e.detail.group) groupInput.value = e.detail.group;
+        if (formIdInput && e.detail.form) formIdInput.value = e.detail.form;
+        if (questionInput && e.detail.question) questionInput.value = e.detail.question;
 
-        // ===============================
-        // SET GROUP ID
-        // ===============================
-        if (groupInput && e.detail.group) {
-            groupInput.value = e.detail.group;
-        }
-
-        // ===============================
-        // SHOW MODAL
-        // ===============================
+        // Show modal
         modal.classList.remove('hidden');
         modal.classList.add('flex');
 
         // ===============================
-        // TAB SWITCHING
+        // 🔹 Add row
         // ===============================
-        content.querySelectorAll('.tab-btn').forEach(tab => {
-            tab.addEventListener('click', () => {
-
-                content.querySelectorAll('.tab-btn')
-                    .forEach(t => t.classList.remove('border-blue-600', 'text-blue-600'));
-
-                content.querySelectorAll('[data-content]')
-                    .forEach(c => c.classList.add('hidden'));
-
-                tab.classList.add('border-blue-600', 'text-blue-600');
-
-                const target = content.querySelector(
-                    `[data-content="${tab.dataset.tab}"]`
-                );
-                if (target) target.classList.remove('hidden');
-            });
+        addRowBtn?.addEventListener('click', () => {
+            const row = rowsContainer.querySelector('.row').cloneNode(true);
+            row.querySelectorAll('input').forEach(input => input.value = '');
+            rowsContainer.appendChild(row);
+            updateNumbers(rowsContainer);
+            updatePreview(rowsContainer, previewContainer);
         });
 
         // ===============================
-        // ADD ROW
+        // 🔹 Remove row (delegation)
         // ===============================
-        const addRowBtn = content.querySelector('#addRow');
-        const rowsContainer = content.querySelector('#rows');
+        rowsContainer?.addEventListener('click', (evt) => {
+            if (evt.target.classList.contains('remove')) {
+                evt.target.closest('.row').remove();
+                updateNumbers(rowsContainer);
+                updatePreview(rowsContainer, previewContainer);
+            }
+        });
 
-        if (addRowBtn && rowsContainer) {
-            addRowBtn.addEventListener('click', () => {
-                const row = rowsContainer.querySelector('.row').cloneNode(true);
-                row.querySelector('input').value = '';
+        // ===============================
+        // 🔹 Update preview on input change
+        // ===============================
+        rowsContainer.querySelectorAll('.answer-text').forEach(input => {
+            input.addEventListener('input', () => updatePreview(rowsContainer, previewContainer));
+        });
 
-                const removeBtn = row.querySelector('.remove');
-                if (removeBtn) {
-                    removeBtn.onclick = () => row.remove();
+        // Event delegation for dynamically added rows
+        rowsContainer.addEventListener('input', (evt) => {
+            if (evt.target.classList.contains('answer-text')) {
+                updatePreview(rowsContainer, previewContainer);
+            }
+        });
+
+        // ===============================
+        // 🔹 SortableJS
+        // ===============================
+        if (rowsContainer) {
+            new Sortable(rowsContainer, {
+                animation: 150,
+                handle: '.drag',
+                onEnd: () => {
+                    updateNumbers(rowsContainer);
+                    updatePreview(rowsContainer, previewContainer);
                 }
-
-                rowsContainer.appendChild(row);
             });
         }
 
         // ===============================
-        // REMOVE ROW
+        // 🔹 Update order before submit
         // ===============================
-        content.querySelectorAll('.remove').forEach(btn => {
-            btn.onclick = () => btn.closest('.row').remove();
-        });
+        if (manualForm) {
+            manualForm.addEventListener('submit', () => {
+                rowsContainer.querySelectorAll('.row').forEach((row, i) => {
+                    let orderInput = row.querySelector('.order-input');
+                    if (!orderInput) {
+                        orderInput = document.createElement('input');
+                        orderInput.type = 'hidden';
+                        orderInput.name = 'orders[]';
+                        orderInput.classList.add('order-input');
+                        row.appendChild(orderInput);
+                    }
+                    orderInput.value = i + 1;
+                });
+            });
+        }
 
     });
 
@@ -110,7 +129,7 @@ document.addEventListener('alpine:init', () => {
         btn.addEventListener('click', () => {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
-            content.innerHTML = ''; // reset modal
+            content.innerHTML = '';
         });
     });
 

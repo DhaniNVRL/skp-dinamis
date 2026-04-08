@@ -10,4 +10,9 @@ class FormType extends Model
 
     protected $fillable = ['name', 'description'];
 
+    public function forms()
+    {
+        return $this->hasMany(Form::class, 'id_formtype');
+    }
+
 }

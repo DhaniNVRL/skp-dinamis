@@ -1,101 +1,98 @@
-<div class="container mx-auto px-4 py-6">
+<div class="w-full px-6 py-6">
 
+    <!-- Tombol Add Form -->
     <button
-    type="button"
-    class="bg-green-600 text-white px-4 py-2 rounded mb-4"
-    @click="
-        $dispatch('open-modal-tab', {
-            title: 'Add Form',
-            manual: '{{ route('forms.storeforms') }}',
-            group: '{{ $groups->id }}',
-            content: document.getElementById('question-form-template').innerHTML
-        })
-    "
+        type="button"
+        class="bg-green-600 text-white px-4 py-2 rounded mb-6"
+        @click="
+            $dispatch('open-modal-tab', {
+                title: 'Add Form',
+                manual: '{{ route('forms.storeforms') }}',
+                group: '{{ $groups->id }}',
+                content: document.getElementById('form-template').innerHTML
+            })
+        "
     >
         Add Form
     </button>
 
-  <form id="deleteForm" action="{{ route('units.bulkDelete') }}" method="POST">
-        @csrf
-        @method('DELETE')
-        <div class="text-end">
-            <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded mb-3">Delete Selected</button>
-            <input type="text" id="searchInput" placeholder="Search Activities...." class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200">
-        </div>
+    <div class="max-w-[1600px] mx-auto space-y-6">
 
-        <div class="max-w-10xl mx-auto p-6 space-y-6">
-             <!-- Header -->
-            @foreach ($forms as $form)
-                <div class="flex justify-between items-center">
+        @foreach ($forms as $form)
+            <div class="bg-white rounded-xl shadow border-l-4 border-indigo-500 p-6">
+
+                <!-- HEADER -->
+                <div class="flex justify-between items-center mb-4">
                     <h1 class="text-2xl font-semibold text-gray-800">{{ $form->name }}</h1>
-                    <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                        + Tambah Pertanyaan
+
+                    <div class="flex space-x-2">
+                        <a href="{{ route('forms.edit', $form->id) }}"
+                           class="px-3 py-1 bg-yellow-400 text-white rounded">
+                            Edit
+                        </a>
+
+                        <form action="{{ route('forms.copy', $form->id) }}" method="POST">
+                            @csrf
+                            <button class="px-3 py-1 bg-blue-400 text-white rounded">
+                                Copy
+                            </button>
+                        </form>
+
+                        <form action="{{ route('forms.destroy', $form->id) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button class="px-3 py-1 bg-red-500 text-white rounded">
+                                Hapus
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- FORM TYPE -->
+                <div class="mb-4">
+                    <span class="text-sm px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full">
+                        {{ $form->formtype->name }} — {{ $form->formtype->description }}
+                    </span>
+                </div>
+
+                <!-- ✅ FORM JAWABAN (1 FORM PER FORM) -->
+                <form action="{{ route('answer.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="form_id" value="{{ $form->id }}">
+
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 border rounded p-4">
+                            @include('admin.forms.kuesioner_umum', [
+                                'questions' => $form->questions
+                            ])
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="bg-blue-600 text-white px-4 py-2 rounded mt-6">
+                        Submit Jawaban
+                    </button>
+                </form>
+
+                <!-- ADD QUESTION -->
+                <div class="mt-6">
+                    <button
+                        type="button"
+                        class="bg-green-600 text-white px-4 py-2 rounded"
+                        @click="
+                            $dispatch('open-modal-tab', {
+                                title: 'Add Question',
+                                manual: '{{ route('question.store') }}',
+                                group: '{{ $groups->id }}',
+                                form: '{{ $form->id }}',
+                                content: document.getElementById('question-form').innerHTML
+                            })
+                        "
+                    >
+                        Add Question
                     </button>
                 </div>
-
-                <div class="bg-white rounded-xl shadow border-l-4 border-indigo-500 p-6 space-y-5">
-                    <!-- Top Row -->
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full">
-                            {{ $form->formtype_id }}
-                        </span>
-
-                        <select class="rounded-md border-gray-300 text-sm">
-                            <option>Text</option>
-                            <option selected>Radio</option>
-                            <option>Checkbox</option>
-                            <option>Select</option>
-                        </select>
-                    </div>
-
-                    <!-- Question -->
-                    <input
-                        type="text"
-                        placeholder="Tulis pertanyaan di sini..."
-                        class="w-full text-lg font-medium border-b border-gray-300 focus:border-indigo-500 focus:ring-0"
-                    >
-
-                    <!-- Options -->
-                    <div class="space-y-2">
-                        <div class="flex items-center gap-2">
-                            <input type="radio" disabled>
-                            <input type="text" placeholder="Opsi 1" class="w-full border-b border-gray-200 focus:ring-0">
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <input type="radio" disabled>
-                            <input type="text" placeholder="Opsi 2" class="w-full border-b border-gray-200 focus:ring-0">
-                        </div>
-                        <p class="text-sm text-gray-400 cursor-pointer">+ Tambah opsi</p>
-                    </div>
-
-                    <!-- Conditional Section -->
-                    <div class="bg-gray-50 rounded-lg p-4 space-y-3">
-                        <p class="text-sm font-semibold text-gray-600">Pertanyaan Tambahan</p>
-
-                        <input
-                            type="text"
-                            placeholder="Muncul jika jawaban tertentu"
-                            class="w-full rounded-md border-gray-300"
-                        >
-
-                        <input
-                            type="text"
-                            placeholder='Jika jawaban "Lainnya"'
-                            class="w-full rounded-md border-gray-300"
-                        >
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="flex justify-end gap-4 text-gray-500">
-                        <button class="hover:text-red-500">🗑</button>
-                        <button class="hover:text-indigo-600">📄 Duplikat</button>
-                    </div>
-                </div>
-            @endforeach
-
-
-
-
-        </div>
-    </form>
+            </div>
+        @endforeach
+    </div>
 </div>

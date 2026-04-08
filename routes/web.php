@@ -11,6 +11,8 @@ use App\Http\Controllers\UnitController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\FormTypeController;
 use App\Http\Controllers\QuestionTypeController;
+use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\AnswerController;
 
 // Login Routes
 Route::controller(LoginController::class)->group(function () {
@@ -133,7 +135,10 @@ Route::controller(UnitController::class)->group(function(){
     Route::get('/units/{id}', 'index')->name('admin.units');
 });
 
-Route::controller(QuestionTypeController::class)->group(function(){
+// Form
+Route::controller(FormController::class)->group(function(){
+    Route::get('/masterdataform', [FormController::class, 'masterdata'])
+        ->name('forms.masterdata');
     Route::post('/forms/storeforms', [FormController::class, 'store'])
         ->name('forms.storeforms');
     Route::post('/forms/import-form', [FormController::class, 'import'])
@@ -142,6 +147,8 @@ Route::controller(QuestionTypeController::class)->group(function(){
         ->name('forms.export');
     Route::delete('/forms/bulkDelete', [FormController::class , 'bulkDelete'])
         ->name('forms.bulkDelete');
+    Route::post('/forms/{id}/copy', [FormController::class, 'copy'])
+        ->name('forms.copy');
     Route::get('/forms/{id}/edit', [FormController::class, 'edit'])
         ->name('forms.edit');
     Route::put('/forms/{id}/', [FormController::class, 'update'])
@@ -152,6 +159,7 @@ Route::controller(QuestionTypeController::class)->group(function(){
 });
 
 // Roles
+Route::controller(RoleController::class)->group(function(){
     Route::get('/roles', [RoleController::class, 'index'])
         ->name('admin.roles');
     Route::post('/roles/storeroles', [RoleController::class, 'store'])
@@ -168,8 +176,10 @@ Route::controller(QuestionTypeController::class)->group(function(){
         ->name('roles.update');
     Route::delete('/roles/{id}', [RoleController::class, 'destroy'])
         ->name('roles.destroy');
+});
 
 // Form Type
+Route::controller(FormTypeController::class)->group(function(){
     Route::get('/formtype', [FormTypeController::class, 'index'])
         ->name('admin.formtype');
     Route::post('/formtype/store', [FormTypeController::class, 'store'])
@@ -186,8 +196,10 @@ Route::controller(QuestionTypeController::class)->group(function(){
         ->name('formtype.update');
     Route::delete('/formtype/{id}', [FormTypeController::class, 'destroy'])
         ->name('formtype.destroy');
+});
 
-// Questation Type
+// Question Type
+Route::controller(QuestionTypeController::class)->group(function(){
     Route::get('questtype', [QuestionTypeController::class, 'index'])
         ->name('admin.questtype');
     Route::post('/questtype/store', [QuestionTypeController::class, 'store'])
@@ -198,12 +210,44 @@ Route::controller(QuestionTypeController::class)->group(function(){
         ->name('questtype.import');
     Route::delete('/questtype/bulkDelete', [QuestionTypeController::class, 'bulkDelete'])
         ->name('questtype.bulkDelete');
-    Route::get('/questtype/{id}', [QuestionTypeController::class, 'edit'])
+    Route::get('/questtype/{id}/edit', [QuestionTypeController::class, 'edit'])
         ->name('questtype.edit');
     Route::put('/questtype/{id}', [QuestionTypeController::class, 'update'])
         ->name('questtype.update');
     Route::delete('/questtype/{id}', [QuestionTypeController::class, 'destroy'])
         ->name('questtype.destroy');
+});
+
+// Question 
+Route::controller(QuestionController::class)->group(function(){
+    Route::get('/masterdataquestion', [QuestionController::class, 'masterdata'])
+        ->name('question.masterdata');
+    Route::post('/question/store', [QuestionController::class, 'store'])
+        ->name('question.store');
+    Route::get('/export-question', [QuestionController::class, 'export'])
+        ->name('question.index');
+    Route::post('/question-import', [QuestionController::class, 'import'])
+        ->name('question.import');
+    Route::post('/question/{id}/copy', [QuestionController::class, 'copy'])
+        ->name('question.copy');
+    Route::get('/question/{id}/edit', [QuestionController::class, 'edit'])
+        ->name('question.edit');
+    Route::put('/question/{id}', [QuestionController::class, 'update'])
+        ->name('question.update');
+    Route::delete('/question/{id}', [QuestionController::class, 'destroy'])
+        ->name('question.destroy');
+});
+
+Route::controller(AnswerController::class)->group(function(){
+    Route::post('/answers', [AnswerController::class, 'store'])
+        ->name('answer.store');
+    Route::get('/answers', [AnswerController::class, 'edit'])
+        ->name('answer.edit');
+    Route::put('/answers', [AnswerController::class, 'update'])
+        ->name('answer.update');
+    Route::delete('/answers', [AnswerController::class, 'destroy'])
+        ->name('answer.destroy');
+});
 
 
 // Redirect root (/) to login or dashboard

@@ -5,42 +5,6 @@
 @section('content')
 <div class="max-w-xl mx-auto mt-10 bg-white shadow-md rounded px-8 pt-6 pb-8">
 
-    {{-- Alert Messages --}}
-    @if(session('success') || session('successdelete') || session('error'))
-        @if(session('success'))
-            <div class="alert-box flex items-center justify-between bg-green-500 bg-opacity-30 border border-green-600 text-green-900 px-4 py-3 rounded mb-4 transition duration-300">
-                <span>{{ session('success') }}</span>
-                <button class="close-alert text-green-800 font-bold text-lg leading-none hover:text-green-900">&times;</button>
-            </div>
-        @endif
-        @if(session('successdelete'))
-            <div class="alert-box flex items-center justify-between bg-red-500 bg-opacity-30 border border-red-600 text-red-900 px-4 py-3 rounded mb-4 transition duration-300">
-                <span>{{ session('successdelete') }}</span>
-                <button class="close-alert text-red-800 font-bold text-lg leading-none hover:text-red-900">&times;</button>
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="bg-red-500 text-white px-4 py-2 rounded mb-4">
-                {{ session('error') }}
-            </div>
-        @endif
-        <script>
-            // Auto-hide
-            setTimeout(() => {
-                document.querySelectorAll('.alert-box').forEach(box => {
-                    box.style.opacity = 0;
-                    setTimeout(() => box.remove(), 300);
-                });
-            }, 5000);
-            document.querySelectorAll('.close-alert').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const box = btn.parentElement;
-                    box.style.opacity = 0;
-                    setTimeout(() => box.remove(), 300);
-                });
-            });
-        </script>
-    @endif
   <h2 class="text-2xl font-semibold mb-6 text-center">Edit Form Type</h2>
 
   <form action="{{ route('formtype.update', $formtypes->id) }}" method="POST">

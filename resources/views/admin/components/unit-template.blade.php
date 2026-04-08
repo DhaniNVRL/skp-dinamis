@@ -1,11 +1,12 @@
-<template id="question-form-template">
-     <div class="bg-white w-full max-w-xl rounded shadow-lg">
+<template id="unit-template">
+    <div class="bg-white w-full max-w-xl rounded shadow-lg">
+
           <!-- TABS -->
           <div class="flex border-b">
               <button
                   class="tab-btn flex-1 py-2 border-b-2 border-blue-600 text-blue-600"
                   data-tab="manual">
-                  Manual
+                  Manual Input
               </button>
               <button
                   class="tab-btn flex-1 py-2"
@@ -21,24 +22,14 @@
               <div data-content="manual">
                   <form id="manualForm" method="POST">
                       @csrf
-
+                      
                       <!-- IMPORTANT: ALIAS -->
                       <input type="hidden" id="groupId" name="id_groups">
 
                       <div id="rows">
                           <div class="row flex gap-2 mb-2">
-                            <div class="w-full">
-                                <input type="text" name="name[]" placeholder="Name Form" class="border p-2 w-full" required>
-                            </div>
-                            <div class="w-full">
-                                <select name="formtype[]" required class="validate-required border rounded px-4 py-2 w-full">
-                                    <option value="">Choose Form Type</option>
-                                        @foreach($formtypes as $formtype)
-                                    <option value="{{ $formtype->id }}">{{ $formtype->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <button type="button" class="remove text-red-600 font-bold">
+                              <input type="text" name="name[]" placeholder="Name Unit" class="border p-2 w-full" required>
+                              <button type="button" class="remove text-red-600 font-bold">
                                   X
                               </button>
                           </div>
@@ -62,7 +53,7 @@
                       @csrf
 
                       <input type="file" name="file" class="border p-2 w-full mb-3" required>
-                      <input type="hidden" name="id_groupss" value="{{ $groups->id }}">
+                      <input type="hidden" name="id_groups" value="{{ $groups->id }}">
 
                       <div class="text-right">
                           <a href="{{ route('units.export') }}" class="bg-blue-600 text-white px-4 py-2 me-5 rounded" >

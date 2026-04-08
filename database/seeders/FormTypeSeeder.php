@@ -17,8 +17,8 @@ class FormTypeSeeder extends Seeder
         DB::table('form_types')->insert([
             [
                 'id'=>1,
-                'name' => 'Form Kuesioner Imum',
-                'description' => 'Form Kuesioner Imum',
+                'name' => 'Form Kuesioner Umum',
+                'description' => 'Form Kuesioner Umum',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],[
