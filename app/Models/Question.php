@@ -27,4 +27,9 @@ class Question extends Model
     {
         return $this->belongsTo(Form::class, 'form_id'); // FK ke forms
     }
+   public function options()
+    {
+        return $this->hasMany(Option::class, 'question_id')
+                    ->orderBy('no', 'asc');
+    }
 }

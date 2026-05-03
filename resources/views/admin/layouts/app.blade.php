@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dashboard')</title>
-    
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
         [x-cloak] { display: none !important; }
@@ -50,6 +51,6 @@
     <script src="{{ asset('js/global-modal.js') }}"></script>
     <script src="{{ asset('js/global-modal-tab.js') }}"></script>
     <script src="{{ asset('js/global-form.js') }}"></script>
-    
+
 </body>
 </html>

@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('options', function (Blueprint $table) {
             $table->id();
             $table->foreignId('question_id')->constrained()->cascadeOnDelete();
+            $table->string('no');
             $table->string('answer_text');
-            $table->integer('value')->nullable();
-            $table->integer('order')->default(0); // 🔥 penting
+            $table->boolean('has_child')->default(false);
             $table->timestamps();
         });
     }

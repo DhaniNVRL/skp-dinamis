@@ -13,6 +13,7 @@ use App\Http\Controllers\FormTypeController;
 use App\Http\Controllers\QuestionTypeController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\AnswerController;
+use App\Http\Controllers\OptionController;
 
 // Login Routes
 Route::controller(LoginController::class)->group(function () {
@@ -132,7 +133,7 @@ Route::controller(UnitController::class)->group(function(){
         ->name('units.update');
     Route::delete('/units/{id}', [UnitController::class, 'destroy'])
         ->name('units.destroy');
-    Route::get('/units/{id}', 'index')->name('admin.units');
+    Route::get('/units/{id}', [UnitController::class, 'index'])->name('admin.units');
 });
 
 // Form
@@ -218,7 +219,7 @@ Route::controller(QuestionTypeController::class)->group(function(){
         ->name('questtype.destroy');
 });
 
-// Question 
+// Question
 Route::controller(QuestionController::class)->group(function(){
     Route::get('/masterdataquestion', [QuestionController::class, 'masterdata'])
         ->name('question.masterdata');
@@ -236,6 +237,17 @@ Route::controller(QuestionController::class)->group(function(){
         ->name('question.update');
     Route::delete('/question/{id}', [QuestionController::class, 'destroy'])
         ->name('question.destroy');
+});
+
+Route::controller(OptionController::class)->group(function(){
+    Route::post('/options/store',[OptionController::class, 'store'])
+        ->name('options.store');
+    Route::get('/options/{id}/edit', [OptionController::class, 'edit'])
+        ->name('options.edit');
+    Route::put('/options/{id}', [OptionController::class, 'update'])
+        ->name('options.update');
+    Route::delete('/options/{id}', [OptionController::class, 'destroy'])
+        ->name('options.destroy');
 });
 
 Route::controller(AnswerController::class)->group(function(){

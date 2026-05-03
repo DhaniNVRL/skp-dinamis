@@ -19,7 +19,7 @@
                 <input type="hidden" name="id_groups" id="id_groups_input" value="{{ $groups->id ?? '' }}">
                 <input type="hidden" name="form_id" id="form_id_input" value="">
 
-                <div id="rows">
+                <div id="answerRows"> <!-- ID diperbaiki -->
                     <div class="row flex gap-2 mb-2">
                         <div class="w-full">
                             <input type="text" name="no[]" placeholder="No" class="border p-2 w-full" required>
@@ -39,7 +39,7 @@
                     </div>
                 </div>
 
-                <button type="button" id="addRow" class="text-blue-600 mb-3">+ Add Row</button>
+                <button type="button" id="addAnswerRow" class="text-blue-600 mb-3">+ Add Row</button> <!-- ID diperbaiki -->
 
                 <div class="text-right">
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>

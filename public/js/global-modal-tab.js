@@ -1,11 +1,17 @@
 document.addEventListener('alpine:init', () => {
 
+    // ===============================
+    // 🔹 GLOBAL MODAL REFERENCES
+    // ===============================
     const modal = document.getElementById('globalModal');
     if (!modal) return console.error('globalModal not found');
 
     const title = document.getElementById('modalTitle');
     const content = document.getElementById('modalContent');
 
+    // ===============================
+    // 🔹 UTILITY: Update row numbers
+    // ===============================
     function updateNumbers(rowsContainer) {
         rowsContainer.querySelectorAll('.row').forEach((row, i) => {
             const dragHandle = row.querySelector('.drag');
@@ -13,6 +19,9 @@ document.addEventListener('alpine:init', () => {
         });
     }
 
+    // ===============================
+    // 🔹 UTILITY: Update preview for manual form
+    // ===============================
     function updatePreview(rowsContainer, previewContainer) {
         if (!previewContainer) return;
         previewContainer.innerHTML = '';
@@ -26,13 +35,20 @@ document.addEventListener('alpine:init', () => {
         });
     }
 
+    // ===============================
+    // 🔹 EVENT: Open Modal
+    // ===============================
     window.addEventListener('open-modal-tab', (e) => {
 
-        // Set title
+        // -------------------------------
+        // Set modal title & content
+        // -------------------------------
         title.innerText = e.detail.title ?? '';
-        // Inject template
         content.innerHTML = e.detail.content ?? '';
 
+        // -------------------------------
+        // Form references
+        // -------------------------------
         const manualForm = content.querySelector('form:not(#excelForm)');
         const groupInput = content.querySelector('[name="id_groups"]');
         const formIdInput = content.querySelector('[name="form_id"]');
@@ -42,28 +58,46 @@ document.addEventListener('alpine:init', () => {
         const previewContainer = content.querySelector('#answerPreview');
         const addRowBtn = content.querySelector('#addAnswerRow');
 
-        // Set hidden inputs
+        // -------------------------------
+        // ✅ Set form action dynamically
+        // -------------------------------
+        if (manualForm && e.detail.manual) {
+            manualForm.action = e.detail.manual;
+        }
+
+        // -------------------------------
+        // Set hidden input values
+        // -------------------------------
         if (groupInput && e.detail.group) groupInput.value = e.detail.group;
         if (formIdInput && e.detail.form) formIdInput.value = e.detail.form;
         if (questionInput && e.detail.question) questionInput.value = e.detail.question;
 
+        // -------------------------------
         // Show modal
+        // -------------------------------
         modal.classList.remove('hidden');
         modal.classList.add('flex');
 
         // ===============================
-        // 🔹 Add row
+        // 🔹 Add Row Handler
         // ===============================
         addRowBtn?.addEventListener('click', () => {
             const row = rowsContainer.querySelector('.row').cloneNode(true);
-            row.querySelectorAll('input').forEach(input => input.value = '');
+
+            // Reset inputs
+            row.querySelectorAll('input, select, textarea').forEach(input => input.value = '');
+
+            // Hide child input by default
+            const childDiv = row.querySelector('.child-input');
+            if (childDiv) childDiv.classList.add('hidden');
+
             rowsContainer.appendChild(row);
             updateNumbers(rowsContainer);
             updatePreview(rowsContainer, previewContainer);
         });
 
         // ===============================
-        // 🔹 Remove row (delegation)
+        // 🔹 Remove Row Handler
         // ===============================
         rowsContainer?.addEventListener('click', (evt) => {
             if (evt.target.classList.contains('remove')) {
@@ -74,21 +108,16 @@ document.addEventListener('alpine:init', () => {
         });
 
         // ===============================
-        // 🔹 Update preview on input change
+        // 🔹 Update Preview on Input
         // ===============================
-        rowsContainer.querySelectorAll('.answer-text').forEach(input => {
-            input.addEventListener('input', () => updatePreview(rowsContainer, previewContainer));
-        });
-
-        // Event delegation for dynamically added rows
-        rowsContainer.addEventListener('input', (evt) => {
+        rowsContainer?.addEventListener('input', (evt) => {
             if (evt.target.classList.contains('answer-text')) {
                 updatePreview(rowsContainer, previewContainer);
             }
         });
 
         // ===============================
-        // 🔹 SortableJS
+        // 🔹 SortableJS for rows
         // ===============================
         if (rowsContainer) {
             new Sortable(rowsContainer, {
@@ -102,11 +131,11 @@ document.addEventListener('alpine:init', () => {
         }
 
         // ===============================
-        // 🔹 Update order before submit
+        // 🔹 Before Submit: add order inputs
         // ===============================
         if (manualForm) {
             manualForm.addEventListener('submit', () => {
-                rowsContainer.querySelectorAll('.row').forEach((row, i) => {
+                rowsContainer?.querySelectorAll('.row').forEach((row, i) => {
                     let orderInput = row.querySelector('.order-input');
                     if (!orderInput) {
                         orderInput = document.createElement('input');
@@ -120,10 +149,28 @@ document.addEventListener('alpine:init', () => {
             });
         }
 
+        // ===============================
+        // 🔹 Child Answer Logic (NEW)
+        // -------------------------------
+        // Menampilkan textarea jika select 'has_child' = 1
+        // ===============================
+        rowsContainer?.addEventListener('change', (evt) => {
+            if (evt.target.matches('select[name="has_child[]"]')) {
+                const childDiv = evt.target.closest('.row').querySelector('.child-input');
+                if (childDiv) {
+                    if (evt.target.value === "1") {
+                        childDiv.classList.remove('hidden');
+                    } else {
+                        childDiv.classList.add('hidden');
+                    }
+                }
+            }
+        });
+
     });
 
     // ===============================
-    // CLOSE MODAL
+    // 🔹 Close Modal Handler
     // ===============================
     modal.querySelectorAll('[data-close]').forEach(btn => {
         btn.addEventListener('click', () => {

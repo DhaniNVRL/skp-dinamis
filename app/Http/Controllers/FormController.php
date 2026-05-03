@@ -88,7 +88,7 @@ class FormController extends Controller
     public function update(Request $request, $id)
     {
         // dd($request->all());
-        
+
         $form = Form::findOrFail($id);
 
         $validated = $request->validate([

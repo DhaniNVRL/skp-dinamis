@@ -22,7 +22,7 @@
               <div data-content="manual">
                   <form id="manualForm" method="POST">
                       @csrf
-                      
+
                       <!-- IMPORTANT: ALIAS -->
                       <input type="hidden" id="groupId" name="id_groups">
 

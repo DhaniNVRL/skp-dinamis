@@ -20,21 +20,26 @@ class UnitController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($id){
+    public function index($id)
+    {
         $group = Group::findOrFail($id);
         $unit = Unit::where('id_groups', $id)->get();
-        $forms = Form::where('id_groups', $id)->with('questions')->get();
-        $questions = Question::where('id_groups', $id)->get();
+
+        $forms = Form::where('id_groups', $id)
+            ->with(['questions.options' => function ($query) {
+                $query->orderBy('no', 'asc');
+            }])
+            ->get();
+
         $formtype = FormType::all();
         $questionype = QuestionType::all();
 
-        return view ('admin.unit', [
+        return view('admin.unit', [
             'groups' => $group,
             'units' => $unit,
             'forms' => $forms,
             'formtypes' => $formtype,
             'questionypes' => $questionype,
-            'questions' => $questions,
         ]);
     }
 
