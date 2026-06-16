@@ -2,18 +2,20 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class GroupsTableSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        // MATIKAN foreign key check sementara
+        Schema::disableForeignKeyConstraints();
+
         DB::table('groups')->truncate();
+
+        Schema::enableForeignKeyConstraints();
 
         DB::table('groups')->insert([
             [

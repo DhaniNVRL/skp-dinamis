@@ -52,7 +52,8 @@ if (!modal) {
         row.querySelector('.remove').onclick = () => row.remove();
         document.getElementById('rows').appendChild(row);
     });
-x
+// x
+    // document.querySelectorAll('.remove').forEach(btn => {
     document.querySelectorAll('.remove').forEach(btn => {
         btn.onclick = () => btn.closest('.row').remove();
     });

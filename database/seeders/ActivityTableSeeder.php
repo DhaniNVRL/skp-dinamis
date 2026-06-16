@@ -4,19 +4,19 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ActivityTableSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-   public function run(): void
+    public function run(): void
     {
-        // Kosongkan tabel dulu
+        Schema::disableForeignKeyConstraints();
+
         DB::table('activities')->truncate();
 
-        // Insert data baru
-       DB::table('activities')->insert([
+        Schema::enableForeignKeyConstraints();
+
+        DB::table('activities')->insert([
             [
                 'id' => 1,
                 'name' => 'Activity 1',
@@ -40,5 +40,4 @@ class ActivityTableSeeder extends Seeder
             ],
         ]);
     }
-
 }

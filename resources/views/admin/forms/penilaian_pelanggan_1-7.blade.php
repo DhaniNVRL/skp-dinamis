@@ -88,7 +88,7 @@
                         </div>
 
                         <div class="flex flex-wrap justify-center gap-4">
-                            @foreach ([1,2,3,4,5,0] as $value)
+                            @foreach ([1,2,3,4,5,6,7,0] as $value)
                                 <label class="flex items-center gap-1">
                                     <input
                                         type="radio"
@@ -109,7 +109,7 @@
                         </div>
 
                         <div class="flex flex-wrap justify-center gap-4">
-                            @foreach ([1,2,3,4,5,0] as $value)
+                            @foreach ([1,2,3,4,5,6,7,0] as $value)
                                 <label class="flex items-center gap-1">
                                     <input
                                         type="radio"
@@ -189,7 +189,7 @@
 
                 <!-- Pilihan Jawaban -->
                 <div class="flex flex-wrap justify-center gap-4">
-                    @foreach ([1,2,3,4,5,0] as $value)
+                    @foreach ([1,2,3,4,5,6,7,0] as $value)
                         <label class="flex items-center gap-1">
                             <input
                                 type="radio"

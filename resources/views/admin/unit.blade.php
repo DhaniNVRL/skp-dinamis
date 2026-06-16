@@ -84,6 +84,7 @@
     @include('admin.components.unit-template')
     @include('admin.components.form-template')
     @include('admin.components.question-template')
+    @include('admin.components.question-penialain_1-5')
 
     <!-- GLOBAL MODAL -->
     @include('admin.components.global-modal')

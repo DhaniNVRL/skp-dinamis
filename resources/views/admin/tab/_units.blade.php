@@ -43,12 +43,19 @@
         type="button"
         class="bg-green-600 text-white px-4 py-2 rounded mb-4"
         @click="
+            const template = document.getElementById('unit-template');
+
+            if (!template) {
+                alert('Template unit-template tidak ditemukan!');
+                return;
+            }
+
             $dispatch('open-modal-tab', {
                 title: 'Add Unit',
                 manual: '{{ route('units.storeunit') }}',
                 excel: '{{ route('units.import') }}',
                 group: '{{ $groups->id }}',
-                content: document.getElementById('unit-form-template').innerHTML
+                content: template.innerHTML
             })
         "
     >

@@ -21,18 +21,24 @@
                 <input type="hidden" name="id_groups" value="{{ $groups->id ?? '' }}">
                 <input type="hidden" name="question_id" value="">
 
-                <div id="answerRows">
+                <div id="rows">
 
-                    <div class="row question-wrapper flex flex-col gap-2 mb-2">
+                    <div class="row question-wrapper flex flex-col gap-2 mb-2" id="answerRows">
                         <div class="option-item flex items-center gap-2">
-                            <input type="text" name="no[]" placeholder="Option Text" class="border p-2 w-full" validate-required>
-                            <input type="text" name="answer_text[]" placeholder="Option Text" class="border p-2 w-full" required>
-
-                            <!-- Pilihan apakah ada jawaban turunan -->
-                            <select name="has_child[]" class="border p-2">
-                                <option value="0">No Child</option>
-                                <option value="1">Has Child</option>
-                            </select>
+                            <div class="w-full" style="width:10%;">
+                                <input type="text" name="no[]" placeholder="Option Text" class="border p-2 w-full" validate-required>
+                            </div>
+                            <div class="w-full">
+                                <input type="text" name="answer_text[]" placeholder="Option Text" class="border p-2 w-full" required>
+                            </div>
+                            
+                            <div class="w-full">
+                                <!-- Pilihan apakah ada jawaban turunan -->
+                                <select name="has_child[]" class="border p-2">
+                                    <option value="0">No Child</option>
+                                    <option value="1">Has Child</option>
+                                </select>
+                            </div>
 
                             <button type="button" class="remove text-red-600 font-bold">X</button>
                         </div>
@@ -40,7 +46,7 @@
 
                 </div>
 
-                <button type="button" id="addAnswerRow" class="text-blue-600 mb-3">
+                <button type="button" id="addRow" class="text-blue-600 mb-3">
                     + Add Row
                 </button>
 

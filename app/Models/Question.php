@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Question extends Model
 {
      protected $fillable = [
-        'id_groups',       // ✅ fix mass assignment
+        'id_groups',       
         'form_id',
+        'no_header',
         'no',
         'name',
         'id_questiontypes',
@@ -31,5 +32,14 @@ class Question extends Model
     {
         return $this->hasMany(Option::class, 'question_id')
                     ->orderBy('no', 'asc');
+    }
+    public function subUnits()
+    {
+        return $this->belongsToMany(
+            SubUnit::class,
+            'subunit_questions',
+            'question_id',
+            'subunit_id'
+        );
     }
 }

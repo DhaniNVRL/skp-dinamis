@@ -3,37 +3,27 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // Jalankan seeder untuk roles terlebih dahulu
+        Schema::disableForeignKeyConstraints();
+
         $this->call([
             RolesTableSeeder::class,
-        ]);
-        $this->call([
             ActivityTableSeeder::class,
-        ]);
-        $this->call([
             GroupsTableSeeder::class,
-        ]);
-        $this->call([
             UnitsTableSeeder::class,
-        ]);
-        $this->call([
             FormTypeSeeder::class,
-        ]);
-        $this->call([
             QuestionTypeSeeder::class,
         ]);
 
-        // Buat user yang merujuk ke role id 1
+        Schema::enableForeignKeyConstraints();
+
         User::insert([
             [
                 'id' => 1,
@@ -58,7 +48,8 @@ class DatabaseSeeder extends Seeder
                 'id_roles' => 3,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ],[
+            ],
+            [
                 'id' => 4,
                 'username' => 'testuser',
                 'password' => Hash::make('testpassword'),
@@ -66,8 +57,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // dan seterusnya...
         ]);
-
     }
 }

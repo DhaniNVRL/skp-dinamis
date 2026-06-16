@@ -39,24 +39,28 @@ class QuestionController extends Controller
      */
     public function store(Request $request)
     {
+        // dd($request->all());
         $validated = $request->validate([
-            'id_groups' => 'required|integer|exists:groups,id', // ✅ fix nama tabel
+            'id_groups' => 'required|integer|exists:groups,id',
             'form_id' => 'required|integer|exists:forms,id',
+            'no_header' => 'required|array',
+            'no_header.*' => 'required|string|max:255',
             'no' => 'required|array',
             'no.*' => 'required|string|max:255',
             'name' => 'required|array',
             'name.*' => 'required|string|max:255',
-            'formtype' => 'required|array',
-            'formtype.*' => 'required|exists:question_types,id',
+            'formtype' => 'nullable|array',
+            'formtype.*' => 'nullable|exists:question_types,id',
         ]);
 
         foreach ($validated['name'] as $index => $name) {
             Question::create([
                 'id_groups' => $validated['id_groups'],
                 'form_id' => $validated['form_id'],
+                'no_header' => $validated['no_header'][$index],
                 'no' => $validated['no'][$index],
                 'name' => $name,
-                'id_questiontypes' => $validated['formtype'][$index],
+                'id_questiontypes' => $validated['formtype'][$index] ?? null,
             ]);
         }
 
@@ -116,6 +120,7 @@ class QuestionController extends Controller
      */
     public function destroy($id)
     {
+        // dd($id);
         $question = Question::findOrFail($id);
         $question->delete();
 

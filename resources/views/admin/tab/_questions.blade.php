@@ -1,6 +1,6 @@
 <div class="w-full px-6 py-6">
 
-    <!-- Tombol Add Form -->
+    <!-- Tombol Form -->
     <button
         type="button"
         class="bg-green-600 text-white px-4 py-2 rounded mb-6"
@@ -19,6 +19,7 @@
     <div class="max-w-[1600px] mx-auto space-y-6">
 
         @foreach ($forms as $form)
+                       
             <div class="bg-white rounded-xl shadow border-l-4 border-indigo-500 p-6">
 
                 <!-- HEADER -->
@@ -56,48 +57,84 @@
                 </div>
 
                 <!-- ✅ FORM JAWABAN (1 FORM PER FORM) -->
-                <form action="{{ route('answer.store') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="form_id" value="{{ $form->id }}">
+                <div class="bg-gray-50 border rounded p-4">
 
-                    <div class="space-y-4">
-                        <div class="bg-gray-50 border rounded p-4">
+                    @switch($form->id_formtype)
+
+                        @case(1)
                             @include('admin.forms.kuesioner_umum', [
                                 'questions' => $form->questions
                             ])
-                            @include('admin.components.option-template')
-                        </div>
-                    </div>
+                            @break
+
+                        @case(2)
+                            @include('admin.forms.penilaian_pelanggan_1-5', [
+                                'questions' => $form->questions
+                            ])
+                            @break
+
+                        @case(3)
+                            @include('admin.forms.penilaian_pelanggan_1-7', [
+                                'questions' => $form->questions
+                            ])
+                            @break
+
+                        @case(4)
+                            @include('admin.forms.penilaian_keterikatan_1-5', [
+                                'questions' => $form->questions
+                            ])
+                            @break
+
+                        @case(5)
+                            @include('admin.forms.penilaian_keterikatan_1-7', [
+                                'questions' => $form->questions
+                            ])
+                            @break
+
+                        @case(6)
+                           @include('admin.forms.keunggulan_keluhan_saran', [
+                               'questions' => $form->questions
+                           ])
+                           @break
+                            @break
+
+                         @case(7)
+                            @include('admin.forms.rangking_1-3', [
+                                'questions' => $form->questions
+                            ])
+                            @break
+
+                         @case(8)
+                            @include('admin.forms.rangking_1-5', [
+                                'questions' => $form->questions
+                            ])
+                            @break
+
+                         @case(9)
+                            @include('admin.forms.keluhan_saran', [
+                                'questions' => $form->questions
+                            ])
+                            @break
+
+                        @default
+                            <p class="text-red-500">Form tidak ditemukan</p>
+
+                    @endswitch
+
+                    @include('admin.components.option-template')
+
+                </div>
+
+                <!-- FORM SUBMIT JAWABAN -->
+                <form action="{{ route('answer.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="form_id" value="{{ $form->id }}">
 
                     <button type="submit"
                         class="bg-blue-600 text-white px-4 py-2 rounded mt-6">
                         Submit Jawaban
                     </button>
                 </form>
-
-                <!-- ADD QUESTION -->
-                <div class="mt-6">
-                    <button
-                type="button"
-                class="bg-green-600 text-white px-4 py-2 rounded mt-2"
-                @click="
-                    const template = document.getElementById('question-form');
-                    if (!template) {
-                        alert('Template question-form tidak ditemukan!');
-                        return;
-                    }
-
-                    $dispatch('open-modal-tab', {
-                        title: 'Add Question',
-                        manual: '{{ route('question.store') }}',
-                        group: '{{ $groups->id }}',
-                        form: '{{ $form->id }}',
-                        content: template.innerHTML
-                    })
-                ">
-                Add Question
-            </button>
-                </div>
             </div>
         @endforeach
     </div>

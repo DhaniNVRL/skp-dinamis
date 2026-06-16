@@ -13,7 +13,8 @@ class QuestionTypeSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('question_types')->truncate();
+        DB::table('question_types')->delete();
+
         DB::table('question_types')->insert([
             [
                 'id'=>1,

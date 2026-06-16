@@ -1,183 +1,176 @@
 document.addEventListener('alpine:init', () => {
 
-    // ===============================
-    // 🔹 GLOBAL MODAL REFERENCES
-    // ===============================
+    // =========================
+    // MODAL
+    // =========================
     const modal = document.getElementById('globalModal');
-    if (!modal) return console.error('globalModal not found');
+
+    if (!modal) {
+        console.error('globalModal not found');
+        return;
+    }
 
     const title = document.getElementById('modalTitle');
     const content = document.getElementById('modalContent');
 
-    // ===============================
-    // 🔹 UTILITY: Update row numbers
-    // ===============================
-    function updateNumbers(rowsContainer) {
-        rowsContainer.querySelectorAll('.row').forEach((row, i) => {
-            const dragHandle = row.querySelector('.drag');
-            if (dragHandle) dragHandle.innerText = i + 1;
-        });
-    }
-
-    // ===============================
-    // 🔹 UTILITY: Update preview for manual form
-    // ===============================
-    function updatePreview(rowsContainer, previewContainer) {
-        if (!previewContainer) return;
-        previewContainer.innerHTML = '';
-        rowsContainer.querySelectorAll('.row').forEach(row => {
-            const text = row.querySelector('.answer-text')?.value || '';
-            if (text) {
-                const div = document.createElement('div');
-                div.innerHTML = `<label><input type="radio" disabled> ${text}</label>`;
-                previewContainer.appendChild(div);
-            }
-        });
-    }
-
-    // ===============================
-    // 🔹 EVENT: Open Modal
-    // ===============================
+    // =========================
+    // OPEN MODAL
+    // =========================
     window.addEventListener('open-modal-tab', (e) => {
 
-        // -------------------------------
-        // Set modal title & content
-        // -------------------------------
+        // RESET CONTENT
+        content.innerHTML = '';
+
+        // SET TITLE
         title.innerText = e.detail.title ?? '';
+
+        // SET CONTENT
         content.innerHTML = e.detail.content ?? '';
 
-        // -------------------------------
-        // Form references
-        // -------------------------------
-        const manualForm = content.querySelector('form:not(#excelForm)');
-        const groupInput = content.querySelector('[name="id_groups"]');
-        const formIdInput = content.querySelector('[name="form_id"]');
-        const questionInput = content.querySelector('[name="question_id"]');
+        // SHOW MODAL
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
 
-        const rowsContainer = content.querySelector('#answerRows');
-        const previewContainer = content.querySelector('#answerPreview');
-        const addRowBtn = content.querySelector('#addAnswerRow');
+        // =========================
+        // FORM REFERENCES
+        // =========================
+        const manualForm = content.querySelector('#manualForm');
+        const excelForm = content.querySelector('#excelForm');
 
-        // -------------------------------
-        // ✅ Set form action dynamically
-        // -------------------------------
+        // =========================
+        // SET ACTION
+        // =========================
         if (manualForm && e.detail.manual) {
             manualForm.action = e.detail.manual;
         }
 
-        // -------------------------------
-        // Set hidden input values
-        // -------------------------------
-        if (groupInput && e.detail.group) groupInput.value = e.detail.group;
-        if (formIdInput && e.detail.form) formIdInput.value = e.detail.form;
-        if (questionInput && e.detail.question) questionInput.value = e.detail.question;
-
-        // -------------------------------
-        // Show modal
-        // -------------------------------
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-
-        // ===============================
-        // 🔹 Add Row Handler
-        // ===============================
-        addRowBtn?.addEventListener('click', () => {
-            const row = rowsContainer.querySelector('.row').cloneNode(true);
-
-            // Reset inputs
-            row.querySelectorAll('input, select, textarea').forEach(input => input.value = '');
-
-            // Hide child input by default
-            const childDiv = row.querySelector('.child-input');
-            if (childDiv) childDiv.classList.add('hidden');
-
-            rowsContainer.appendChild(row);
-            updateNumbers(rowsContainer);
-            updatePreview(rowsContainer, previewContainer);
-        });
-
-        // ===============================
-        // 🔹 Remove Row Handler
-        // ===============================
-        rowsContainer?.addEventListener('click', (evt) => {
-            if (evt.target.classList.contains('remove')) {
-                evt.target.closest('.row').remove();
-                updateNumbers(rowsContainer);
-                updatePreview(rowsContainer, previewContainer);
-            }
-        });
-
-        // ===============================
-        // 🔹 Update Preview on Input
-        // ===============================
-        rowsContainer?.addEventListener('input', (evt) => {
-            if (evt.target.classList.contains('answer-text')) {
-                updatePreview(rowsContainer, previewContainer);
-            }
-        });
-
-        // ===============================
-        // 🔹 SortableJS for rows
-        // ===============================
-        if (rowsContainer) {
-            new Sortable(rowsContainer, {
-                animation: 150,
-                handle: '.drag',
-                onEnd: () => {
-                    updateNumbers(rowsContainer);
-                    updatePreview(rowsContainer, previewContainer);
-                }
-            });
+        if (excelForm && e.detail.excel) {
+            excelForm.action = e.detail.excel;
         }
 
-        // ===============================
-        // 🔹 Before Submit: add order inputs
-        // ===============================
-        if (manualForm) {
-            manualForm.addEventListener('submit', () => {
-                rowsContainer?.querySelectorAll('.row').forEach((row, i) => {
-                    let orderInput = row.querySelector('.order-input');
-                    if (!orderInput) {
-                        orderInput = document.createElement('input');
-                        orderInput.type = 'hidden';
-                        orderInput.name = 'orders[]';
-                        orderInput.classList.add('order-input');
-                        row.appendChild(orderInput);
-                    }
-                    orderInput.value = i + 1;
+        // =========================
+        // SET GROUP ID
+        // =========================
+        content.querySelectorAll('[name="id_groups"]').forEach(input => {
+            input.value = e.detail.group ?? '';
+        });
+
+        // =========================
+        // SET FORM ID
+        // =========================
+        const formInput = content.querySelector('[name="form_id"]');
+
+        if (formInput && e.detail.form) {
+            formInput.value = e.detail.form;
+        }
+
+        // =========================
+        // SET QUESTION ID
+        // =========================
+        const questionInput = content.querySelector('[name="question_id"]');
+
+        if (questionInput && e.detail.question) {
+            questionInput.value = e.detail.question;
+        }
+
+        // =========================
+        // TAB SYSTEM
+        // =========================
+        const tabButtons = content.querySelectorAll('.tab-btn');
+
+        tabButtons.forEach(btn => {
+
+            btn.addEventListener('click', () => {
+
+                // RESET BUTTON
+                tabButtons.forEach(b => {
+                    b.classList.remove(
+                        'border-blue-600',
+                        'text-blue-600'
+                    );
                 });
-            });
-        }
 
-        // ===============================
-        // 🔹 Child Answer Logic (NEW)
-        // -------------------------------
-        // Menampilkan textarea jika select 'has_child' = 1
-        // ===============================
-        rowsContainer?.addEventListener('change', (evt) => {
-            if (evt.target.matches('select[name="has_child[]"]')) {
-                const childDiv = evt.target.closest('.row').querySelector('.child-input');
-                if (childDiv) {
-                    if (evt.target.value === "1") {
-                        childDiv.classList.remove('hidden');
-                    } else {
-                        childDiv.classList.add('hidden');
-                    }
+                // HIDE CONTENT
+                content.querySelectorAll('[data-content]')
+                    .forEach(c => c.classList.add('hidden'));
+
+                // ACTIVE BUTTON
+                btn.classList.add(
+                    'border-blue-600',
+                    'text-blue-600'
+                );
+
+                // SHOW TARGET
+                const target = content.querySelector(
+                    `[data-content="${btn.dataset.tab}"]`
+                );
+
+                if (target) {
+                    target.classList.remove('hidden');
                 }
-            }
+
+            });
+
         });
+
+        // =========================
+        // UNIT ROW SYSTEM
+        // =========================
+        const rows = content.querySelector('#rows');
+        const addRow = content.querySelector('#addRow');
+
+        if (rows && addRow) {
+
+            addRow.addEventListener('click', () => {
+
+                const firstRow = rows.querySelector('.row');
+
+                if (!firstRow) return;
+
+                const clone = firstRow.cloneNode(true);
+
+                clone.querySelectorAll('input').forEach(input => {
+                    input.value = '';
+                });
+
+                rows.appendChild(clone);
+
+            });
+
+            rows.addEventListener('click', (ev) => {
+
+                if (ev.target.classList.contains('remove')) {
+
+                    const allRows = rows.querySelectorAll('.row');
+
+                    if (allRows.length <= 1) {
+                        return;
+                    }
+
+                    ev.target.closest('.row').remove();
+
+                }
+
+            });
+
+        }
 
     });
 
-    // ===============================
-    // 🔹 Close Modal Handler
-    // ===============================
+    // =========================
+    // CLOSE MODAL
+    // =========================
     modal.querySelectorAll('[data-close]').forEach(btn => {
+
         btn.addEventListener('click', () => {
+
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+
             content.innerHTML = '';
+
         });
+
     });
 
 });

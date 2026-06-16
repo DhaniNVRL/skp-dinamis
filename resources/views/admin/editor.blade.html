@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Word Editor</title>
+
+    <link rel="stylesheet" href="{{ asset('css/editor.css') }}">
+</head>
+<body>
+
+<div class="editor-container">
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+
+        <!-- TEXT STYLE -->
+        <button onclick="format('bold')"><b>B</b></button>
+        <button onclick="format('italic')"><i>I</i></button>
+        <button onclick="format('underline')"><u>U</u></button>
+
+        <!-- PARAGRAPH -->
+        <select onchange="formatBlock(this.value)">
+            <option value="P">Paragraph</option>
+            <option value="H1">Heading 1</option>
+            <option value="H2">Heading 2</option>
+            <option value="H3">Heading 3</option>
+        </select>
+
+        <!-- LIST -->
+        <button onclick="format('insertUnorderedList')">• List</button>
+        <button onclick="format('insertOrderedList')">1. List</button>
+
+        <!-- ALIGN -->
+        <button onclick="format('justifyLeft')">Left</button>
+        <button onclick="format('justifyCenter')">Center</button>
+        <button onclick="format('justifyRight')">Right</button>
+
+        <!-- TABLE -->
+        <button onclick="insertTable()">Insert Table</button>
+
+    </div>
+
+    <!-- EDITOR -->
+    <div class="editor" id="editor" contenteditable="true">
+        <h1>Mini Word Editor</h1>
+        <p>Silakan mulai mengetik...</p>
+    </div>
+
+</div>
+
+<script src="{{ asset('js/editor.js') }}"></script>
+
+</body>
+</html>

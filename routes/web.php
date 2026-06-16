@@ -260,6 +260,17 @@ Route::controller(AnswerController::class)->group(function(){
     Route::delete('/answers', [AnswerController::class, 'destroy'])
         ->name('answer.destroy');
 });
+Route::controller(SubUnitQuestionController::class)->group(function(){
+    Route::get(
+        '/subunit/{subunit}/questions',
+        [SubUnitQuestionController::class, 'edit']
+    )->name('subunit.questions.edit');
+
+    Route::post(
+        '/subunit/questions/save',
+        [SubUnitQuestionController::class, 'save']
+    )->name('subunit.questions.save');
+});
 
 
 // Redirect root (/) to login or dashboard

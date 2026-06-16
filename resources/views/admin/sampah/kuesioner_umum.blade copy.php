@@ -5,7 +5,7 @@
         <div class="flex justify-between items-start gap-4">
 
             <label class="font-semibold text-gray-800">
-                {{ $question->no_header }}{{ $question->no }}. {{ $question->name }}
+                {{ $question->no }}. {{ $question->name }}
             </label>
 
             <!-- ACTION -->
@@ -28,7 +28,7 @@
                     <button type="submit"
                             class="text-red-500 hover:text-red-600 transition"
                             title="Delete">
-                        <i class="fa fa-trash">Hapus</i>
+                        <i class="fa fa-trash"></i>
                     </button>
                 </form>
 
