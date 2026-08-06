@@ -10,6 +10,8 @@ use App\Models\Unit;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class GroupController extends Controller
 {
@@ -48,12 +50,14 @@ class GroupController extends Controller
             'name.*' => 'required|string|max:255',
         ]);
 
-        foreach ($request->name as $name) {
-            Group::create([
-                'activity_id' => $request->id_activities,
-                'name' => $name,
-            ]);
-        }
+        DB::transaction(function () use ($request): void {
+            foreach ($request->name as $name) {
+                Group::create([
+                    'activity_id' => $request->id_activities,
+                    'name' => trim($name),
+                ]);
+            }
+        });
 
         return back()->with('success', 'Group berhasil ditambahkan');
     }
@@ -84,6 +88,11 @@ class GroupController extends Controller
 
     public function destroy($id){
         $group = Group::findOrFail($id);
+
+        if ($this->hasDependencies([$group->id])) {
+            return back()->with('error', 'Group tidak dapat dihapus karena masih digunakan.');
+        }
+
         $group->delete();
 
         return redirect()->back()->with('successdelete', 'Group berhasil dihapus.');
@@ -91,20 +100,18 @@ class GroupController extends Controller
 
     public function bulkDelete(Request $request)
     {
-        $ids = $request->input('ids', []);
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:groups,id'],
+        ]);
 
-        if (count($ids) > 0) {
-
-            Group::whereIn('id', $ids)->delete();
-
-            return redirect()
-                ->back()
-                ->with('successdelete', 'Group terpilih berhasil dihapus.');
+        if ($this->hasDependencies($validated['ids'])) {
+            return back()->with('error', 'Sebagian group masih digunakan dan tidak dapat dihapus.');
         }
 
-        return redirect()
-            ->back()
-            ->with('error', 'Tidak ada group yang dipilih.');
+        Group::whereIn('id', $validated['ids'])->delete();
+
+        return back()->with('successdelete', 'Group terpilih berhasil dihapus.');
     }
 
 
@@ -209,6 +216,7 @@ class GroupController extends Controller
 
             $inserted = 0;
             $skipped = 0;
+            $names = [];
 
             foreach ($rows as $index => $row) {
                 /*
@@ -245,29 +253,43 @@ class GroupController extends Controller
                     )
                     ->exists();
 
-                if ($exists) {
+                $normalizedName = mb_strtolower($name);
+
+                if ($exists || isset($names[$normalizedName])) {
                     $skipped++;
 
                     continue;
                 }
 
-                Group::create([
-                    'activity_id'
-                        => $validated['id_activities'],
-
-                    'name'
-                        => $name,
+                $rowValidator = Validator::make(['name' => $name], [
+                    'name' => ['required', 'string', 'max:255'],
                 ]);
 
-                $inserted++;
+                if ($rowValidator->fails()) {
+                    return back()->with('error', 'Data Group pada baris '.($index + 1).' tidak valid.');
+                }
+
+                $names[$normalizedName] = $name;
             }
 
-            if ($inserted === 0) {
+            if ($names === []) {
                 return back()->with(
                     'error',
                     'Tidak ada Group baru yang berhasil diimport. Periksa isi file atau data mungkin sudah tersedia.'
                 );
             }
+
+            DB::transaction(function () use ($names, $validated, &$inserted): void {
+                foreach ($names as $name) {
+                    Group::create([
+                        'activity_id' => $validated['id_activities'],
+                        'name' => $name,
+                    ]);
+                    $inserted++;
+                }
+            });
+
+            $spreadsheet->disconnectWorksheets();
 
             return back()->with(
                 'success',
@@ -294,6 +316,17 @@ class GroupController extends Controller
             ->get();
 
         return response()->json($groups);
+    }
+
+    private function hasDependencies(array $ids): bool
+    {
+        return DB::table('units')->whereIn('group_id', $ids)->exists()
+            || DB::table('forms')->whereIn('group_id', $ids)->exists()
+            || DB::table('questions')->whereIn('group_id', $ids)->exists()
+            || DB::table('competitors')->whereIn('group_id', $ids)->exists()
+            || DB::table('descriptions')->whereIn('group_id', $ids)->exists()
+            || DB::table('user_profiles')->whereIn('group_id', $ids)->exists()
+            || DB::table('survey_sessions')->whereIn('group_id', $ids)->exists();
     }
 
 }

@@ -274,8 +274,8 @@ class DataUserController extends Controller
                 'string',
                 'min:8',
             ],
-            'activity_id' => 'nullable|array',
-            'activity_id.*' => 'nullable|exists:activities,id',
+            'activity_id' => 'required|array|min:1',
+            'activity_id.*' => 'required|exists:activities,id',
             'role_id' => 'required|array|min:1',
             'role_id.*' => 'required|exists:roles,id',
         ]);
@@ -409,6 +409,11 @@ class DataUserController extends Controller
 
         $user = User::findOrFail($id);
 
+        if ((int) $user->id === (int) auth()->id()
+            && (int) $validated['role_id'] !== (int) $user->role_id) {
+            return back()->with('error', 'Role akun yang sedang digunakan tidak dapat diubah.');
+        }
+
         $data = [
             'username' => $validated['username'],
             'role_id'  => $validated['role_id'],
@@ -454,6 +459,13 @@ class DataUserController extends Controller
     {
         abort_if((int) $id === (int) auth()->id(), 422, 'Akun yang sedang digunakan tidak dapat dihapus.');
 
+        if (Answer::query()->where('user_id', $id)->exists()) {
+            return back()->with(
+                'error',
+                'User tidak dapat dihapus karena memiliki jawaban. Reset jawaban terlebih dahulu jika memang diperlukan.'
+            );
+        }
+
         DB::transaction(function () use ($id) {
             $user = User::query()->findOrFail($id);
 
@@ -473,6 +485,10 @@ class DataUserController extends Controller
 
         if (in_array((int) auth()->id(), array_map('intval', $validated['ids']), true)) {
             return back()->with('error', 'Akun yang sedang digunakan tidak dapat dihapus.');
+        }
+
+        if (Answer::query()->whereIn('user_id', $validated['ids'])->exists()) {
+            return back()->with('error', 'Sebagian user memiliki jawaban dan tidak dapat dihapus.');
         }
 
         DB::transaction(function () use ($validated) {

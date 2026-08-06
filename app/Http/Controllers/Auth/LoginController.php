@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\SurveySession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
@@ -22,8 +25,18 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
+        $throttleKey = Str::lower($credentials['username']).'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            throw ValidationException::withMessages([
+                'username' => 'Terlalu banyak percobaan login. Coba lagi dalam '
+                    .RateLimiter::availableIn($throttleKey).' detik.',
+            ]);
+        }
+
         // Coba autentikasi user
         if (Auth::attempt($credentials, $request->filled('remember'))) {
+            RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
 
             $user = Auth::user();
@@ -41,6 +54,8 @@ class LoginController extends Controller
                     return redirect()->route('surveyor.dashboard');
                 case 'pm':
                     return redirect()->route('pm.dashboard');
+                case 'monitoring':
+                    return redirect()->route('admin.dashboard');
                 case 'user':
                      $profile = $user->profile;
 
@@ -82,6 +97,8 @@ class LoginController extends Controller
                     ]);
             }
         }
+
+        RateLimiter::hit($throttleKey, 60);
 
         // Kalau gagal login
         return back()->withErrors([

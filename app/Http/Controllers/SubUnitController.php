@@ -13,6 +13,7 @@ use App\Models\Question;
 use App\Models\SubUnit;
 use App\Models\Competitor;
 use App\Models\SubUnitQuestion;
+use App\Models\Answer;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Excel as ExcelFormat;
@@ -277,6 +278,14 @@ class SubUnitController extends Controller
         $subunit = SubUnit::findOrFail($id);
         $unitId = $subunit->unit_id;
 
+        if (Answer::query()->where('subunit_id', $subunit->id)->exists()) {
+            return $this->redirectToSubUnit(
+                $unitId,
+                'error',
+                'Sub Unit tidak dapat dihapus karena memiliki jawaban responden.'
+            );
+        }
+
         DB::transaction(function () use ($subunit) {
             SubUnitQuestion::query()
                 ->where('subunit_id', $subunit->id)
@@ -311,6 +320,7 @@ class SubUnitController extends Controller
                 'selected.*' => [
                     'required',
                     'integer',
+                    'distinct',
                     'exists:subunits,id',
                 ],
             ],
@@ -344,6 +354,22 @@ class SubUnitController extends Controller
 
         $subunitIds = $subunits->pluck('id');
         $deletedCount = $subunits->count();
+
+        if ($subunits->count() !== count($validated['selected'])) {
+            return $this->redirectToSubUnit(
+                $validated['unit_id'],
+                'error',
+                'Sebagian Sub Unit tidak sesuai dengan Unit yang dipilih.'
+            );
+        }
+
+        if (Answer::query()->whereIn('subunit_id', $subunitIds)->exists()) {
+            return $this->redirectToSubUnit(
+                $validated['unit_id'],
+                'error',
+                'Sebagian Sub Unit memiliki jawaban responden dan tidak dapat dihapus.'
+            );
+        }
 
         DB::transaction(function () use (
             $subunitIds,

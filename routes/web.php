@@ -58,7 +58,7 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::middleware('role:Admin,pm,surveyor')->group(function () {
+    Route::middleware('role:Admin,pm,surveyor,monitoring')->group(function () {
         Route::get(
             '/admin/dashboard',
             [MonitoringDashboardController::class, 'index']
@@ -670,6 +670,7 @@ Route::get('/', function () {
         'admin' => redirect()->route('admin.dashboard'),
         'pm' => redirect()->route('pm.dashboard'),
         'surveyor' => redirect()->route('surveyor.dashboard'),
+        'monitoring' => redirect()->route('admin.dashboard'),
         'user' => redirect()->route('user.dashboard'),
         default => abort(403, 'Role tidak dikenali.'),
     };

@@ -154,6 +154,12 @@ class FormController extends Controller
 
         $form = Form::findOrFail($id);
 
+        abort_unless(
+            (int) $form->group_id === (int) $validated['group_id'],
+            422,
+            'Group form tidak dapat diubah melalui proses ini.'
+        );
+
         $form->update([
             'group_id' =>
                 $validated['group_id'],

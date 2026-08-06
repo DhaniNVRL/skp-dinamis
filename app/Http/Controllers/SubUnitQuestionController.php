@@ -63,6 +63,9 @@ class SubUnitQuestionController extends Controller
 
         $subunits = SubUnit::query()
             ->whereIn('id', $validated['subunit_ids'])
+            ->whereHas('unit', function ($query) use ($form): void {
+                $query->where('group_id', $form->group_id);
+            })
             ->get();
 
         if (

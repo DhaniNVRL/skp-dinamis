@@ -12,30 +12,15 @@ class RolesTableSeeder extends Seeder
      */
    public function run(): void
     {
-        // Kosongkan tabel dulu
-        DB::table('roles')->truncate();
-
-        // Insert data baru
-        DB::table('roles')->insert([
-            [
-                'id' => 1,
-                'name' => 'Admin',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'id' => 3,
-                'name' => 'Monitoring',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'id' => 4,
-                'name' => 'User',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        foreach (['Admin', 'PM', 'Surveyor', 'Monitoring', 'User'] as $name) {
+            DB::table('roles')->insertOrIgnore([
+                [
+                    'name' => $name,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+        }
     }
 
 }

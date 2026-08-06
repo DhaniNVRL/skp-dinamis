@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Competitor;
 use App\Models\Form;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CompetitorController extends Controller
 {
@@ -36,13 +37,20 @@ class CompetitorController extends Controller
             ],
         ]);
 
-        foreach ($validated['name'] as $name) {
-            Competitor::create([
-                'group_id' => $validated['group_id'],
-                'form_id' => $validated['form_id'],
-                'name' => trim($name),
-            ]);
-        }
+        $form = Form::query()
+            ->where('id', $validated['form_id'])
+            ->where('group_id', $validated['group_id'])
+            ->firstOrFail();
+
+        DB::transaction(function () use ($validated, $form): void {
+            foreach ($validated['name'] as $name) {
+                Competitor::create([
+                    'group_id' => $form->group_id,
+                    'form_id' => $form->id,
+                    'name' => trim($name),
+                ]);
+            }
+        });
 
         return redirect()
             ->route('admin.units', [

@@ -103,6 +103,19 @@ class AnswerController extends Controller
             )
             ->first();
 
+        abort_unless(
+            $session,
+            409,
+            'Sesi survei belum dimulai.'
+        );
+
+        abort_unless(
+            (int) $session->group_id === (int) $profile->group_id
+                && (int) $session->unit_id === (int) $profile->unit_id,
+            409,
+            'Profil responden berubah. Mulai ulang sesi survei sebelum menyimpan jawaban.'
+        );
+
         abort_if(
             $session?->status === 'completed',
             403,
@@ -986,8 +999,7 @@ class AnswerController extends Controller
         ?int $subunitId,
         ?int $competitorId
     ): void {
-        Answer::query()->updateOrCreate(
-            [
+        $attributes = [
                 'user_id' =>
                     Auth::id(),
 
@@ -1002,11 +1014,21 @@ class AnswerController extends Controller
 
                 'competitor_id' =>
                     $competitorId,
-            ],
+            ];
+
+        $answer = Answer::query()->updateOrCreate(
+            $attributes,
             [
                 'answer' => $value,
             ]
         );
+
+        // Bersihkan duplikasi legacy untuk konteks logis yang sama tanpa
+        // menyentuh jawaban lain milik responden.
+        Answer::query()
+            ->where($attributes)
+            ->whereKeyNot($answer->getKey())
+            ->delete();
     }
 
     /*

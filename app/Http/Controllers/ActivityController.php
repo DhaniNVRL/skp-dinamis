@@ -7,6 +7,10 @@ use App\Models\Activity;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 
 class ActivityController extends Controller
@@ -38,16 +42,18 @@ class ActivityController extends Controller
         $descriptionList = $request->input('description');
 
         try {
+            DB::transaction(function () use ($nameList, $descriptionList): void {
             for ($i = 0; $i < count($nameList); $i++) {
                 Activity::create([
                     'name' => $nameList[$i],
                     'description' => $descriptionList[$i],
                 ]);
             }
+            });
             return redirect()->back()->with('success', 'Data berhasil disimpan!');
-         } catch (\Exception $e) {
-            // Jika terjadi error, kembali ke halaman sebelumnya dengan pesan error
-            return redirect()->back()->with('error', $e->getMessage());
+         } catch (Throwable $error) {
+            report($error);
+            return redirect()->back()->with('error', 'Data activity gagal disimpan.');
         }
 
     }
@@ -76,37 +82,62 @@ class ActivityController extends Controller
 
     public function import(Request $request){
         $request -> validate([
-            'file' =>'required|mimes:xlsx,xls'
+            'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:5120'],
         ]);
 
-        $file = $request->file('file');
+        try {
+            $spreadsheet = IOFactory::load($request->file('file')->getRealPath());
+            $rows = $spreadsheet->getActiveSheet()->toArray();
+            $data = [];
 
-        $spreadsheet = IOFactory::load($file->getRealPath());
-        $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray();
+            foreach ($rows as $index => $row) {
+                if ($index === 0 || trim((string) ($row[0] ?? '')) === '') {
+                    continue;
+                }
 
-        // Lewati baris pertama (header)
-        foreach ($rows as $index => $row) {
-            if ($index === 0) continue;
-
-            $name = $row[0] ?? null;
-            $description = $row[1] ?? null;
-
-            // Simpan hanya jika ada data
-            if (!empty($name)) {
-                Activity::create([
-                    'name' => $name,
-                    'description' => $description,
+                $item = [
+                    'name' => trim((string) $row[0]),
+                    'description' => trim((string) ($row[1] ?? '')),
+                ];
+                $validator = Validator::make($item, [
+                    'name' => ['required', 'string', 'max:255'],
+                    'description' => ['required', 'string'],
                 ]);
-            }
-        }
 
-        return redirect()->back()->with('success', 'Data berhasil diimport dari Excel!');
+                if ($validator->fails()) {
+                    throw ValidationException::withMessages([
+                        'file' => 'Activity pada baris '.($index + 1).' tidak valid.',
+                    ]);
+                }
+
+                $data[] = $item;
+            }
+
+            if ($data === []) {
+                throw ValidationException::withMessages(['file' => 'Tidak ada activity untuk diimport.']);
+            }
+
+            DB::transaction(fn () => collect($data)->each(fn ($item) => Activity::create($item)));
+            $spreadsheet->disconnectWorksheets();
+
+            return back()->with('success', count($data).' activity berhasil diimport.');
+        } catch (ValidationException $error) {
+            throw $error;
+        } catch (Throwable $error) {
+            report($error);
+
+            return back()->with('error', 'Import activity gagal. Periksa kembali format file.');
+        }
     }
 
     public function destroy($id)
     {
         $activity = Activity::findOrFail($id);
+
+        if ($this->hasDependencies([$activity->id])) {
+            return back()->with('error', 'Activity tidak dapat dihapus karena masih digunakan.');
+        }
+
         $activity->delete();
         return redirect()
             ->route('admin.activity')
@@ -122,20 +153,18 @@ class ActivityController extends Controller
 
     public function bulkDelete(Request $request)
     {
-        $ids = $request->input('ids', []);
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:activities,id'],
+        ]);
 
-        if (count($ids) > 0) {
-
-            Activity::whereIn('id', $ids)->delete();
-
-            return redirect()
-                ->back()
-                ->with('successdelete', 'Data terpilih berhasil dihapus.');
+        if ($this->hasDependencies($validated['ids'])) {
+            return back()->with('error', 'Sebagian activity masih digunakan dan tidak dapat dihapus.');
         }
 
-        return redirect()
-            ->back()
-            ->with('error', 'Tidak ada data yang dipilih.');
+        Activity::whereIn('id', $validated['ids'])->delete();
+
+        return back()->with('successdelete', 'Data terpilih berhasil dihapus.');
     }
 
     public function update(Request $request, $id)
@@ -144,7 +173,7 @@ class ActivityController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'required|string',
         ]);
 
         $activity->update($validated);
@@ -152,5 +181,13 @@ class ActivityController extends Controller
         return redirect()
             ->route('admin.activity')
             ->with('success', 'Data berhasil diperbarui.');
+    }
+
+    private function hasDependencies(array $ids): bool
+    {
+        return DB::table('groups')->whereIn('activity_id', $ids)->exists()
+            || DB::table('user_profiles')->whereIn('activity_id', $ids)->exists()
+            || DB::table('survey_sessions')->whereIn('activity_id', $ids)->exists()
+            || DB::table('complete_profiles')->whereIn('activity_id', $ids)->exists();
     }
 }

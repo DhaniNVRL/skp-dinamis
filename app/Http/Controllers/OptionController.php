@@ -56,6 +56,7 @@ class OptionController extends Controller
             'answer_text2' => [
                 'nullable',
                 'array',
+                'size:'.count((array) $request->input('answer_text', [])),
             ],
 
             'answer_text2.*' => [
@@ -67,7 +68,7 @@ class OptionController extends Controller
             'no' => [
                 'required',
                 'array',
-                'min:1',
+                'size:'.count((array) $request->input('answer_text', [])),
             ],
 
             'no.*' => [
@@ -79,6 +80,7 @@ class OptionController extends Controller
             'has_child' => [
                 'required',
                 'array',
+                'size:'.count((array) $request->input('answer_text', [])),
             ],
 
             'has_child.*' => [

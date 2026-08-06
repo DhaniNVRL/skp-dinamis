@@ -16,6 +16,10 @@ use Maatwebsite\Excel\Excel as ExcelFormat;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class UnitController extends Controller
 {
@@ -66,14 +70,14 @@ class UnitController extends Controller
             'name.*' => 'required|string|max:255',
         ]);
 
-        foreach ($validated['name'] as $name) {
-
-            Unit::create([
-                'group_id' => $validated['group_id'],
-                'name' => $name,
-            ]);
-
-        }
+        DB::transaction(function () use ($validated): void {
+            foreach ($validated['name'] as $name) {
+                Unit::create([
+                    'group_id' => $validated['group_id'],
+                    'name' => trim($name),
+                ]);
+            }
+        });
 
         return redirect()
             ->route('admin.units', $validated['group_id'])
@@ -106,6 +110,11 @@ class UnitController extends Controller
     public function destroy($id)
     {
         $unit = Unit::findOrFail($id);
+
+        if ($this->hasDependencies([$unit->id])) {
+            return back()->with('error', 'Unit tidak dapat dihapus karena masih digunakan.');
+        }
+
         $unit->delete();
         return redirect()
             ->back()
@@ -114,19 +123,20 @@ class UnitController extends Controller
 
     public function bulkDelete(Request $request)
     {
-        $ids = $request->input('ids', []);
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:units,id'],
+        ]);
 
-        if (empty($ids)) {
-            return redirect()
-                ->back()
-                ->with('error', 'Tidak ada unit yang dipilih.');
+        if ($this->hasDependencies($validated['ids'])) {
+            return back()->with('error', 'Sebagian unit masih digunakan dan tidak dapat dihapus.');
         }
 
-        Unit::whereIn('id', $ids)->delete();
+        Unit::whereIn('id', $validated['ids'])->delete();
 
         return redirect()
             ->back()
-            ->with('successdelete', count($ids) . ' unit berhasil dihapus.');
+            ->with('successdelete', count($validated['ids']) . ' unit berhasil dihapus.');
     }
 
     public function downloadTemplate()
@@ -147,30 +157,58 @@ class UnitController extends Controller
 
     public function import(Request $request)
     {
-        $request->validate([
-            'file' => ['required', 'file', 'mimes:xlsx,xls'],
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:5120'],
             'group_id' => ['required', 'exists:groups,id'],
         ]);
 
-        $file = $request->file('file');
-        $spreadsheet = IOFactory::load($file->getRealPath());
-        $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray();
-        foreach ($rows as $index => $row) {
-            // Lewati header
-            if ($index === 0) {
-                continue;
+        try {
+            $spreadsheet = IOFactory::load($validated['file']->getRealPath());
+            $rows = $spreadsheet->getActiveSheet()->toArray();
+            $names = [];
+
+            foreach ($rows as $index => $row) {
+                if ($index === 0 || trim((string) ($row[0] ?? '')) === '') {
+                    continue;
+                }
+
+                $name = trim((string) $row[0]);
+                $validator = Validator::make(['name' => $name], [
+                    'name' => ['required', 'string', 'max:255'],
+                ]);
+
+                if ($validator->fails()) {
+                    throw ValidationException::withMessages([
+                        'file' => 'Unit pada baris '.($index + 1).' tidak valid.',
+                    ]);
+                }
+
+                $names[mb_strtolower($name)] = $name;
             }
-            $name = trim($row[0] ?? '');
-            if ($name === '') {
-                continue;
+
+            if ($names === []) {
+                throw ValidationException::withMessages(['file' => 'Tidak ada unit untuk diimport.']);
             }
-            Unit::create([
-                'group_id' => $request->group_id,
-                'name'     => $name,
-            ]);
+
+            DB::transaction(function () use ($names, $validated): void {
+                foreach ($names as $name) {
+                    Unit::firstOrCreate([
+                        'group_id' => $validated['group_id'],
+                        'name' => $name,
+                    ]);
+                }
+            });
+
+            $spreadsheet->disconnectWorksheets();
+
+            return back()->with('success', count($names).' unit berhasil diproses.');
+        } catch (ValidationException $error) {
+            throw $error;
+        } catch (Throwable $error) {
+            report($error);
+
+            return back()->with('error', 'Import unit gagal. Periksa kembali format file.');
         }
-        return back()->with('success', 'Unit berhasil diimport!');
     }
 
     public function getUnits($groupID)
@@ -178,5 +216,12 @@ class UnitController extends Controller
         // sesuaikan nama foreign key di table units
         $units = Unit::where('group_id', $groupID)->get();
         return response()->json($units);
+    }
+
+    private function hasDependencies(array $ids): bool
+    {
+        return DB::table('subunits')->whereIn('unit_id', $ids)->exists()
+            || DB::table('user_profiles')->whereIn('unit_id', $ids)->exists()
+            || DB::table('survey_sessions')->whereIn('unit_id', $ids)->exists();
     }
 }

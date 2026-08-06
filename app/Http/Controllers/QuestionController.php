@@ -105,22 +105,18 @@ class QuestionController extends Controller
                 );
         }
 
-        foreach ($validated['questions'] as $questionData) {
-            Question::create([
-                'group_id' => $form->group_id,
-                'form_id' => $form->id,
-
-                'no_header' => $questionData['no_header']
-                    ?? null,
-
-                'no' => $questionData['no'],
-
-                'name' => $questionData['name'],
-
-                'questiontype_id' =>
-                    $questionData['questiontype_id'],
-            ]);
-        }
+        DB::transaction(function () use ($validated, $form): void {
+            foreach ($validated['questions'] as $questionData) {
+                Question::create([
+                    'group_id' => $form->group_id,
+                    'form_id' => $form->id,
+                    'no_header' => $questionData['no_header'] ?? null,
+                    'no' => $questionData['no'],
+                    'name' => $questionData['name'],
+                    'questiontype_id' => $questionData['questiontype_id'],
+                ]);
+            }
+        });
 
         return redirect()
             ->route('admin.units', [
@@ -200,6 +196,12 @@ class QuestionController extends Controller
             $validated['form_id']
         );
 
+        abort_unless(
+            (int) $form->group_id === (int) $validated['group_id'],
+            422,
+            'Form tidak sesuai dengan group yang dipilih.'
+        );
+
         if ((int) $form->formtype_id === 12) {
             return redirect()
                 ->route('admin.units', [
@@ -256,11 +258,19 @@ class QuestionController extends Controller
         $groupId = $question->group_id;
 
         try {
+            if ($question->answers()->exists()) {
+                return redirect()
+                    ->route('admin.units', ['id' => $groupId, 'tab' => 'question'])
+                    ->with('error', 'Pertanyaan tidak dapat dihapus karena memiliki jawaban responden.');
+            }
+
             DB::transaction(function () use ($question) {
                 /*
                 * Jika tidak ada option, query ini tetap aman.
                 */
                 $question->options()->delete();
+
+                $question->subUnitQuestions()->delete();
 
                 $question->delete();
             });
