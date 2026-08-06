@@ -1,0 +1,20 @@
+/* Button Edi */
+.btn-edit {
+    background: transparent;
+    border: none;
+    color: #3498db;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 5px;
+    transition: all 0.2s ease;
+}
+
+.btn-edit i {
+    color: inherit;
+}
+
+.btn-edit:hover {
+    color: #1d6fa5;
+    background-color: rgba(52, 152, 219, 0.1);
+}
+

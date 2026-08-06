@@ -1,0 +1,67 @@
+
+    <!-- 2. Email -->
+    <div class="my-4">
+        <label>Email</label>
+        <input type="email" name="q2"
+               class="validate-email border p-2 w-full">
+    </div>
+
+    <!-- 3. Single Choice + Conditional -->
+    <div class="my-4">
+        <label>Jenis Kelamin</label><br>  
+
+        <input type="radio" name="q3" value="Laki-laki"> Laki-laki <br>
+
+        <input type="radio" name="q3" value="Perempuan"
+               onchange="toggleFollowUp(this, 'perempuan-question')">
+        Perempuan
+    </div>
+
+    <!-- FOLLOW UP (hidden dulu) -->
+    <div id="perempuan-question" style="display:none;" class="mb-4 ml-4">
+        <label>Apakah sedang hamil?</label><br>
+
+        <input type="radio" name="q4" value="Ya"> Ya <br>
+        <input type="radio" name="q4" value="Tidak"> Tidak
+    </div>
+
+    <!-- 4. Multiple Choice -->
+    <div class="my-4">
+        <label>Hobi</label><br>
+
+        <input type="checkbox" name="q5[]" value="Olahraga"> Olahraga <br>
+        <input type="checkbox" name="q5[]" value="Musik"> Musik <br>
+        <input type="checkbox" name="q5[]" value="Gaming"> Gaming
+    </div>
+
+    <!-- 5. Dropdown -->
+    <div class="my-4">
+        <label>Pilih Kota</label>
+        <select name="q6" class="validate-required border p-2 w-full">
+            <option value="">-- Pilih --</option>
+            <option>Jakarta</option>
+            <option>Bandung</option>
+            <option>Surabaya</option>
+        </select>
+    </div>
+
+    <!-- 6. Number -->
+    <div class="my-4">
+        <label>Umur</label>
+        <input type="text" name="q7"
+               class="validate-number validate-required border p-2 w-full">
+    </div>
+
+    <!-- 7. Date -->
+    <div class="my-4">
+        <label>Tanggal Lahir</label>
+        <input type="date" name="q8"
+               class="validate-required border p-2 w-full">
+    </div>
+
+    <!-- 8. Phone -->
+    <div class="my-4">
+        <label>No HP</label>
+        <input type="text" name="q9"
+               class="validate-number validate-required border p-2 w-full">
+    </div>

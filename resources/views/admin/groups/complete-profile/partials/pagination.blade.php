@@ -1,0 +1,1 @@
+<div class="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm"><p class="text-sm text-gray-500">Total {{ $cprofiles->count() }} Complete Profile</p></div>

@@ -1,0 +1,80 @@
+<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+
+    {{-- Header pertanyaan --}}
+    <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
+
+        <div class="flex min-w-0 items-start gap-3">
+
+            <span
+                class="inline-flex min-w-12 shrink-0 items-center
+                       justify-center rounded-lg bg-blue-100
+                       px-2.5 py-1 text-sm font-semibold text-blue-700"
+            >
+                {{ $question->no_header }}{{ $question->no }}
+            </span>
+
+            <div class="min-w-0">
+
+                <h4 class="font-semibold leading-6 text-gray-800">
+                    {{ $question->name }}
+                </h4>
+
+                <p class="mt-1 text-xs text-gray-500">
+                    Jawaban berupa saran atau masukan.
+                </p>
+
+            </div>
+
+        </div>
+
+        @include(
+            'admin.units.question.partials.forms.question-action',
+            [
+                'question' => $question,
+                'form' => $form,
+            ]
+        )
+
+    </div>
+
+    {{-- Preview jawaban --}}
+    <div class="p-5">
+
+        <div class="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+
+            <div class="mb-3 flex items-center gap-2">
+
+                <span
+                    class="inline-flex h-8 w-8 items-center
+                           justify-center rounded-lg bg-blue-100
+                           text-blue-600"
+                >
+                    <i class="fa-solid fa-lightbulb text-sm"></i>
+                </span>
+
+                <div>
+                    <h5 class="text-sm font-semibold text-blue-800">
+                        Saran
+                    </h5>
+
+                    <p class="text-xs text-blue-600">
+                        Masukan untuk peningkatan kualitas layanan
+                    </p>
+                </div>
+
+            </div>
+
+            <textarea
+                rows="6"
+                disabled
+                class="w-full resize-none rounded-lg border
+                       border-blue-200 bg-white p-3
+                       text-sm text-gray-700"
+                placeholder="Responden memberikan ide, masukan, atau rekomendasi untuk peningkatan kualitas layanan..."
+            ></textarea>
+
+        </div>
+
+    </div>
+
+</div>

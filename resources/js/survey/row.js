@@ -1,0 +1,5 @@
+addRow()
+
+removeRow()
+
+duplicateRow()
