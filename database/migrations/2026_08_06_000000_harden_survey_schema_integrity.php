@@ -4,7 +4,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use RuntimeException;
 
 return new class extends Migration
 {
@@ -107,7 +106,7 @@ return new class extends Migration
 
         foreach (['user_id', 'form_id', 'question_id', 'answer'] as $column) {
             if (! Schema::hasColumn('answers', $column)) {
-                throw new RuntimeException(
+                throw new \RuntimeException(
                     "Schema tabel answers masih legacy: kolom {$column} tidak ditemukan. "
                     .'Lakukan migrasi data jawaban secara khusus sebelum hardening.'
                 );
@@ -134,7 +133,7 @@ return new class extends Migration
             ->first();
 
         if ($duplicate) {
-            throw new RuntimeException(
+            throw new \RuntimeException(
                 'Migration dibatalkan: ditemukan data duplikat pada '
                 .$table.' untuk kombinasi '.implode(', ', $columns).'.'
             );
@@ -168,7 +167,7 @@ return new class extends Migration
                 ->exists();
 
             if ($orphanExists) {
-                throw new RuntimeException(
+                throw new \RuntimeException(
                     "Migration dibatalkan: subunit_questions memiliki {$column} orphan."
                 );
             }

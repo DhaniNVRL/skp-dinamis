@@ -1,4 +1,3 @@
-// console.log("GLOBAL MODAL AKTIF");
 import '../css/app.css';
 import './admin/global/bulk-selected';
 import './admin/global/dynamic-table';

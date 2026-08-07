@@ -11,8 +11,6 @@ use App\Models\Question;
 use App\Models\Competitor;
 use App\Models\Description;
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
-use Maatwebsite\Excel\Excel as ExcelFormat;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -34,6 +32,7 @@ class UnitController extends Controller
             ->with([
                 'formtype',
                 'description',
+                'questions.questiontype',
                 'questions.options' => function ($query) {
                     $query->orderBy('no', 'asc');
                 }
@@ -93,6 +92,10 @@ class UnitController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+        ], [
+            'name.required' => 'Nama Unit wajib diisi.',
+            'name.string' => 'Nama Unit harus berupa teks.',
+            'name.max' => 'Nama Unit maksimal 255 karakter.',
         ]);
 
         $unit->update([

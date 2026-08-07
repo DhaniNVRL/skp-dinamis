@@ -185,6 +185,7 @@
                                                 <option
                                                     value="{{ $option->id }}"
                                                     data-has-child="{{ (int) $option->has_child === 1 ? '1' : '0' }}"
+                                                    data-answer-text2="{{ $option->answer_text2 ?? '' }}"
                                                     @selected(
                                                         (string) $selectedOptionId ===
                                                         (string) $option->id
@@ -239,7 +240,7 @@
                                             data-ranking-child-input
                                             @required($selectedHasChild)
                                             @disabled(!$selectedHasChild)
-                                            placeholder="Tulis jawaban tambahan..."
+                                            placeholder="{{ $selectedOption?->answer_text2 ?: 'Tulis jawaban tambahan...' }}"
                                             class="w-full rounded-lg
                                                    border border-gray-300
                                                    bg-white px-4 py-3

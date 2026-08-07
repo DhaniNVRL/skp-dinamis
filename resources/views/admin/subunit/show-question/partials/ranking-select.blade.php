@@ -40,6 +40,7 @@
             <option
                 value="{{ $option->id }}"
                 data-has-child="{{ (int) $option->has_child }}"
+                data-answer-text2="{{ $option->answer_text2 ?? '' }}"
             >
                 {{ $option->answer_text }}
             </option>
@@ -65,7 +66,7 @@
             data-ranking-child-input
             disabled
             class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-            placeholder="Tulis jawaban tambahan..."
+            placeholder="Jawaban tambahan..."
         ></textarea>
     </div>
 </div>

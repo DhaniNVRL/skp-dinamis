@@ -1,7 +1,1 @@
-unique option
-
-ranking
-
-show textarea
-
-hide textarea
+// Reserved for ranking-option validation and dependent text fields.

@@ -53,11 +53,6 @@
 
             {{-- Body --}}
             <div class="min-h-0 flex-1 overflow-auto p-6">
-                {{-- Isi modal --}}
-            </div>
-
-            {{-- Body --}}
-            <div class="min-h-0 flex-1 overflow-auto p-6">
 
                 <div class="overflow-x-auto rounded-lg border border-gray-200">
 

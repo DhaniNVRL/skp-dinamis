@@ -6,8 +6,8 @@ use App\Models\Form;
 use App\Models\Question;
 use App\Models\Group;
 use App\Models\QuestionType;
+use App\Models\SurveySession;
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Concerns\ToCollection;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -30,7 +30,9 @@ class QuestionController extends Controller
 
     public function masterdata()
     {
-        $questions = Question::all();
+        $questions = Question::query()
+            ->inDisplayOrder()
+            ->get();
 
         return view('/admin/masterdata/question', compact('questions'));
     }
@@ -80,6 +82,7 @@ class QuestionController extends Controller
             'questions.*.name' => [
                 'required',
                 'string',
+                'max:1000',
             ],
 
             'questions.*.questiontype_id' => [
@@ -93,6 +96,10 @@ class QuestionController extends Controller
             ->where('group_id', $validated['group_id'])
             ->firstOrFail();
 
+        if (SurveySession::query()->where('group_id', $form->group_id)->exists()) {
+            return back()->with('error', 'Pertanyaan tidak dapat ditambahkan karena survei pada group ini sudah dimulai.');
+        }
+
         if ((int) $form->formtype_id === 12) {
             return redirect()
                 ->route('admin.units', [
@@ -103,6 +110,19 @@ class QuestionController extends Controller
                     'error',
                     'Form tipe Description tidak dapat memiliki pertanyaan.'
                 );
+        }
+
+        $allowedQuestionTypeIds = $this->getQuestionTypesByForm($form)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        foreach ($validated['questions'] as $index => $questionData) {
+            if (! in_array((int) $questionData['questiontype_id'], $allowedQuestionTypeIds, true)) {
+                throw ValidationException::withMessages([
+                    "questions.{$index}.questiontype_id" => 'Tipe pertanyaan tidak sesuai dengan tipe form yang dipilih.',
+                ]);
+            }
         }
 
         DB::transaction(function () use ($validated, $form): void {
@@ -143,6 +163,10 @@ class QuestionController extends Controller
     public function edit($id)
     {
         $question = Question::findOrFail($id);
+
+        if (SurveySession::query()->where('group_id', $question->group_id)->exists()) {
+            return back()->with('error', 'Pertanyaan tidak dapat diubah karena survei pada group ini sudah dimulai.');
+        }
 
         // Ambil group untuk kembali ke halaman unit/group
         $group = Group::findOrFail($question->group_id);
@@ -214,7 +238,29 @@ class QuestionController extends Controller
                 );
         }
 
+        $allowedQuestionTypeIds = $this->getQuestionTypesByForm($form)
+            ->pluck('id')
+            ->map(fn ($questionTypeId) => (int) $questionTypeId)
+            ->all();
+
+        if (! in_array((int) $validated['questiontype_id'], $allowedQuestionTypeIds, true)) {
+            throw ValidationException::withMessages([
+                'questiontype_id' => 'Tipe pertanyaan tidak sesuai dengan tipe form yang dipilih.',
+            ]);
+        }
+
         $question = Question::findOrFail($id);
+
+        abort_unless(
+            (int) $question->form_id === (int) $form->id
+                && (int) $question->group_id === (int) $form->group_id,
+            422,
+            'Pertanyaan tidak sesuai dengan form yang dipilih.'
+        );
+
+        if (SurveySession::query()->where('group_id', $form->group_id)->exists()) {
+            return back()->with('error', 'Pertanyaan tidak dapat diubah karena survei pada group ini sudah dimulai.');
+        }
 
         $question->update([
             'group_id' =>
@@ -264,6 +310,12 @@ class QuestionController extends Controller
                     ->with('error', 'Pertanyaan tidak dapat dihapus karena memiliki jawaban responden.');
             }
 
+            if (SurveySession::query()->where('group_id', $question->group_id)->exists()) {
+                return redirect()
+                    ->route('admin.units', ['id' => $groupId, 'tab' => 'question'])
+                    ->with('error', 'Pertanyaan tidak dapat dihapus karena survei pada group ini sudah dimulai.');
+            }
+
             DB::transaction(function () use ($question) {
                 /*
                 * Jika tidak ada option, query ini tetap aman.
@@ -297,6 +349,56 @@ class QuestionController extends Controller
                     'Pertanyaan gagal dihapus.'
                 );
         }
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'form_id' => ['required', 'integer', 'exists:forms,id'],
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:questions,id'],
+        ]);
+
+        $form = Form::query()->findOrFail($validated['form_id']);
+
+        if ((int) $form->formtype_id === 12) {
+            throw ValidationException::withMessages([
+                'ids' => 'Form tipe Description tidak memiliki pertanyaan yang dapat dihapus.',
+            ]);
+        }
+
+        $questions = Question::query()
+            ->where('form_id', $form->id)
+            ->whereIn('id', $validated['ids'])
+            ->get();
+
+        if ($questions->count() !== count($validated['ids'])) {
+            throw ValidationException::withMessages([
+                'ids' => 'Sebagian pertanyaan tidak berasal dari form yang dipilih.',
+            ]);
+        }
+
+        if (SurveySession::query()->where('group_id', $form->group_id)->exists()) {
+            return redirect()
+                ->route('admin.units', ['id' => $form->group_id, 'tab' => 'question'])
+                ->with('error', 'Pertanyaan tidak dapat dihapus karena survei pada group ini sudah dimulai.');
+        }
+
+        if (DB::table('answers')->whereIn('question_id', $validated['ids'])->exists()) {
+            return redirect()
+                ->route('admin.units', ['id' => $form->group_id, 'tab' => 'question'])
+                ->with('error', 'Pertanyaan terpilih tidak dapat dihapus karena memiliki jawaban responden.');
+        }
+
+        DB::transaction(function () use ($validated): void {
+            DB::table('options')->whereIn('question_id', $validated['ids'])->delete();
+            DB::table('subunit_questions')->whereIn('question_id', $validated['ids'])->delete();
+            Question::query()->whereIn('id', $validated['ids'])->delete();
+        });
+
+        return redirect()
+            ->route('admin.units', ['id' => $form->group_id, 'tab' => 'question'])
+            ->with('successdelete', count($validated['ids']).' pertanyaan berhasil dihapus.');
     }
 
     
@@ -548,7 +650,7 @@ class QuestionController extends Controller
         | 11. Competitor
         |--------------------------------------------------------------------------
         */
-        elseif ($formTypeId === 11) {
+        elseif (in_array($formTypeId, [11, 13], true)) {
             return collect([
                 [
                     'id' => 1,
@@ -643,6 +745,10 @@ class QuestionController extends Controller
             ->where('id', $validated['form_id'])
             ->where('group_id', $validated['group_id'])
             ->firstOrFail();
+
+        if (SurveySession::query()->where('group_id', $form->group_id)->exists()) {
+            return back()->with('error', 'Pertanyaan tidak dapat diimport karena survei pada group ini sudah dimulai.');
+        }
 
         if ((int) $form->formtype_id === 12) {
             return redirect()
@@ -787,12 +893,6 @@ class QuestionController extends Controller
                     ]);
                 }
 
-                if ($noHeader === '') {
-                    throw ValidationException::withMessages([
-                        'file' => "No header pada baris {$excelRow} wajib diisi.",
-                    ]);
-                }
-
                 if ($number === '') {
                     throw ValidationException::withMessages([
                         'file' => "Nomor pertanyaan pada baris {$excelRow} wajib diisi.",
@@ -802,6 +902,24 @@ class QuestionController extends Controller
                 if ($name === '') {
                     throw ValidationException::withMessages([
                         'file' => "Nama pertanyaan pada baris {$excelRow} wajib diisi.",
+                    ]);
+                }
+
+                if (mb_strlen($noHeader) > 20) {
+                    throw ValidationException::withMessages([
+                        'file' => "No header pada baris {$excelRow} maksimal 20 karakter.",
+                    ]);
+                }
+
+                if (filter_var($number, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+                    throw ValidationException::withMessages([
+                        'file' => "Nomor pertanyaan pada baris {$excelRow} harus bilangan bulat minimal 1.",
+                    ]);
+                }
+
+                if (mb_strlen($name) > 1000) {
+                    throw ValidationException::withMessages([
+                        'file' => "Nama pertanyaan pada baris {$excelRow} maksimal 1000 karakter.",
                     ]);
                 }
 
@@ -924,6 +1042,18 @@ class QuestionController extends Controller
                     ]);
                 }
 
+                if (filter_var($number, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+                    throw ValidationException::withMessages([
+                        'file' => "Urutan option pada baris {$excelRow} harus bilangan bulat minimal 1.",
+                    ]);
+                }
+
+                if (mb_strlen($answerText) > 255) {
+                    throw ValidationException::withMessages([
+                        'file' => "Nama option pada baris {$excelRow} maksimal 255 karakter.",
+                    ]);
+                }
+
                 $hasChild = $this->extractReferenceId(
                     $hasChildValue
                 );
@@ -941,13 +1071,25 @@ class QuestionController extends Controller
                     ]);
                 }
 
+                if ((int) $hasChild === 1 && $answerText2 === '') {
+                    throw ValidationException::withMessages([
+                        'file' => "Label child pada baris {$excelRow} wajib diisi ketika has_child bernilai 1.",
+                    ]);
+                }
+
+                if (mb_strlen($answerText2) > 255) {
+                    throw ValidationException::withMessages([
+                        'file' => "Label child pada baris {$excelRow} maksimal 255 karakter.",
+                    ]);
+                }
+
                 $optionsForImport[$normalizedCode][] = [
                     'no' => $number,
                     'answer_text' => $answerText,
                     'answer_text2' => $answerText2 !== ''
                         ? $answerText2
                         : null,
-                    'has_child' => (int) $hasChildValue,
+                    'has_child' => $hasChild,
                 ];
             }
 

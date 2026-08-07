@@ -40,11 +40,6 @@ class LoginController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
-            // dd([
-            //     'username' => $user->username,
-            //     'role_id' => $user->role_id,
-            //     'role' => $user->role?->name,
-            // ]);
             $role = strtolower($user->role->name ?? '');
 
             switch ($role) {

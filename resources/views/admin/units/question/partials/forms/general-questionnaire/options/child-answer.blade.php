@@ -12,7 +12,7 @@
     <textarea
         disabled
         rows="2"
-        placeholder="Jawaban tambahan"
+        placeholder="{{ $option->answer_text2 ?: 'Jawaban tambahan' }}"
         class="w-full resize-none rounded-lg
                border border-gray-300 bg-gray-50
                px-3 py-2 text-sm text-gray-500"

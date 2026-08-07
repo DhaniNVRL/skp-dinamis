@@ -30,7 +30,7 @@ class Form extends Model
             Question::class,
             'form_id',
             'id'
-        );
+        )->inDisplayOrder();
     }
 
     public function group()

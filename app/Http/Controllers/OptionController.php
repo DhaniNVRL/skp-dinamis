@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Option;
 use App\Models\Question;
+use App\Models\SurveySession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class OptionController extends Controller
 {
@@ -56,7 +58,6 @@ class OptionController extends Controller
             'answer_text2' => [
                 'nullable',
                 'array',
-                'size:'.count((array) $request->input('answer_text', [])),
             ],
 
             'answer_text2.*' => [
@@ -89,10 +90,22 @@ class OptionController extends Controller
             ],
         ]);
 
+        foreach ($validated['has_child'] as $index => $hasChild) {
+            if ((int) $hasChild === 1 && trim((string) ($validated['answer_text2'][$index] ?? '')) === '') {
+                throw ValidationException::withMessages([
+                    "answer_text2.{$index}" => 'Label child wajib diisi ketika Child Jawaban diaktifkan.',
+                ]);
+            }
+        }
 
-        $question = Question::findOrFail(
+
+        $question = Question::with('form')->findOrFail(
             $validated['question_id']
         );
+
+        if (SurveySession::query()->where('group_id', $question->group_id)->exists()) {
+            return back()->with('error', 'Option tidak dapat ditambahkan karena survei pada group ini sudah dimulai.');
+        }
 
 
         DB::transaction(function () use ($validated) {
@@ -177,10 +190,20 @@ class OptionController extends Controller
             ],
         ]);
 
-        $option = Option::with('question')
+        $option = Option::with('question.form')
             ->findOrFail($id);
 
+        if (SurveySession::query()->where('group_id', $option->question->group_id)->exists()) {
+            return back()->with('error', 'Option tidak dapat diubah karena survei pada group ini sudah dimulai.');
+        }
+
         $hasChild = (bool) $validated['has_child'];
+
+        if ($hasChild && trim((string) ($validated['answer_text2'] ?? '')) === '') {
+            throw ValidationException::withMessages([
+                'answer_text2' => 'Label child wajib diisi ketika Child Jawaban diaktifkan.',
+            ]);
+        }
 
         $option->update([
             'no' => $validated['no'],
@@ -213,8 +236,12 @@ class OptionController extends Controller
      */
     public function destroy($id)
     {
-        $option = Option::with('question')
+        $option = Option::with('question.form')
             ->findOrFail($id);
+
+        if (SurveySession::query()->where('group_id', $option->question->group_id)->exists()) {
+            return back()->with('error', 'Option tidak dapat dihapus karena survei pada group ini sudah dimulai.');
+        }
 
         $groupId = $option->question->group_id;
 

@@ -84,6 +84,8 @@ class SurveyController extends Controller
                     ->orderBy('id');
             },
 
+            'questions.questiontype',
+
             'questions.options' => function ($query) {
                 $query
                     ->orderByRaw(
@@ -300,7 +302,10 @@ class SurveyController extends Controller
     {
         $forms = Form::query()
             ->where('group_id', $profile->group_id)
-            ->with('questions:id,form_id,questiontype_id')
+            ->with([
+                'questions:id,form_id,questiontype_id',
+                'questions.questiontype:id,name',
+            ])
             ->orderBy('no_urut')
             ->orderBy('id')
             ->get();
@@ -385,8 +390,11 @@ class SurveyController extends Controller
 
     private function isTitleQuestion(Form $form, $question): bool
     {
-        return (int) $form->formtype_id !== 1
-            && (int) $question->questiontype_id === 1;
+        return $question->questiontype?->isTitleOnly()
+            || (
+                (int) $form->formtype_id !== 1
+                && (int) $question->questiontype_id === 1
+            );
     }
 
     private function answerKey(

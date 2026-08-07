@@ -4,115 +4,80 @@ namespace App\Http\Controllers;
 
 use App\Models\FormType;
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
-use Maatwebsite\Excel\Excel as ExcelFormat;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Throwable;
-
 
 class FormTypeController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $formtypes = FormType::all();
-        return view('/admin/formtype', compact('formtypes'));
+        $formTypes = FormType::query()->orderBy('id')->get();
+
+        return view('admin.formtypes.index', compact('formTypes'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        // dd($request->all());
-
-        $request -> validate([
-            'name.*' => 'required|string|max:255',
-            'description.*' => 'required|string',
+        $validated = $request->validate([
+            'name' => ['required', 'array', 'min:1'],
+            'name.*' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'array'],
+            'description.*' => ['required', 'string', 'max:1000'],
         ]);
 
-        $nameList = $request->input('name');
-        $descriptionList = $request->input('description');
+        if (count($validated['name']) !== count($validated['description'])) {
+            throw ValidationException::withMessages([
+                'description' => 'Jumlah nama dan deskripsi tipe form harus sama.',
+            ]);
+        }
 
-        try {
-            DB::transaction(function () use ($nameList, $descriptionList): void {
-            for ($i = 0; $i < count($nameList); $i++) {
+        DB::transaction(function () use ($validated): void {
+            foreach ($validated['name'] as $index => $name) {
                 FormType::create([
-                    'name' => $nameList[$i],
-                    'description' => $descriptionList[$i],
+                    'name' => trim($name),
+                    'description' => trim($validated['description'][$index]),
                 ]);
             }
-            });
-            return redirect()->back()->with('success', 'Data berhasil disimpan!');
-        } catch (Throwable $error) {
-            report($error);
-            return redirect()->back()->with('error', 'Tipe form gagal disimpan.');
-        }
+        });
+
+        return back()->with('success', 'Tipe form berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(FormType $formType)
+    public function edit($id)
     {
-        //
-    }
+        $formtypes = FormType::query()->findOrFail($id);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(FormType $formType, $id)
-    {
-        $formtypes = FormType::findOrFail($id);
         return view('admin.edit.editformtype', compact('formtypes'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, FormType $formType, $id)
+    public function update(Request $request, $id)
     {
-        $formtypes = FormType::findOrFail($id);
-
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string', 'max:1000'],
         ]);
 
-        $formtypes->update($validated);
+        FormType::query()->findOrFail($id)->update($validated);
 
-        return redirect()->route('admin.formtype')->with('success', 'Data berhasil diperbarui.');
+        return redirect()->route('admin.formtype')->with('success', 'Tipe form berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(FormType $formType, $id)
+    public function destroy($id)
     {
-        $formtypes = FormType::findOrFail($id);
+        $formType = FormType::query()->findOrFail($id);
 
-        if ($formtypes->forms()->exists()) {
+        if ($formType->forms()->exists()) {
             return back()->with('error', 'Tipe form masih digunakan dan tidak dapat dihapus.');
         }
 
-        $formtypes->delete();
+        $formType->delete();
 
-        return redirect()->back()->with('successdelete', 'data berhasil dihapus.');
+        return back()->with('successdelete', 'Tipe form berhasil dihapus.');
     }
 
     public function bulkDelete(Request $request)
@@ -126,59 +91,73 @@ class FormTypeController extends Controller
             return back()->with('error', 'Sebagian tipe form masih digunakan dan tidak dapat dihapus.');
         }
 
-        FormType::whereIn('id', $validated['selected'])->delete();
-        return redirect()->back()->with('successdelete', 'Data terpilih berhasil dihapus.');
+        FormType::query()->whereIn('id', $validated['selected'])->delete();
+
+        return back()->with('successdelete', count($validated['selected']).' tipe form berhasil dihapus.');
     }
 
-    public function export(Request $request){
+    public function export()
+    {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Input Form Type');
+        $sheet->fromArray([
+            ['name', 'description'],
+            ['', ''],
+        ]);
+        $sheet->getStyle('A1:B1')->getFont()->setBold(true);
+        $sheet->freezePane('A2');
 
-        // Header
-        $sheet->setCellValue('A1', 'name');
-        $sheet->setCellValue('B1', 'description');
-
-        // Kosongkan baris kedua untuk input user nanti
-        $sheet->setCellValue('A2', '');
-        $sheet->setCellValue('B2', '');
-
-        // Download file
         $writer = new Xlsx($spreadsheet);
-        $filename = 'template_import_formtypes.xlsx';
 
-        // Buat file untuk download langsung
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, $filename);
+        return response()->streamDownload(
+            fn () => $writer->save('php://output'),
+            'template_import_form_types.xlsx',
+            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+        );
     }
 
-    public function import(Request $request){
-         $request -> validate([
+    public function import(Request $request)
+    {
+        $validated = $request->validate([
             'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:5120'],
         ]);
 
         try {
-            $spreadsheet = IOFactory::load($request->file('file')->getRealPath());
+            $spreadsheet = IOFactory::load($validated['file']->getRealPath());
             $rows = $spreadsheet->getActiveSheet()->toArray();
-            $data = [];
+            $headers = array_map(
+                fn ($value) => strtolower(trim((string) $value)),
+                array_slice($rows[0] ?? [], 0, 2)
+            );
 
-            foreach ($rows as $index => $row) {
-                if ($index === 0 || trim((string) ($row[0] ?? '')) === '') {
+            if ($headers !== ['name', 'description']) {
+                throw ValidationException::withMessages([
+                    'file' => 'Judul kolom harus: name, description.',
+                ]);
+            }
+
+            $data = [];
+            foreach (array_slice($rows, 1) as $index => $row) {
+                if (trim((string) ($row[0] ?? '')) === '' && trim((string) ($row[1] ?? '')) === '') {
                     continue;
                 }
 
                 $item = [
-                    'name' => trim((string) $row[0]),
+                    'name' => trim((string) ($row[0] ?? '')),
                     'description' => trim((string) ($row[1] ?? '')),
                 ];
-                if (Validator::make($item, [
+                $validator = Validator::make($item, [
                     'name' => ['required', 'string', 'max:255'],
-                    'description' => ['required', 'string'],
-                ])->fails()) {
+                    'description' => ['required', 'string', 'max:1000'],
+                ]);
+
+                if ($validator->fails()) {
                     throw ValidationException::withMessages([
-                        'file' => 'Tipe form pada baris '.($index + 1).' tidak valid.',
+                        'file' => 'Baris '.($index + 2).' tidak valid: '.$validator->errors()->first(),
                     ]);
                 }
+
                 $data[] = $item;
             }
 
@@ -195,7 +174,7 @@ class FormTypeController extends Controller
         } catch (Throwable $error) {
             report($error);
 
-            return back()->with('error', 'Import tipe form gagal. Periksa kembali format file.');
+            return back()->with('error', 'Import tipe form gagal. Periksa kembali format file Excel.');
         }
     }
 }

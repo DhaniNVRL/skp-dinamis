@@ -37,11 +37,11 @@ Route::controller(LoginController::class)->middleware('guest')->group(function (
 
     Route::post('/login', 'login');
 
-    Route::post('/logout', 'logout')
-        ->withoutMiddleware('guest')
-        ->middleware('auth')
-        ->name('logout');
 });
+
+Route::post('/logout', [LoginController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
 
 
 /*
@@ -434,6 +434,11 @@ Route::middleware('auth')->group(function () {
                 '/question/import/{formId}',
                 'import'
             )->name('question.import');
+
+            Route::delete(
+                '/questions/bulk-delete',
+                'bulkDelete'
+            )->name('questions.bulk-delete');
 
             Route::get('/question/{id}/edit', 'edit')
                 ->name('question.edit');

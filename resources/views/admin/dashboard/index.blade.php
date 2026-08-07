@@ -45,3 +45,7 @@
 
 @include('admin.dashboard.modals.respondent-detail')
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('js/dashboard-monitoring.js') }}"></script>
+@endpush

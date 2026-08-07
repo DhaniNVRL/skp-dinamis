@@ -2,6 +2,10 @@ $('.tab-button').on('click', function () {
 
     const tab = $(this).data('tab');
 
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.replaceState({}, '', url.toString());
+
     $('.tab-button')
         .removeClass('border-blue-600 text-blue-600')
         .addClass('border-transparent text-gray-500');
@@ -15,6 +19,19 @@ $('.tab-button').on('click', function () {
 
     $('#tab-' + tab).removeClass('hidden');
 
+});
+
+$(function () {
+    const requestedTab = new URLSearchParams(window.location.search).get('tab');
+    const button = requestedTab
+        ? $('.tab-button[data-tab]').filter(function () {
+            return this.dataset.tab === requestedTab;
+        })
+        : $();
+
+    if (button.length) {
+        button.trigger('click');
+    }
 });
 
 document.addEventListener("click", function (e) {

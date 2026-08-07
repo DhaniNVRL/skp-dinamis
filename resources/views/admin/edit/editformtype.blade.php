@@ -1,6 +1,6 @@
-@extends('admin.layouts.app')
+@extends('layouts.app')
 
-@section('title', 'Edit Activity')
+@section('title', 'Edit Form Type')
 
 @section('content')
 <div class="max-w-xl mx-auto mt-10 bg-white shadow-md rounded px-8 pt-6 pb-8">
@@ -12,12 +12,9 @@
     @method('PUT')
 
     <div class="mb-4">
-      <label for="name" class="block text-gray-700 font-bold mb-2">ID:</label>
+      <label for="id" class="block text-gray-700 font-bold mb-2">ID:</label>
       <input readonly type="text" name="id" id="id" value="{{ old('id', $formtypes->id) }}"
              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
-      @error('name')
-        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-      @enderror
     </div>
 
     <div class="mb-4">
@@ -49,4 +46,3 @@
   </form>
 </div>
 @endsection
-

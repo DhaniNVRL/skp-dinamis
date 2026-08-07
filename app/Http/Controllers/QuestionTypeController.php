@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\QuestionType;
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
-use Maatwebsite\Excel\Excel as ExcelFormat;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Throwable;
 
 class QuestionTypeController extends Controller
 {
@@ -17,8 +19,9 @@ class QuestionTypeController extends Controller
      */
     public function index()
     {
-        $questtypes = QuestionType::all();
-        return view('/admin/questionstypes', compact('questtypes'));
+        $questtypes = QuestionType::query()->orderBy('id')->get();
+
+        return view('admin.questiontypes.index', compact('questtypes'));
     }
 
     /**
@@ -34,27 +37,34 @@ class QuestionTypeController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
-        // dd(QuestionType::all());
-
-        $request -> validate([
-            'name.*' => 'required|string|max:255',
-            'description.*' => 'required|string',
+        $validated = $request->validate([
+            'name' => ['required', 'array', 'min:1'],
+            'name.*' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'array'],
+            'description.*' => ['required', 'string'],
         ]);
 
-        $nameList = $request->input('name');
-        $descriptionList = $request->input('description');
+        if (count($validated['name']) !== count($validated['description'])) {
+            throw ValidationException::withMessages([
+                'description' => 'Jumlah nama dan deskripsi tipe pertanyaan harus sama.',
+            ]);
+        }
 
         try {
-            for ($i = 0; $i < count($nameList); $i++) {
-                QuestionType::create([
-                    'name' => $nameList[$i],
-                    'description' => $descriptionList[$i],
-                ]);
-            }
-            return redirect()->back()->with('success', 'Data berhasil disimpan!');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            DB::transaction(function () use ($validated): void {
+                foreach ($validated['name'] as $index => $name) {
+                    QuestionType::create([
+                        'name' => $name,
+                        'description' => $validated['description'][$index],
+                    ]);
+                }
+            });
+
+            return back()->with('success', 'Data berhasil disimpan!');
+        } catch (Throwable $error) {
+            report($error);
+
+            return back()->with('error', 'Tipe pertanyaan gagal disimpan.');
         }
     }
 
@@ -84,7 +94,7 @@ class QuestionTypeController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'required|string',
         ]);
 
         $questtypes->update($validated);
@@ -99,6 +109,15 @@ class QuestionTypeController extends Controller
     public function destroy(QuestionType $questionType, $id)
     {
         $questtypes = QuestionType::findOrFail($id);
+
+        if ($questtypes->isTitleOnly()) {
+            return back()->with('error', 'Tipe sistem Judul (Tanpa Jawaban) tidak dapat dihapus.');
+        }
+
+        if ($questtypes->questions()->exists()) {
+            return back()->with('error', 'Tipe pertanyaan masih digunakan dan tidak dapat dihapus.');
+        }
+
         $questtypes->delete();
 
         return redirect()->back()->with('successdelete', 'data berhasil dihapus.');
@@ -106,13 +125,25 @@ class QuestionTypeController extends Controller
 
     public function bulkDelete(Request $request)
     {
-        $ids = $request->input('selected', []);
+        $validated = $request->validate([
+            'selected' => ['required', 'array', 'min:1'],
+            'selected.*' => ['required', 'integer', 'distinct', 'exists:question_types,id'],
+        ]);
 
-        if(count($ids)>0){
-            QuestionType::whereIn('id', $ids)->delete();
-            return redirect()->back()->with('successdelete', 'Data terpilih berhasil dihapus.');
+        if (QuestionType::query()->whereIn('id', $validated['selected'])->whereHas('questions')->exists()) {
+            return back()->with('error', 'Sebagian tipe pertanyaan masih digunakan dan tidak dapat dihapus.');
         }
-        return redirect()->back()->with('error', 'Tidak ada data yang dipilih.');
+
+        if (QuestionType::query()
+            ->whereIn('id', $validated['selected'])
+            ->get()
+            ->contains(fn (QuestionType $type) => $type->isTitleOnly())) {
+            return back()->with('error', 'Tipe sistem Judul (Tanpa Jawaban) tidak dapat dihapus.');
+        }
+
+        QuestionType::whereIn('id', $validated['selected'])->delete();
+
+        return back()->with('successdelete', 'Data terpilih berhasil dihapus.');
     }
 
     public function export(Request $request)
@@ -138,33 +169,55 @@ class QuestionTypeController extends Controller
         }, $filename);
     }
 
-    public function import(Request $request){
-         $request -> validate([
-            'file' =>'required|mimes:xlsx,xls'
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:5120'],
         ]);
 
-        $file = $request->file('file');
+        try {
+            $spreadsheet = IOFactory::load($request->file('file')->getRealPath());
+            $rows = $spreadsheet->getActiveSheet()->toArray();
+            $data = [];
 
-        $spreadsheet = IOFactory::load($file->getRealPath());
-        $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray();
+            foreach ($rows as $index => $row) {
+                if ($index === 0 || trim((string) ($row[0] ?? '')) === '') {
+                    continue;
+                }
 
-        // Lewati baris pertama (header)
-        foreach ($rows as $index => $row) {
-            if ($index === 0) continue;
+                $item = [
+                    'name' => trim((string) $row[0]),
+                    'description' => trim((string) ($row[1] ?? '')),
+                ];
 
-            $name = $row[0] ?? null;
-            $description = $row[1] ?? null;
+                if (Validator::make($item, [
+                    'name' => ['required', 'string', 'max:255'],
+                    'description' => ['required', 'string'],
+                ])->fails()) {
+                    throw ValidationException::withMessages([
+                        'file' => 'Tipe pertanyaan pada baris '.($index + 1).' tidak valid.',
+                    ]);
+                }
 
-            // Simpan hanya jika ada data
-            if (!empty($name)) {
-                QuestionType::create([
-                    'name' => $name,
-                    'description' => $description,
+                $data[] = $item;
+            }
+
+            if ($data === []) {
+                throw ValidationException::withMessages([
+                    'file' => 'Tidak ada tipe pertanyaan untuk diimport.',
                 ]);
             }
-        }
 
-        return redirect()->back()->with('success', 'Data berhasil diimport dari Excel!');
+            DB::transaction(fn () => collect($data)->each(fn ($item) => QuestionType::create($item)));
+            $spreadsheet->disconnectWorksheets();
+
+            return back()->with('success', count($data).' tipe pertanyaan berhasil diimport.');
+        } catch (ValidationException $error) {
+            throw $error;
+        } catch (Throwable $error) {
+            report($error);
+
+            return back()->with('error', 'Import tipe pertanyaan gagal. Periksa kembali format file.');
+        }
     }
 }

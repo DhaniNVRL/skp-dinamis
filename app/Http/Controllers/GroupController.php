@@ -15,16 +15,6 @@ use Illuminate\Support\Facades\Validator;
 
 class GroupController extends Controller
 {
-    // public function index($id){
-    //     $activity = Activity::findOrFail($id);
-    //     $groups = Group::where('id_activities', $id)->get();
-
-    //     return view('admin.group', [
-    //         'activity' => $activity,
-    //         'groups' => $groups,
-    
-    //     ]);
-    // }
     public function index($id){
         $activity = Activity::findOrFail($id);
         $cprofiles = CompleteProfile::where('activity_id', $id)->get();
@@ -103,6 +93,14 @@ class GroupController extends Controller
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
             'ids.*' => ['required', 'integer', 'distinct', 'exists:groups,id'],
+        ], [
+            'ids.required' => 'Pilih minimal satu Group yang akan dihapus.',
+            'ids.array' => 'Daftar Group yang dipilih tidak valid.',
+            'ids.min' => 'Pilih minimal satu Group yang akan dihapus.',
+            'ids.*.required' => 'ID Group tidak boleh kosong.',
+            'ids.*.integer' => 'ID Group harus berupa angka.',
+            'ids.*.distinct' => 'Group yang sama terkirim lebih dari satu kali. Muat ulang halaman lalu coba kembali.',
+            'ids.*.exists' => 'Salah satu Group yang dipilih sudah tidak tersedia.',
         ]);
 
         if ($this->hasDependencies($validated['ids'])) {

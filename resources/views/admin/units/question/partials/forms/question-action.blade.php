@@ -1,5 +1,20 @@
 <div class="flex shrink-0 items-center gap-2">
 
+    <label
+        class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white hover:bg-gray-50"
+        title="Pilih pertanyaan"
+    >
+        <input
+            type="checkbox"
+            name="ids[]"
+            value="{{ $question->id }}"
+            form="questionBulkDeleteForm-{{ $form->id }}"
+            data-question-bulk-checkbox
+            class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+            aria-label="Pilih pertanyaan {{ $question->name }}"
+        >
+    </label>
+
      <button
         type="button"
         data-modal-open="editQuestionModal"

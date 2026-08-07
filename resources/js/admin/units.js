@@ -260,7 +260,9 @@ function initializeEditUnit() {
     const form = document.getElementById("editUnitForm");
     const input =
         document.getElementById("editUnitName") ||
-        document.getElementById("edit_name");
+        document.getElementById("edit_name") ||
+        document.getElementById("edit_unit_name");
+    const idInput = document.getElementById("edit_unit_id");
 
     if (!form || !input) {
         return;
@@ -277,6 +279,9 @@ function initializeEditUnit() {
 
         form.action = button.dataset.action || "";
         input.value = button.dataset.name || "";
+        if (idInput) {
+            idInput.value = button.dataset.id || "";
+        }
 
         window.setTimeout(function () {
             input.focus();
@@ -334,6 +339,8 @@ function initializeUnitBulkDelete() {
     const modal = document.getElementById(
         "bulkDeleteUnitModal"
     );
+    const bulkAction = document.getElementById("unitBulkAction");
+    const selectedCount = document.getElementById("selectedUnitCount");
 
     if (!deleteButton) {
         console.warn(
@@ -368,6 +375,17 @@ function initializeUnitBulkDelete() {
 
         deleteButton.disabled =
             selectedCheckboxes.length === 0;
+
+        if (bulkAction) {
+            bulkAction.classList.toggle(
+                "hidden",
+                selectedCheckboxes.length === 0
+            );
+        }
+
+        if (selectedCount) {
+            selectedCount.textContent = String(selectedCheckboxes.length);
+        }
 
         if (selectAll) {
             selectAll.checked =

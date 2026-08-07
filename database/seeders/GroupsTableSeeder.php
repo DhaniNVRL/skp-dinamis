@@ -4,20 +4,12 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class GroupsTableSeeder extends Seeder
 {
     public function run(): void
     {
-        // MATIKAN foreign key check sementara
-        Schema::disableForeignKeyConstraints();
-
-        DB::table('groups')->truncate();
-
-        Schema::enableForeignKeyConstraints();
-
-        DB::table('groups')->insert([
+        DB::table('groups')->upsert([
             [
                 'id' => 1,
                 'activity_id' => 1,
@@ -74,6 +66,6 @@ class GroupsTableSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-        ]);
+        ], ['id'], ['activity_id', 'name', 'updated_at']);
     }
 }

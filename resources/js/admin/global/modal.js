@@ -1,4 +1,3 @@
-// console.log("GLOBAL MODAL AKTIF");
 class GlobalModal {
     constructor() {
         this.registerOpen();
@@ -72,9 +71,7 @@ class GlobalModal {
 
     registerOpen() {
         document.addEventListener("click", (e) => {
-            console.log("klik");
             const button = e.target.closest("[data-modal-open]");
-            console.log(button);
             if (!button) return;
             this.open(button.dataset.modalOpen);
         });

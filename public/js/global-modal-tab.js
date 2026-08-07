@@ -3,7 +3,6 @@ document.addEventListener('alpine:init', () => {
     const modal = document.getElementById('globalModal');
 
     if (!modal) {
-        console.error('globalModal not found');
         return;
     }
 
@@ -271,9 +270,6 @@ document.addEventListener('alpine:init', () => {
         if (form && !form.dataset.editorBound) {
 
             form.dataset.editorBound = "true";
-
-            console.log(form.action);
-            console.log(form.method);
 
             form.addEventListener('submit', () => {
                 input.value = editor.innerHTML;

@@ -1,6 +1,6 @@
-@extends('admin.layouts.app')
+@extends('layouts.app')
 
-@section('title', 'Edit Activity')
+@section('title', 'Edit Question Type')
 
 @section('content')
 <div class="max-w-xl mx-auto mt-10 bg-white shadow-md rounded px-8 pt-6 pb-8">
@@ -41,19 +41,16 @@
             });
         </script>
     @endif
-  <h2 class="text-2xl font-semibold mb-6 text-center">Edit Form Type</h2>
+  <h2 class="text-2xl font-semibold mb-6 text-center">Edit Question Type</h2>
 
   <form action="{{ route('questtype.update', $questtypes->id) }}" method="POST">
     @csrf
     @method('PUT')
 
     <div class="mb-4">
-      <label for="name" class="block text-gray-700 font-bold mb-2">ID:</label>
+      <label for="id" class="block text-gray-700 font-bold mb-2">ID:</label>
       <input readonly type="text" name="id" id="id" value="{{ old('id', $questtypes->id) }}"
              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
-      @error('name')
-        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-      @enderror
     </div>
 
     <div class="mb-4">
@@ -75,7 +72,7 @@
     </div>
 
     <div class="flex justify-between items-center">
-      <a href="{{ route('admin.formtype') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+      <a href="{{ route('admin.questtype') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
         Batal
       </a>
       <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
@@ -85,4 +82,3 @@
   </form>
 </div>
 @endsection
-

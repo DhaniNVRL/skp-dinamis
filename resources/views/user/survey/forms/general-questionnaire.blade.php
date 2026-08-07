@@ -6,6 +6,7 @@
 
         @php
             $questionTypeId = (int) $question->questiontype_id;
+            $isTitleOnly = $question->questiontype?->isTitleOnly() ?? false;
 
             $storedAnswer = data_get(
                 $answerMap,
@@ -28,6 +29,21 @@
                 ($question->no ?? '')
             );
         @endphp
+
+        @if ($isTitleOnly)
+            <section
+                data-question-container
+                data-question-title
+                data-question-id="{{ $question->id }}"
+                class="overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-sm"
+            >
+                <div class="border-l-4 border-blue-600 px-6 py-5">
+                    <h2 class="text-xl font-bold leading-relaxed text-gray-900">
+                        {{ $question->name }}
+                    </h2>
+                </div>
+            </section>
+        @else
 
         <div
             data-question-container
@@ -192,7 +208,7 @@
                                         rows="3"
                                         data-child-input
                                         @required($isChecked)
-                                        placeholder="Tulis jawaban tambahan..."
+                                        placeholder="{{ $option->answer_text2 ?: 'Tulis jawaban tambahan...' }}"
                                         class="w-full rounded-lg border border-gray-300
                                                px-4 py-3 text-sm outline-none transition
                                                focus:border-indigo-500 focus:ring-2
@@ -289,7 +305,7 @@
                                         rows="3"
                                         data-child-input
                                         @required($isChecked)
-                                        placeholder="Tulis jawaban tambahan..."
+                                        placeholder="{{ $option->answer_text2 ?: 'Tulis jawaban tambahan...' }}"
                                         class="w-full rounded-lg border border-gray-300
                                                px-4 py-3 text-sm outline-none transition
                                                focus:border-indigo-500 focus:ring-2
@@ -377,6 +393,8 @@
                 Pertanyaan ini wajib diisi.
             </p>
         </div>
+
+        @endif
     @empty
         @include('user.survey.partials.empty', [
             'message' => 'Form ini belum memiliki pertanyaan aktif.',

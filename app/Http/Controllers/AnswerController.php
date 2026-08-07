@@ -161,6 +161,8 @@ class AnswerController extends Controller
                     )
                     ->orderBy('id');
             },
+
+            'questions.questiontype',
         ]);
 
         $subunitIds = SubUnit::query()
@@ -981,10 +983,11 @@ class AnswerController extends Controller
          * Form lainnya:
          * questiontype_id 1 adalah judul.
          */
-        return (
-            (int) $form->formtype_id !== 1 &&
-            (int) $question->questiontype_id === 1
-        );
+        return $question->questiontype?->isTitleOnly()
+            || (
+                (int) $form->formtype_id !== 1
+                && (int) $question->questiontype_id === 1
+            );
     }
 
     /*

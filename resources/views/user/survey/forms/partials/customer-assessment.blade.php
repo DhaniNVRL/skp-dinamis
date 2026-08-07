@@ -505,7 +505,7 @@
                                                                     !$showReason ||
                                                                     !$optionChecked
                                                                 )
-                                                                placeholder="Tulis jawaban tambahan..."
+                                                                placeholder="{{ $option->answer_text2 ?: 'Tulis jawaban tambahan...' }}"
                                                                 class="w-full
                                                                        rounded-lg
                                                                        border

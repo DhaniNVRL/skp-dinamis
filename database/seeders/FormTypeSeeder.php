@@ -10,9 +10,7 @@ class FormTypeSeeder extends Seeder
     public function run(): void
     {
       
-        DB::table('form_types')->delete();
-
-        DB::table('form_types')->insert([
+        DB::table('form_types')->upsert([
             [
                 'id' => 1,
                 'name' => 'Form Kuesioner Umum',
@@ -92,11 +90,18 @@ class FormTypeSeeder extends Seeder
             ],
             [
                 'id' => 12,
-                'name' => 'Form Descrition',
-                'description' => 'Descrition',
+                'name' => 'Form Deskripsi',
+                'description' => 'Deskripsi',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 13,
+                'name' => 'Form Pembanding',
+                'description' => 'Skala 1-7',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
-        ]);
+        ], ['id'], ['name', 'description', 'updated_at']);
     }
 }

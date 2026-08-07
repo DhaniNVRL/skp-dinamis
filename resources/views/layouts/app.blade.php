@@ -10,7 +10,7 @@
 
     <title>@yield('title', 'Dashboard')</title>
 
-    {{-- CDN Tailwind dapat dihapus jika Vite sudah stabil --}}
+    {{-- Fallback utility CSS; build Vite lama belum memproses Tailwind. --}}
     <script src="https://cdn.tailwindcss.com"></script>
 
     <link
@@ -19,11 +19,11 @@
     >
 
     {{-- LIBRARY --}}
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 
     <script
         defer
-        src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+        src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"
     ></script>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -75,12 +75,11 @@
         <main
             class="fixed bottom-12 left-64 right-0 top-16 overflow-y-auto bg-gray-100 px-6 py-6"
         >
-            @includeWhen(
-                view()->exists('layouts.partials.alert'),
-                'layouts.partials.alert'
-            )
+            @include('layouts.partials.global-alerts')
 
-            @yield('content')
+            <div id="pageContent">
+                @yield('content')
+            </div>
         </main>
     </div>
 
@@ -89,6 +88,8 @@
 
     @stack('modals')
     @stack('templates')
+    <script src="{{ asset('js/global-alerts.js') }}?v=20260806-4"></script>
+    <script src="{{ asset('js/active-tab-persistence.js') }}?v=20260806-1"></script>
     @stack('scripts')
 </body>
 </html>

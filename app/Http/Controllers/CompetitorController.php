@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Competitor;
 use App\Models\Form;
+use App\Models\SurveySession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -42,6 +43,10 @@ class CompetitorController extends Controller
             ->where('group_id', $validated['group_id'])
             ->firstOrFail();
 
+        if (SurveySession::query()->where('group_id', $form->group_id)->exists()) {
+            return back()->with('error', 'Kompetitor tidak dapat ditambahkan karena survei pada group ini sudah dimulai.');
+        }
+
         DB::transaction(function () use ($validated, $form): void {
             foreach ($validated['name'] as $name) {
                 Competitor::create([
@@ -69,6 +74,10 @@ class CompetitorController extends Controller
             ->findOrFail($id);
 
         $groupId = $competitor->group_id;
+
+        if (SurveySession::query()->where('group_id', $groupId)->exists()) {
+            return back()->with('error', 'Kompetitor tidak dapat dihapus karena survei pada group ini sudah dimulai.');
+        }
 
         try {
             $competitor->delete();
@@ -129,6 +138,10 @@ class CompetitorController extends Controller
             ->where('group_id', $form->group_id)
             ->where('form_id', $form->id)
             ->firstOrFail();
+
+        if (SurveySession::query()->where('group_id', $form->group_id)->exists()) {
+            return back()->with('error', 'Kompetitor tidak dapat diubah karena survei pada group ini sudah dimulai.');
+        }
 
         $competitor->update([
             'name' => trim($validated['name']),

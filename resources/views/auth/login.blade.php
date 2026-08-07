@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <title>Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white rounded shadow-md w-full max-w-4xl flex flex-col md:flex-row overflow-hidden">
+    @include('layouts.partials.global-alerts')
+    <div id="pageContent" class="bg-white rounded shadow-md w-full max-w-4xl flex flex-col md:flex-row overflow-hidden">
 
         <!-- Gambar (Hanya tampil di laptop/PC) -->
         <div class="hidden md:block md:w-1/2">
@@ -22,6 +24,7 @@
             @if (session('finish'))
                 <div
                     id="successAlert"
+                    data-alert
                     class="mb-6 flex items-start justify-between
                         rounded-lg border border-green-200
                         bg-green-50 px-4 py-3 text-green-700"
@@ -76,13 +79,13 @@
             @endif
 
             @if (session('status'))
-                <div class="text-center mb-4 text-green-600">
+                <div data-alert class="text-center mb-4 text-green-600">
                     {{ session('status') }}
                 </div>
             @endif
 
             @if ($errors->any())
-                <div class="text-center mb-4 text-red-600">
+                <div data-alert class="text-center mb-4 text-red-600">
                     <ul class="list-disc pl-5">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -119,5 +122,6 @@
             </form>
         </div>
     </div>
+    <script src="{{ asset('js/global-alerts.js') }}?v=20260806-4"></script>
 </body>
 </html>

@@ -1,2 +1,1 @@
-Add Row
-Remove Row
+// Reserved for adding and removing manual survey rows.

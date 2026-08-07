@@ -5,6 +5,7 @@
         data-modal-open="editOptionModal"
         data-id="{{ $option->id }}"
         data-question-id="{{ $question->id }}"
+        data-no="{{ $option->no }}"
         data-answer-text="{{ $option->answer_text }}"
         data-answer-text2="{{ $option->answer_text2 }}"
         data-has-child="{{ $option->has_child }}"

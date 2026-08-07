@@ -16,7 +16,7 @@
         <div data-alert class="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><span>{{ session('error') }}</span><button type="button" data-alert-close><i class="fa-solid fa-xmark"></i></button></div>
     @endif
     @if ($errors->any())
-        <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"><p class="font-semibold">Data belum dapat diproses:</p><ul class="mt-2 list-disc pl-5 text-sm">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+        <div data-alert class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"><p class="font-semibold">Data belum dapat diproses:</p><ul class="mt-2 list-disc pl-5 text-sm">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif
 
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -43,4 +43,8 @@
 @push('templates')
     @include('admin.groups.groups.templates.create-row')
     @include('admin.groups.complete-profile.templates.create-row')
+@endpush
+
+@push('scripts')
+    <script src="{{ asset('js/groups-bulk-selection.js') }}?v=20260806-2"></script>
 @endpush

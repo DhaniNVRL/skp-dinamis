@@ -480,7 +480,7 @@ const UserPage = {
 
 document.addEventListener("modal:opened", (e) => {
 
-    if (e.detail.id !== "bulkDeleteModal") {
+    if (e.detail.id !== "bulkDeleteModal" || !document.getElementById("userTable")) {
         return;
     }
 

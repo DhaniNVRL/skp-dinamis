@@ -11,12 +11,11 @@ use App\Models\Activity;
 use App\Models\Answer;
 use App\Models\UserProfile;
 use Illuminate\Support\Facades\Hash;
-use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Maatwebsite\Excel\Excel as ExcelFormat;
+use Illuminate\Validation\Rules\Password;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -204,7 +203,7 @@ class DataUserController extends Controller
 
                 $validator = Validator::make($item, [
                     'username' => ['required', 'string', 'max:191', 'unique:users,username'],
-                    'password' => ['required', 'string', 'min:8'],
+                    'password' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
                     'role_id' => ['required', 'integer', 'exists:roles,id'],
                     'activity_id' => ['required', 'integer', 'exists:activities,id'],
                 ]);
@@ -269,16 +268,22 @@ class DataUserController extends Controller
             'username' => 'required|array|min:1',
             'username.*' => ['required', 'string', 'max:191', 'distinct', 'unique:users,username'],
             'password' => 'required|array|min:1',
-            'password.*' => [
-                'required',
-                'string',
-                'min:8',
-            ],
+            'password.*' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
             'activity_id' => 'required|array|min:1',
             'activity_id.*' => 'required|exists:activities,id',
             'role_id' => 'required|array|min:1',
             'role_id.*' => 'required|exists:roles,id',
         ]);
+
+        $rowCount = count($request->username);
+        if (count($request->password) !== $rowCount
+            || count($request->activity_id) !== $rowCount
+            || count($request->role_id) !== $rowCount) {
+            throw ValidationException::withMessages([
+                'username' => 'Jumlah username, password, activity, dan role harus sama.',
+            ]);
+        }
+
         $usernameList = $request->username;
         $passwordList = $request->password;
         $activityList = $request->input('activity_id', []);
@@ -287,8 +292,7 @@ class DataUserController extends Controller
             $usernameList,
             $passwordList,
             $activityList,
-            $roleList,
-            $request
+            $roleList
         ) {
             for ($i = 0; $i < count($usernameList); $i++) {
                 $user = User::create([
@@ -360,7 +364,7 @@ class DataUserController extends Controller
                 'max:191',
                 Rule::unique('users', 'username')->ignore($id),
             ],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
         ]);
 
         $user = User::query()->findOrFail($id);
@@ -393,7 +397,6 @@ class DataUserController extends Controller
 
     public function update(Request $request, $id)
     {
-        // dd($request->all());
         $validated = $request->validate([
             'username'      => [
                 'required',
@@ -401,12 +404,10 @@ class DataUserController extends Controller
                 'max:191',
                 Rule::unique('users', 'username')->ignore($id),
             ],
-            'password'      => 'nullable|string|min:8',
+            'password'      => ['nullable', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
             'role_id'       => 'required|exists:roles,id',
             'activity_id'   => 'required|exists:activities,id',
         ]);
-        // dd($validated);
-
         $user = User::findOrFail($id);
 
         if ((int) $user->id === (int) auth()->id()
@@ -480,7 +481,7 @@ class DataUserController extends Controller
     {
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['required', 'integer', 'exists:users,id'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:users,id'],
         ]);
 
         if (in_array((int) auth()->id(), array_map('intval', $validated['ids']), true)) {

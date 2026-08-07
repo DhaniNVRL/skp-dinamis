@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <title>Register Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+    @include('layouts.partials.global-alerts')
+    <div id="pageContent" class="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h2 class="text-2xl font-bold mb-6 text-center">Buat Akun Admin</h2>
 
         @if ($errors->any())
-            <div class="mb-4 text-red-600">
+            <div data-alert class="mb-4 text-red-600">
                 <ul class="list-disc pl-5">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -56,5 +58,6 @@
             </button>
         </form>
     </div>
+    <script src="{{ asset('js/global-alerts.js') }}?v=20260806-4"></script>
 </body>
 </html>

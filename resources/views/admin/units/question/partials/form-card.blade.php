@@ -197,11 +197,11 @@
                     @case(11)
 
                         @include(
-                            'admin.units.question.partials.forms.general-questionnaire.index',
-                            // 'admin.units.question.partials.forms.competitor',
+                            'admin.units.question.partials.forms.competitor-1-5.index',
                             [
                                 'form' => $form,
-                                'questions' => $form->questions
+                                'questions' => $form->questions,
+                                'competitors' => $competitors,
                             ]
                         )
 
@@ -219,6 +219,20 @@
                                 'admin.units.question.partials.forms.description',
                                 ['form' => $form]
                             )
+
+                        @break
+
+
+                    @case(13)
+
+                        @include(
+                            'admin.units.question.partials.forms.competitor-1-7.index',
+                            [
+                                'form' => $form,
+                                'questions' => $form->questions,
+                                'competitors' => $competitors,
+                            ]
+                        )
 
                         @break
 

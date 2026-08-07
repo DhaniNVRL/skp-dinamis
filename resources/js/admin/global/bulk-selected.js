@@ -55,6 +55,10 @@ window.BulkSelect = {
             selectAll.indeterminate = indeterminate;
         });
 
+        document.querySelectorAll('#btnDeleteSelected').forEach(button => {
+            button.disabled = checked.length === 0;
+        });
+
     },
 
     getSelectedIds() {

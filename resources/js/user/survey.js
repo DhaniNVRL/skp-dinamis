@@ -683,6 +683,11 @@ function refreshRankingChild(select) {
         selectedOption.dataset
             .hasChild === "1";
 
+    const childPlaceholder =
+        selectedOption?.dataset
+            ?.answerText2?.trim() ||
+        "Tulis jawaban tambahan...";
+
     childContainer.classList.toggle(
         "hidden",
         !hasChild
@@ -690,6 +695,8 @@ function refreshRankingChild(select) {
 
     childInput.disabled = !hasChild;
     childInput.required = hasChild;
+    childInput.placeholder =
+        childPlaceholder;
 
     if (!hasChild) {
         childInput.value = "";
@@ -701,7 +708,7 @@ function refreshRankingChild(select) {
         selectedOption.textContent
     ) {
         childLabel.textContent =
-            `Keterangan ${selectedOption.textContent.trim()}`;
+            childPlaceholder;
     }
 }
 
@@ -799,4 +806,3 @@ function refreshRankingOptions(
 
     
 }
-

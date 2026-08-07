@@ -6,17 +6,17 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard')</title>
 
-    {{-- Tailwind --}}
+    {{-- Layout admin masih mengandalkan utility Tailwind dari CDN. --}}
     <script src="https://cdn.tailwindcss.com"></script>
 
     {{-- jQuery --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     {{-- Alpine --}}
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.14.9/dist/cdn.min.js"></script>
 
     {{-- Sortable --}}
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 
     {{-- Font Awesome --}}
     <link rel="stylesheet"
@@ -34,6 +34,7 @@
 </head>
 
 <body class="h-screen overflow-hidden bg-gray-100">
+    @php($showAdminSidebar = auth()->user()?->hasRole('admin') ?? false)
 
     {{-- Header --}}
     @include('admin.layouts.header')
@@ -41,18 +42,24 @@
     <div class="flex flex-1 overflow-hidden">
 
         {{-- Sidebar --}}
-        @include('admin.layouts.sidebar')
+        @if ($showAdminSidebar)
+            @include('admin.layouts.sidebar')
+        @endif
 
         {{-- Content --}}
         <main
             class="fixed
                    top-16 bottom-12
-                   left-64 right-0
+                   {{ $showAdminSidebar ? 'left-64' : 'left-0' }} right-0
                    px-6 py-6
                    overflow-y-auto
                    bg-gray-100">
 
-            @yield('content')
+            @include('layouts.partials.global-alerts')
+
+            <div id="pageContent">
+                @yield('content')
+            </div>
 
         </main>
 
@@ -62,9 +69,10 @@
     @include('admin.layouts.footer')
 
     {{-- Global JS --}}
-    <script src="{{ asset('js/global-modal.js') }}"></script>
-    <script src="{{ asset('js/global-modal-tab.js') }}"></script>
-    <script src="{{ asset('js/global-form.js') }}"></script>
+    <script src="{{ asset('js/global-modal.js') }}?v=20260806-2"></script>
+    <script src="{{ asset('js/global-modal-tab.js') }}?v=20260806-2"></script>
+    <script src="{{ asset('js/global-form.js') }}?v=20260806-2"></script>
+    <script src="{{ asset('js/global-alerts.js') }}?v=20260806-4"></script>
 
     @stack('scripts')
 

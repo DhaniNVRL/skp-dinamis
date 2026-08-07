@@ -4,19 +4,12 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class ActivityTableSeeder extends Seeder
 {
     public function run(): void
     {
-        Schema::disableForeignKeyConstraints();
-
-        DB::table('activities')->truncate();
-
-        Schema::enableForeignKeyConstraints();
-
-        DB::table('activities')->insert([
+        DB::table('activities')->upsert([
             [
                 'id' => 1,
                 'name' => 'SKP TJB Power Services 2026',
@@ -31,6 +24,6 @@ class ActivityTableSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-        ]);
+        ], ['id'], ['name', 'description', 'updated_at']);
     }
 }

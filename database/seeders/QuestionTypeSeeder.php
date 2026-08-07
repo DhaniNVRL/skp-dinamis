@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -13,9 +12,7 @@ class QuestionTypeSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('question_types')->delete();
-
-        DB::table('question_types')->insert([
+        DB::table('question_types')->upsert([
             [
                 'id'=>1,
                 'name' => 'Short Text',
@@ -71,6 +68,6 @@ class QuestionTypeSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
-        ]);
+        ], ['id'], ['name', 'description', 'updated_at']);
     }
 }

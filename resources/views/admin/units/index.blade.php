@@ -223,3 +223,9 @@
     @include('admin.units.question.templates.forms.competitor-1-7')
 
 @endpush
+
+@push('scripts')
+    <script src="{{ asset('js/units-page-fixes.js') }}?v=20260806-2"></script>
+    <script src="{{ asset('js/unit-question-crud-fixes.js') }}?v=20260806-1"></script>
+    <script src="{{ asset('js/question-bulk-selection.js') }}?v=20260806-1"></script>
+@endpush

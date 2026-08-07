@@ -152,5 +152,4 @@
 @endsection
 
 @push('scripts')
-    @vite('resources/js/user/survey.js')
 @endpush

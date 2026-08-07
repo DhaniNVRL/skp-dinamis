@@ -10,6 +10,7 @@ use App\Models\FormType;
 use App\Models\Group;
 use App\Models\Question;
 use App\Models\SubUnitQuestion;
+use App\Models\SurveySession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -85,6 +86,10 @@ class FormController extends Controller
             ],
         ]);
 
+        if (SurveySession::query()->where('group_id', $validated['group_id'])->exists()) {
+            return back()->with('error', 'Form tidak dapat ditambahkan karena survei pada group ini sudah dimulai.');
+        }
+
         DB::transaction(function () use ($validated): void {
             foreach ($validated['forms'] as $formData) {
                 Form::create([
@@ -154,6 +159,10 @@ class FormController extends Controller
 
         $form = Form::findOrFail($id);
 
+        if (SurveySession::query()->where('group_id', $form->group_id)->exists()) {
+            return back()->with('error', 'Form tidak dapat diubah karena survei pada group ini sudah dimulai.');
+        }
+
         abort_unless(
             (int) $form->group_id === (int) $validated['group_id'],
             422,
@@ -193,6 +202,10 @@ class FormController extends Controller
     public function destroy($id)
     {
         $form = Form::findOrFail($id);
+
+        if (SurveySession::query()->where('group_id', $form->group_id)->exists()) {
+            return back()->with('error', 'Form tidak dapat dihapus karena survei pada group ini sudah dimulai.');
+        }
 
         $groupId = $form->group_id;
 
@@ -237,6 +250,10 @@ class FormController extends Controller
         $source = Form::query()
             ->with(['questions.options', 'description'])
             ->findOrFail($id);
+
+        if (SurveySession::query()->where('group_id', $source->group_id)->exists()) {
+            return back()->with('error', 'Form tidak dapat disalin karena survei pada group ini sudah dimulai.');
+        }
 
         $copy = DB::transaction(function () use ($source) {
             $copy = $source->replicate();
@@ -382,8 +399,12 @@ class FormController extends Controller
                 ]);
 
                 if ($validator->fails()) {
+                    $details = collect($validator->errors()->all())
+                        ->take(3)
+                        ->implode(' ');
+
                     throw ValidationException::withMessages([
-                        'file' => 'Data form pada baris '.($index + 2).' tidak valid.',
+                        'file' => 'Data form pada baris '.($index + 2).' tidak valid: '.$details,
                     ]);
                 }
 
@@ -392,6 +413,12 @@ class FormController extends Controller
 
             if ($data === []) {
                 throw ValidationException::withMessages(['file' => 'Tidak ada data form untuk diimport.']);
+            }
+
+            if (SurveySession::query()->whereIn('group_id', collect($data)->pluck('group_id')->unique())->exists()) {
+                throw ValidationException::withMessages([
+                    'file' => 'Import ditolak karena survei pada salah satu group sudah dimulai.',
+                ]);
             }
 
             DB::transaction(fn () => collect($data)->each(fn ($item) => Form::create($item)));
@@ -416,6 +443,11 @@ class FormController extends Controller
 
         if (Answer::query()->whereIn('form_id', $validated['ids'])->exists()) {
             return back()->with('error', 'Form terpilih tidak dapat dihapus karena memiliki jawaban responden.');
+        }
+
+        $groupIds = Form::query()->whereIn('id', $validated['ids'])->pluck('group_id');
+        if (SurveySession::query()->whereIn('group_id', $groupIds)->exists()) {
+            return back()->with('error', 'Form terpilih tidak dapat dihapus karena survei pada group terkait sudah dimulai.');
         }
 
         DB::transaction(function () use ($validated): void {

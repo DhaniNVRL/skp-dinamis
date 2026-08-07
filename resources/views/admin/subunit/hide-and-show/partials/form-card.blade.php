@@ -35,6 +35,53 @@
         $globalFormTypes,
         true
     );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Urutkan Pertanyaan
+    |--------------------------------------------------------------------------
+    |
+    | no_header diurutkan sebagai teks:
+    | A, B, C, D, dan seterusnya.
+    |
+    | no diurutkan sebagai angka:
+    | 1, 2, 3, ..., 9, 10, 11, 12.
+    |
+    */
+
+    $sortedQuestions = collect($form->questions ?? [])
+        ->sort(function ($first, $second) {
+            $firstHeader = strtoupper(
+                trim((string) ($first->no_header ?? ''))
+            );
+
+            $secondHeader = strtoupper(
+                trim((string) ($second->no_header ?? ''))
+            );
+
+            $headerComparison = strnatcasecmp(
+                $firstHeader,
+                $secondHeader
+            );
+
+            if ($headerComparison !== 0) {
+                return $headerComparison;
+            }
+
+            $firstNumber = (int) ($first->no ?? 0);
+            $secondNumber = (int) ($second->no ?? 0);
+
+            $numberComparison =
+                $firstNumber <=> $secondNumber;
+
+            if ($numberComparison !== 0) {
+                return $numberComparison;
+            }
+
+            return (int) $first->id
+                <=> (int) $second->id;
+        })
+        ->values();
 @endphp
 
 <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -70,7 +117,7 @@
 
     {{-- QUESTIONS --}}
     <div class="space-y-4 p-5">
-        @forelse ($form->questions as $question)
+        @forelse ($sortedQuestions as $question)
             @include(
                 'admin.subunit.hide-and-show.partials.question-card',
                 [
@@ -79,6 +126,7 @@
                     'allSubunits' => $allSubunits,
                     'activeMapSubUnit' => $activeMapSubUnit,
                     'isPerSubUnit' => $isPerSubUnit,
+                    'questionIteration' => $loop->iteration,
                 ]
             )
         @empty

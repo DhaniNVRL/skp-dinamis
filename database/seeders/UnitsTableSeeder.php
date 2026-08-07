@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class UnitsTableSeeder extends Seeder
 {
@@ -13,13 +12,7 @@ class UnitsTableSeeder extends Seeder
      */
     public function run(): void
     {
-        Schema::disableForeignKeyConstraints();
-
-        DB::table('units')->truncate();
-
-        Schema::enableForeignKeyConstraints();
-
-        DB::table('units')->insert([
+        DB::table('units')->upsert([
             [
                 'id' => 1,
                 'group_id' => 1,
@@ -62,6 +55,6 @@ class UnitsTableSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-        ]);
+        ], ['id'], ['group_id', 'name', 'updated_at']);
     }
 }

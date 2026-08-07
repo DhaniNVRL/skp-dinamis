@@ -23,15 +23,9 @@
                             ]
                         )
 
-                        <div>
-                            <h3 class="font-semibold text-gray-800">
-                                {{ $question->name }}
-                            </h3>
-
-                            <p class="mt-1 text-xs text-gray-500">
-                                Judul Pertanyaan
-                            </p>
-                        </div>
+                        <h3 class="font-semibold text-gray-800">
+                            {{ $question->name }}
+                        </h3>
                     </div>
                 </div>
             @else

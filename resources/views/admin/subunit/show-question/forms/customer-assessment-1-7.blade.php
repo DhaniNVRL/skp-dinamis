@@ -47,15 +47,9 @@
                             ]
                         )
 
-                        <div>
-                            <h3 class="font-semibold text-gray-800">
-                                {{ $question->name }}
-                            </h3>
-
-                            <p class="mt-1 text-xs text-gray-500">
-                                Judul Pertanyaan
-                            </p>
-                        </div>
+                        <h3 class="font-semibold text-gray-800">
+                            {{ $question->name }}
+                        </h3>
                     </div>
                 </div>
 
@@ -262,7 +256,7 @@
                                                 data-customer-reason-child-input
                                                 disabled
                                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                                                placeholder="{{ $option->child_placeholder ?? 'Tuliskan keterangan tambahan...' }}"
+                                                placeholder="{{ $option->answer_text2 ?: 'Tuliskan keterangan tambahan...' }}"
                                             ></textarea>
                                         </div>
                                     @endif

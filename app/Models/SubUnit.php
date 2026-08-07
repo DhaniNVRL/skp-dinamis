@@ -30,7 +30,8 @@ class SubUnit extends Model
             'subunit_id',
             'question_id'
         )
-            ->withPivot('form_id');
+            ->withPivot('form_id')
+            ->inDisplayOrder();
     }
 
     public function subUnitQuestions()

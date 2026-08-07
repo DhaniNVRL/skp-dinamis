@@ -1,3 +1,12 @@
+@if ($question->questiontype?->isTitleOnly())
+
+    @include(
+        'admin.units.question.partials.forms.general-questionnaire.options.title',
+        ['question' => $question]
+    )
+
+@else
+
 @switch((int) $question->questiontype_id)
 
     @case(1)
@@ -113,3 +122,5 @@
         </div>
 
 @endswitch
+
+@endif

@@ -127,11 +127,12 @@
     {{-- COMPETITOR ASSESSMENT 1-5 --}}
     @case(11)
         @include(
-            'admin.subunit.show-question.forms.competitor-assessment-1-5',
+            'admin.subunit.show-question.forms.partials.competitor-assessment',
             [
                 'form' => $form,
                 'questions' => $questions,
                 'competitors' => $competitors,
+                'maximum' => 5,
             ]
         )
         @break
@@ -150,11 +151,12 @@
     {{-- COMPETITOR ASSESSMENT 1-7 --}}
     @case(13)
         @include(
-            'admin.subunit.show-question.forms.competitor-assessment-1-7',
+            'admin.subunit.show-question.forms.partials.competitor-assessment',
             [
                 'form' => $form,
                 'questions' => $questions,
                 'competitors' => $competitors,
+                'maximum' => 7,
             ]
         )
         @break

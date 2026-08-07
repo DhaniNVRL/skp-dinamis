@@ -8,7 +8,7 @@
     data-general-questionnaire
     class="space-y-5"
 >
-    @forelse ($questions->sortBy('no') as $question)
+    @forelse ($questions as $question)
         @php
             $questionTypeId = (int) (
                 $question->questiontype_id
@@ -23,27 +23,33 @@
                 . $scopeId;
         @endphp
 
-        {{-- TYPE 1: JUDUL --}}
-        @if ($questionTypeId === 1)
-            <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-5">
-                <div class="flex items-start gap-3">
+        {{-- TYPE 10: TITLE TANPA JAWABAN --}}
+        @if ($questionTypeId === 10)
+            @include(
+                'admin.subunit.show-question.forms.partials.title',
+                ['question' => $question]
+            )
+
+        {{-- TYPE 1: SHORT TEXT --}}
+        @elseif ($questionTypeId === 1)
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+                <div class="mb-4 flex items-start gap-3">
                     @include(
                         'admin.subunit.show-question.forms.partials.question-number',
-                        [
-                            'question' => $question,
-                        ]
+                        ['question' => $question]
                     )
 
-                    <div>
-                        <h3 class="font-semibold text-gray-800">
-                            {{ $question->name }}
-                        </h3>
-
-                        <p class="mt-1 text-xs text-gray-500">
-                            Judul Pertanyaan
-                        </p>
-                    </div>
+                    <h3 class="font-semibold text-gray-800">
+                        {{ $question->name }}
+                    </h3>
                 </div>
+
+                <input
+                    type="text"
+                    name="general_answers[{{ $question->id }}][{{ $scopeId }}]"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                    placeholder="Tulis jawaban singkat..."
+                >
             </div>
 
         {{-- TYPE 2: TEXTAREA --}}
@@ -150,7 +156,7 @@
                                         disabled
                                         data-general-child-input
                                         class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                                        placeholder="{{ $option->child_placeholder ?? 'Jawaban tambahan...' }}"
+                                        placeholder="{{ $option->answer_text2 ?: 'Jawaban tambahan...' }}"
                                     ></textarea>
                                 </div>
                             @endif
@@ -249,7 +255,7 @@
                                         disabled
                                         data-general-child-input
                                         class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                                        placeholder="{{ $option->child_placeholder ?? 'Jawaban tambahan...' }}"
+                                        placeholder="{{ $option->answer_text2 ?: 'Jawaban tambahan...' }}"
                                     ></textarea>
                                 </div>
                             @endif

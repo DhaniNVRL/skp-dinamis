@@ -790,6 +790,11 @@ function updateRankingChild(select) {
         selectedOption?.dataset
             ?.hasChild === "1";
 
+    const childPlaceholder =
+        selectedOption?.dataset
+            ?.answerText2?.trim() ||
+        "Jawaban tambahan...";
+
     child.classList.toggle(
         "hidden",
         !hasChild
@@ -801,6 +806,8 @@ function updateRankingChild(select) {
     );
 
     childInput.disabled = !hasChild;
+    childInput.placeholder =
+        childPlaceholder;
 
     if (!hasChild) {
         childInput.value = "";

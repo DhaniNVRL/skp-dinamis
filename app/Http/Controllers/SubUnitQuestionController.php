@@ -6,6 +6,7 @@ use App\Models\Form;
 use App\Models\Question;
 use App\Models\SubUnit;
 use App\Models\SubUnitQuestion;
+use App\Models\SurveySession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +47,12 @@ class SubUnitQuestionController extends Controller
         $form = Form::findOrFail(
             $validated['form_id']
         );
+
+        if (SurveySession::query()->where('group_id', $form->group_id)->exists()) {
+            throw ValidationException::withMessages([
+                'form_id' => 'Konfigurasi pertanyaan terkunci karena survei pada group ini sudah dimulai.',
+            ]);
+        }
 
         $question = Question::findOrFail(
             $validated['question_id']
