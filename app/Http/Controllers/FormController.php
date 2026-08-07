@@ -86,10 +86,6 @@ class FormController extends Controller
             ],
         ]);
 
-        if (SurveySession::query()->where('group_id', $validated['group_id'])->exists()) {
-            return back()->with('error', 'Form tidak dapat ditambahkan karena survei pada group ini sudah dimulai.');
-        }
-
         DB::transaction(function () use ($validated): void {
             foreach ($validated['forms'] as $formData) {
                 Form::create([
@@ -159,10 +155,6 @@ class FormController extends Controller
 
         $form = Form::findOrFail($id);
 
-        if (SurveySession::query()->where('group_id', $form->group_id)->exists()) {
-            return back()->with('error', 'Form tidak dapat diubah karena survei pada group ini sudah dimulai.');
-        }
-
         abort_unless(
             (int) $form->group_id === (int) $validated['group_id'],
             422,
@@ -197,27 +189,18 @@ class FormController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    
+
 
     public function destroy($id)
     {
-        $form = Form::findOrFail($id);
-
-        if (SurveySession::query()->where('group_id', $form->group_id)->exists()) {
-            return back()->with('error', 'Form tidak dapat dihapus karena survei pada group ini sudah dimulai.');
-        }
+        $form = Form::query()->findOrFail($id);
 
         $groupId = $form->group_id;
 
         try {
-
-            if (Answer::query()->where('form_id', $form->id)->exists()) {
-                return redirect()
-                    ->route('admin.units', ['id' => $groupId, 'tab' => 'question'])
-                    ->with('error', 'Form tidak dapat dihapus karena sudah memiliki jawaban responden.');
-            }
-
-            DB::transaction(fn () => $this->deleteFormRelations($form));
+            DB::transaction(function () use ($form): void {
+                $this->deleteFormRelations($form);
+            });
 
             return redirect()
                 ->route('admin.units', [
@@ -225,12 +208,11 @@ class FormController extends Controller
                     'tab' => 'question',
                 ])
                 ->with(
-                    'success',
-                    'Form, pertanyaan, dan option berhasil dihapus.'
+                    'successdelete',
+                    'Form beserta pertanyaan, option, dan jawaban responden berhasil dihapus.'
                 );
 
         } catch (\Throwable $error) {
-
             report($error);
 
             return redirect()
@@ -462,17 +444,109 @@ class FormController extends Controller
 
     private function deleteFormRelations(Form $form): void
     {
-        $questionIds = $form->questions()->pluck('id');
+        /*
+        |--------------------------------------------------------------------------
+        | Ambil seluruh ID pertanyaan pada form
+        |--------------------------------------------------------------------------
+        */
+        $questionIds = Question::query()
+            ->where('form_id', $form->id)
+            ->pluck('id');
 
-        SubUnitQuestion::query()->where('form_id', $form->id)->delete();
-        Description::query()->where('form_id', $form->id)->delete();
-        Competitor::query()->where('form_id', $form->id)->delete();
+        /*
+        |--------------------------------------------------------------------------
+        | 1. Hapus ANSWER
+        |--------------------------------------------------------------------------
+        | Kita hapus berdasarkan form_id DAN question_id.
+        |
+        | form_id penting untuk jawaban yang memang tercatat langsung ke form.
+        | question_id penting sebagai pengaman semua jawaban pertanyaan form.
+        */
+        Answer::query()
+            ->where(function ($query) use ($form, $questionIds) {
 
+                $query->where('form_id', $form->id);
+
+                if ($questionIds->isNotEmpty()) {
+                    $query->orWhereIn(
+                        'question_id',
+                        $questionIds
+                    );
+                }
+            })
+            ->delete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. Hapus OPTION
+        |--------------------------------------------------------------------------
+        */
         if ($questionIds->isNotEmpty()) {
-            Option::query()->whereIn('question_id', $questionIds)->delete();
+            Option::query()
+                ->whereIn(
+                    'question_id',
+                    $questionIds
+                )
+                ->delete();
         }
 
-        Question::query()->where('form_id', $form->id)->delete();
+        /*
+        |--------------------------------------------------------------------------
+        | 3. Hapus konfigurasi Sub Unit / Hide Show
+        |--------------------------------------------------------------------------
+        */
+        SubUnitQuestion::query()
+            ->where('form_id', $form->id)
+            ->delete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tambahan pengaman
+        |--------------------------------------------------------------------------
+        | Jika ada data lama yang form_id-nya tidak sesuai tetapi question_id
+        | masih menunjuk pertanyaan form ini.
+        */
+        if ($questionIds->isNotEmpty()) {
+            SubUnitQuestion::query()
+                ->whereIn(
+                    'question_id',
+                    $questionIds
+                )
+                ->delete();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4. Hapus DESCRIPTION
+        |--------------------------------------------------------------------------
+        */
+        Description::query()
+            ->where('form_id', $form->id)
+            ->delete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 5. Hapus COMPETITOR
+        |--------------------------------------------------------------------------
+        */
+        Competitor::query()
+            ->where('form_id', $form->id)
+            ->delete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 6. Hapus QUESTION
+        |--------------------------------------------------------------------------
+        */
+        Question::query()
+            ->where('form_id', $form->id)
+            ->delete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 7. Terakhir hapus FORM
+        |--------------------------------------------------------------------------
+        */
         $form->delete();
     }
 }

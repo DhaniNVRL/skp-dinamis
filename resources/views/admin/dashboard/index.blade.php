@@ -43,7 +43,6 @@
     </div>
 </div>
 
-@include('admin.dashboard.modals.respondent-detail')
 @endsection
 
 @push('scripts')

@@ -1,37 +1,169 @@
 @php
+    /*
+    |--------------------------------------------------------------------------
+    | Scale Values
+    |--------------------------------------------------------------------------
+    */
     $scaleValues = array_merge(
         range(1, $maximumScale),
         [0]
     );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sort Questions
+    |--------------------------------------------------------------------------
+    |
+    | Karena kolom "no" bertipe VARCHAR, jangan gunakan:
+    |
+    | ->sortBy('no')
+    | atau
+    | (int) $question->no
+    |
+    | Natural sort akan menghasilkan urutan:
+    |
+    | 0
+    | 1
+    | 2
+    | 3
+    | 3.1
+    | 3.2
+    | 3.3
+    | ...
+    | 3.9
+    | 3.10
+    | 3.11
+    |
+    | Nomor kembar tetap diperbolehkan.
+    | Jika no_header + no sama, ID menjadi tie breaker.
+    */
+    $sortedQuestions = $questions
+        ->sort(function ($a, $b) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | 1. Sort no_header
+            |--------------------------------------------------------------------------
+            */
+            $headerA = trim(
+                (string) ($a->no_header ?? '')
+            );
+
+            $headerB = trim(
+                (string) ($b->no_header ?? '')
+            );
+
+            $headerCompare = strnatcasecmp(
+                $headerA,
+                $headerB
+            );
+
+            if ($headerCompare !== 0) {
+                return $headerCompare;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | 2. Sort no
+            |--------------------------------------------------------------------------
+            */
+            $noA = trim(
+                (string) ($a->no ?? '0')
+            );
+
+            $noB = trim(
+                (string) ($b->no ?? '0')
+            );
+
+            $noCompare = strnatcasecmp(
+                $noA,
+                $noB
+            );
+
+            if ($noCompare !== 0) {
+                return $noCompare;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | 3. Jika nomor sama, urutkan berdasarkan ID
+            |--------------------------------------------------------------------------
+            */
+            return (int) $a->id <=> (int) $b->id;
+        })
+        ->values();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Group setelah proses sorting
+    |--------------------------------------------------------------------------
+    */
+    $groupedQuestions = $sortedQuestions
+        ->groupBy('no_header');
 @endphp
 
+
 <div class="space-y-6">
+
     @forelse (
-        $questions->groupBy('no_header')
+        $groupedQuestions
         as $header => $questionGroup
     )
+
         @foreach ($questionGroup as $question)
+
             @php
+                /*
+                |--------------------------------------------------------------------------
+                | Question Type
+                |--------------------------------------------------------------------------
+                */
                 $questionTypeId =
                     (int) $question->questiontype_id;
 
+                /*
+                |--------------------------------------------------------------------------
+                | Nomor Tampilan
+                |--------------------------------------------------------------------------
+                |
+                | Contoh:
+                |
+                | no_header = E
+                | no        = 3.10
+                |
+                | hasil:
+                | E3.10
+                */
                 $questionNumber = trim(
-                    ($question->no_header ?? '') .
-                    ($question->no ?? '')
+                    (string) ($question->no_header ?? '')
+                    .
+                    (string) ($question->no ?? '')
                 );
 
+                /*
+                |--------------------------------------------------------------------------
+                | Active Sub Unit
+                |--------------------------------------------------------------------------
+                */
                 $activeSubunitIds = collect(
                     $activeMapSubUnit[
                         $form->id . '-' . $question->id
                     ] ?? []
                 )
-                    ->map(fn ($id) => (int) $id)
+                    ->map(
+                        fn ($id) => (int) $id
+                    )
                     ->unique()
                     ->values();
             @endphp
 
+
+            {{-- ================================================================ --}}
             {{-- QUESTION TYPE 1: TITLE --}}
+            {{-- ================================================================ --}}
+
             @if ($questionTypeId === 1)
+
                 <div
                     class="rounded-xl border border-blue-200
                            bg-blue-50 px-5 py-4"
@@ -45,21 +177,34 @@
                 </div>
 
                 @continue
+
             @endif
 
+
+            {{--
+            |--------------------------------------------------------------------------
+            | Skip jika tidak memiliki Sub Unit aktif
+            |--------------------------------------------------------------------------
+            --}}
             @continue($activeSubunitIds->isEmpty())
+
 
             <section
                 class="overflow-hidden rounded-xl
                        border border-gray-200
                        bg-white shadow-sm"
             >
+
+                {{-- ============================================================ --}}
                 {{-- QUESTION HEADER --}}
+                {{-- ============================================================ --}}
+
                 <header
                     class="border-b border-gray-200
                            px-5 py-4"
                 >
                     <div class="flex items-start gap-3">
+
                         <span
                             class="inline-flex h-9 min-w-9
                                    shrink-0 items-center
@@ -70,42 +215,81 @@
                             {{ $questionNumber }}
                         </span>
 
+
                         <div>
+
                             <h3 class="font-semibold text-gray-900">
                                 {{ $question->name }}
                             </h3>
 
+
                             <p class="mt-1 text-xs text-gray-500">
+
                                 @if ($questionTypeId === 2)
+
                                     Penilaian Kepentingan dan Kinerja
+
                                 @elseif ($questionTypeId === 3)
+
                                     Penilaian Kepentingan dan Kinerja dengan alasan
+
                                 @elseif ($questionTypeId === 4)
+
                                     Penilaian Kepentingan dan Kinerja dengan pilihan alasan
+
                                 @elseif ($questionTypeId === 5)
+
                                     Penilaian satu indikator
+
                                 @elseif ($questionTypeId === 6)
+
                                     Jawaban penilaian
+
                                 @endif
+
                             </p>
+
                         </div>
+
                     </div>
                 </header>
 
+
+                {{-- ============================================================ --}}
+                {{-- QUESTION BODY --}}
+                {{-- ============================================================ --}}
+
                 <div class="space-y-5 bg-gray-50 p-5">
+
                     @foreach ($activeSubunitIds as $subunitId)
+
                         @php
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Cari Sub Unit
+                            |--------------------------------------------------------------------------
+                            */
                             $subunit = $subunits->firstWhere(
                                 'id',
                                 $subunitId
                             );
 
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Stored Answer
+                            |--------------------------------------------------------------------------
+                            */
                             $storedAnswer = data_get(
                                 $answerMap,
                                 "{$question->id}.{$subunitId}.0",
                                 []
                             );
 
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Importance
+                            |--------------------------------------------------------------------------
+                            */
                             $storedImportance = old(
                                 "answers.{$question->id}.{$subunitId}.importance",
                                 data_get(
@@ -114,6 +298,11 @@
                                 )
                             );
 
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Performance
+                            |--------------------------------------------------------------------------
+                            */
                             $storedPerformance = old(
                                 "answers.{$question->id}.{$subunitId}.performance",
                                 data_get(
@@ -122,6 +311,11 @@
                                 )
                             );
 
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Reason
+                            |--------------------------------------------------------------------------
+                            */
                             $storedReason = old(
                                 "answers.{$question->id}.{$subunitId}.reason",
                                 data_get(
@@ -130,6 +324,11 @@
                                 )
                             );
 
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Reason Options
+                            |--------------------------------------------------------------------------
+                            */
                             $storedReasonOptions = old(
                                 "answers.{$question->id}.{$subunitId}.reasons",
                                 data_get(
@@ -139,6 +338,11 @@
                                 )
                             );
 
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Child Answers
+                            |--------------------------------------------------------------------------
+                            */
                             $storedChildren = old(
                                 "answers.{$question->id}.{$subunitId}.children",
                                 data_get(
@@ -148,6 +352,11 @@
                                 )
                             );
 
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Single Value
+                            |--------------------------------------------------------------------------
+                            */
                             $storedValue = old(
                                 "answers.{$question->id}.{$subunitId}.value",
                                 data_get(
@@ -156,14 +365,22 @@
                                 )
                             );
 
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Tampilkan alasan?
+                            |--------------------------------------------------------------------------
+                            */
                             $showReason =
-                                filled($storedPerformance) &&
-                                (int) $storedPerformance !== 0 &&
-                                (int) $storedPerformance <=
-                                    $reasonMaximum;
+                                filled($storedPerformance)
+                                &&
+                                (int) $storedPerformance !== 0
+                                &&
+                                (int) $storedPerformance <= $reasonMaximum;
                         @endphp
 
+
                         @continue(!$subunit)
+
 
                         <div
                             data-question-container
@@ -173,12 +390,17 @@
                             class="rounded-xl border
                                    border-gray-200 bg-white"
                         >
+
+                            {{-- ==================================================== --}}
                             {{-- SUB UNIT HEADER --}}
+                            {{-- ==================================================== --}}
+
                             <div
                                 class="flex items-center gap-3
                                        border-b border-blue-200
                                        bg-blue-50 px-5 py-4"
                             >
+
                                 <span
                                     class="inline-flex h-10 w-10
                                            items-center justify-center
@@ -188,7 +410,9 @@
                                     <i class="fa-solid fa-building"></i>
                                 </span>
 
+
                                 <div>
+
                                     <div
                                         class="text-xs font-semibold
                                                uppercase tracking-wide
@@ -197,15 +421,28 @@
                                         Sub Unit
                                     </div>
 
+
                                     <div class="font-bold text-gray-900">
                                         {{ $subunit->name }}
                                     </div>
+
                                 </div>
+
                             </div>
+
+
+                            {{-- ==================================================== --}}
+                            {{-- SUB UNIT BODY --}}
+                            {{-- ==================================================== --}}
 
                             <div class="space-y-5 p-5">
 
-                                {{-- IMPORTANCE AND PERFORMANCE --}}
+
+                                {{-- ================================================= --}}
+                                {{-- TYPE 2,3,4 --}}
+                                {{-- IMPORTANCE & PERFORMANCE --}}
+                                {{-- ================================================= --}}
+
                                 @if (
                                     in_array(
                                         $questionTypeId,
@@ -213,16 +450,22 @@
                                         true
                                     )
                                 )
+
                                     <div
                                         class="grid grid-cols-1
                                                gap-5 lg:grid-cols-2"
                                     >
+
+                                        {{-- ========================================= --}}
                                         {{-- IMPORTANCE --}}
+                                        {{-- ========================================= --}}
+
                                         <div
                                             class="rounded-xl border
                                                    border-blue-200
                                                    bg-blue-50 p-5"
                                         >
+
                                             <div
                                                 class="mb-4 text-center
                                                        font-semibold
@@ -231,33 +474,43 @@
                                                 Kepentingan
                                             </div>
 
+
                                             <div
                                                 data-option-group
                                                 class="flex flex-wrap
                                                        items-center
                                                        justify-center gap-3"
                                             >
+
                                                 @foreach ($scaleValues as $value)
+
                                                     @if ($value === 0)
+
                                                         <div
                                                             class="mx-2 h-9
                                                                    border-l
                                                                    border-blue-300"
                                                         ></div>
+
                                                     @endif
 
+
                                                     <label class="cursor-pointer">
+
                                                         <input
                                                             type="radio"
                                                             name="answers[{{ $question->id }}][{{ $subunitId }}][importance]"
                                                             value="{{ $value }}"
+
                                                             @checked(
                                                                 (string) $storedImportance ===
                                                                 (string) $value
                                                             )
+
                                                             required
                                                             class="peer sr-only"
                                                         >
+
 
                                                         <span
                                                             class="inline-flex
@@ -276,17 +529,26 @@
                                                         >
                                                             {{ $value }}
                                                         </span>
+
                                                     </label>
+
                                                 @endforeach
+
                                             </div>
+
                                         </div>
 
+
+                                        {{-- ========================================= --}}
                                         {{-- PERFORMANCE --}}
+                                        {{-- ========================================= --}}
+
                                         <div
                                             class="rounded-xl border
                                                    border-emerald-200
                                                    bg-emerald-50 p-5"
                                         >
+
                                             <div
                                                 class="mb-4 text-center
                                                        font-semibold
@@ -295,34 +557,45 @@
                                                 Kinerja
                                             </div>
 
+
                                             <div
                                                 data-option-group
                                                 class="flex flex-wrap
                                                        items-center
                                                        justify-center gap-3"
                                             >
+
                                                 @foreach ($scaleValues as $value)
+
                                                     @if ($value === 0)
+
                                                         <div
                                                             class="mx-2 h-9
                                                                    border-l
                                                                    border-emerald-300"
                                                         ></div>
+
                                                     @endif
 
+
                                                     <label class="cursor-pointer">
+
                                                         <input
                                                             type="radio"
                                                             name="answers[{{ $question->id }}][{{ $subunitId }}][performance]"
                                                             value="{{ $value }}"
+
                                                             data-performance-input
+
                                                             @checked(
                                                                 (string) $storedPerformance ===
                                                                 (string) $value
                                                             )
+
                                                             required
                                                             class="peer sr-only"
                                                         >
+
 
                                                         <span
                                                             class="inline-flex
@@ -341,15 +614,26 @@
                                                         >
                                                             {{ $value }}
                                                         </span>
+
                                                     </label>
+
                                                 @endforeach
+
                                             </div>
+
                                         </div>
+
                                     </div>
+
                                 @endif
 
+
+                                {{-- ================================================= --}}
                                 {{-- TYPE 3: TEXTAREA REASON --}}
+                                {{-- ================================================= --}}
+
                                 @if ($questionTypeId === 3)
+
                                     <div
                                         data-performance-reason
                                         class="{{ $showReason ? '' : 'hidden' }}
@@ -357,13 +641,16 @@
                                                border-amber-200
                                                bg-amber-50 p-5"
                                     >
+
                                         <div class="mb-4">
+
                                             <h4
                                                 class="font-semibold
                                                        text-gray-900"
                                             >
                                                 Alasan Penilaian Kinerja
                                             </h4>
+
 
                                             <p
                                                 class="mt-1 text-sm
@@ -372,15 +659,21 @@
                                                 Wajib diisi jika nilai
                                                 Kinerja 1–{{ $reasonMaximum }}.
                                             </p>
+
                                         </div>
+
 
                                         <textarea
                                             name="answers[{{ $question->id }}][{{ $subunitId }}][reason]"
                                             rows="4"
+
                                             data-performance-reason-input
+
                                             @required($showReason)
                                             @disabled(!$showReason)
+
                                             placeholder="Tuliskan alasan penilaian Kinerja..."
+
                                             class="w-full rounded-lg
                                                    border border-gray-300
                                                    px-4 py-3 text-sm
@@ -389,11 +682,18 @@
                                                    focus:ring-2
                                                    focus:ring-amber-100"
                                         >{{ $storedReason }}</textarea>
+
                                     </div>
+
                                 @endif
 
+
+                                {{-- ================================================= --}}
                                 {{-- TYPE 4: CHECKBOX REASONS --}}
+                                {{-- ================================================= --}}
+
                                 @if ($questionTypeId === 4)
+
                                     <div
                                         data-performance-reason
                                         class="{{ $showReason ? '' : 'hidden' }}
@@ -401,25 +701,34 @@
                                                border-amber-200
                                                bg-amber-50 p-5"
                                     >
+
                                         <div class="mb-4">
+
                                             <h4 class="font-semibold text-gray-900">
                                                 Pilihan Alasan
                                             </h4>
+
 
                                             <p class="mt-1 text-sm text-gray-500">
                                                 Pilih minimal satu alasan jika
                                                 Kinerja 1–{{ $reasonMaximum }}.
                                             </p>
+
                                         </div>
+
 
                                         <div
                                             data-reason-checkbox-group
+
                                             @if ($showReason)
                                                 data-required-group
                                             @endif
+
                                             class="space-y-3"
                                         >
+
                                             @forelse ($question->options as $option)
+
                                                 @php
                                                     $optionChecked = in_array(
                                                         (string) $option->id,
@@ -440,30 +749,42 @@
                                                     );
                                                 @endphp
 
+
                                                 <div
                                                     class="overflow-hidden
                                                            rounded-lg border
                                                            border-gray-200
                                                            bg-white"
                                                 >
+
                                                     <label
                                                         class="flex cursor-pointer
                                                                items-start gap-3 p-4"
                                                     >
+
                                                         <input
                                                             type="checkbox"
+
                                                             name="answers[{{ $question->id }}][{{ $subunitId }}][reasons][]"
+
                                                             value="{{ $option->id }}"
+
                                                             data-option-input
+
                                                             data-has-child="{{ $hasChild ? 1 : 0 }}"
+
                                                             data-child-target="customer-child-{{ $question->id }}-{{ $subunitId }}-{{ $option->id }}"
+
                                                             @checked($optionChecked)
+
                                                             @disabled(!$showReason)
+
                                                             class="mt-0.5 h-4 w-4
                                                                    rounded border-gray-300
                                                                    text-indigo-600
                                                                    focus:ring-indigo-500"
                                                         >
+
 
                                                         <span
                                                             class="text-sm
@@ -472,17 +793,24 @@
                                                         >
                                                             {{ $option->answer_text }}
                                                         </span>
+
                                                     </label>
 
+
                                                     @if ($hasChild)
+
                                                         <div
                                                             id="customer-child-{{ $question->id }}-{{ $subunitId }}-{{ $option->id }}"
+
                                                             data-child-container
+
                                                             class="{{ $showReason && $optionChecked ? '' : 'hidden' }}
                                                                    border-t
                                                                    border-gray-200 p-4"
                                                         >
+
                                                             @if (filled($option->answer_text2))
+
                                                                 <label
                                                                     class="mb-2 block
                                                                            text-sm
@@ -491,21 +819,31 @@
                                                                 >
                                                                     {{ $option->answer_text2 }}
                                                                 </label>
+
                                                             @endif
+
 
                                                             <textarea
                                                                 name="answers[{{ $question->id }}][{{ $subunitId }}][children][{{ $option->id }}]"
+
                                                                 rows="3"
+
                                                                 data-child-input
+
                                                                 @required(
-                                                                    $showReason &&
+                                                                    $showReason
+                                                                    &&
                                                                     $optionChecked
                                                                 )
+
                                                                 @disabled(
-                                                                    !$showReason ||
+                                                                    !$showReason
+                                                                    ||
                                                                     !$optionChecked
                                                                 )
+
                                                                 placeholder="{{ $option->answer_text2 ?: 'Tulis jawaban tambahan...' }}"
+
                                                                 class="w-full
                                                                        rounded-lg
                                                                        border
@@ -517,10 +855,16 @@
                                                                        focus:ring-2
                                                                        focus:ring-indigo-100"
                                                             >{{ $childValue }}</textarea>
+
                                                         </div>
+
                                                     @endif
+
                                                 </div>
+
+
                                             @empty
+
                                                 <div
                                                     class="rounded-lg
                                                            border border-dashed
@@ -530,13 +874,22 @@
                                                 >
                                                     Pilihan alasan belum tersedia.
                                                 </div>
+
                                             @endforelse
+
                                         </div>
+
                                     </div>
+
                                 @endif
 
+
+                                {{-- ================================================= --}}
                                 {{-- TYPE 5: SINGLE INDICATOR --}}
+                                {{-- ================================================= --}}
+
                                 @if ($questionTypeId === 5)
+
                                     <div
                                         data-option-group
                                         class="flex flex-wrap
@@ -545,27 +898,38 @@
                                                border-indigo-200
                                                bg-indigo-50 p-5"
                                     >
+
                                         @foreach ($scaleValues as $value)
+
                                             @if ($value === 0)
+
                                                 <div
                                                     class="mx-2 h-9
                                                            border-l
                                                            border-indigo-300"
                                                 ></div>
+
                                             @endif
 
+
                                             <label class="cursor-pointer">
+
                                                 <input
                                                     type="radio"
+
                                                     name="answers[{{ $question->id }}][{{ $subunitId }}][value]"
+
                                                     value="{{ $value }}"
+
                                                     @checked(
                                                         (string) $storedValue ===
                                                         (string) $value
                                                     )
+
                                                     required
                                                     class="peer sr-only"
                                                 >
+
 
                                                 <span
                                                     class="inline-flex h-10 w-10
@@ -581,18 +945,31 @@
                                                 >
                                                     {{ $value }}
                                                 </span>
+
                                             </label>
+
                                         @endforeach
+
                                     </div>
+
                                 @endif
 
+
+                                {{-- ================================================= --}}
                                 {{-- TYPE 6: TEXTAREA --}}
+                                {{-- ================================================= --}}
+
                                 @if ($questionTypeId === 6)
+
                                     <textarea
                                         name="answers[{{ $question->id }}][{{ $subunitId }}][value]"
+
                                         rows="4"
+
                                         required
+
                                         placeholder="Tulis jawaban..."
+
                                         class="w-full rounded-lg border
                                                border-gray-300 px-4 py-3
                                                text-sm outline-none
@@ -600,7 +977,13 @@
                                                focus:ring-2
                                                focus:ring-indigo-100"
                                     >{{ $storedValue }}</textarea>
+
                                 @endif
+
+
+                                {{-- ================================================= --}}
+                                {{-- QUESTION ERROR --}}
+                                {{-- ================================================= --}}
 
                                 <p
                                     data-question-error
@@ -609,16 +992,27 @@
                                 >
                                     Pertanyaan ini wajib diisi.
                                 </p>
+
                             </div>
+
                         </div>
+
                     @endforeach
+
                 </div>
+
             </section>
+
         @endforeach
+
+
     @empty
+
         @include('user.survey.partials.empty', [
             'message' =>
                 'Form ini belum memiliki pertanyaan aktif.',
         ])
+
     @endforelse
+
 </div>

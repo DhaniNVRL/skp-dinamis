@@ -395,7 +395,7 @@ document.addEventListener(
     (e)=>{
 
 
-        if(e.detail.id !== "deleteModal")
+        if(e.detail.id !== "deleteUserModal")
             return;
 
         if(!activeModalButton)
@@ -408,20 +408,62 @@ document.addEventListener(
         console.log("DELETE:", button.dataset.id);
 
 
-        document.getElementById(
+        const userName = document.getElementById(
             "deleteUserName"
-        ).textContent =
-            button.dataset.name;
+        );
 
+        const deleteForm = document.getElementById(
+            "deleteUserForm"
+        );
 
-        document.getElementById(
-            "deleteForm"
-        ).action =
-            `/datauser/${button.dataset.id}`;
+        if (!userName || !deleteForm || !button.dataset.action) {
+            console.error(
+                "Konfigurasi modal hapus user tidak lengkap."
+            );
+
+            return;
+        }
+
+        userName.textContent = button.dataset.name;
+        deleteForm.action = button.dataset.action;
 
 
     }
 );
+
+document.addEventListener("modal:opened", (event) => {
+    if (event.detail.id !== "deleteAnswersModal" || !activeModalButton) {
+        return;
+    }
+
+    const form = document.getElementById("deleteAnswersForm");
+    const name = document.getElementById("deleteAnswersUserName");
+
+    if (!form || !name || !activeModalButton.dataset.action) {
+        console.error("Konfigurasi modal hapus jawaban tidak lengkap.");
+        return;
+    }
+
+    name.textContent = activeModalButton.dataset.name || "user ini";
+    form.action = activeModalButton.dataset.action;
+});
+
+document.addEventListener("modal:opened", (event) => {
+    if (event.detail.id !== "reopenSurveyModal" || !activeModalButton) {
+        return;
+    }
+
+    const form = document.getElementById("reopenSurveyForm");
+    const name = document.getElementById("reopenSurveyUserName");
+
+    if (!form || !name || !activeModalButton.dataset.action) {
+        console.error("Konfigurasi modal buka kembali survey tidak lengkap.");
+        return;
+    }
+
+    name.textContent = activeModalButton.dataset.name || "user ini";
+    form.action = activeModalButton.dataset.action;
+});
 
 /* =========================
    Bulk Selected

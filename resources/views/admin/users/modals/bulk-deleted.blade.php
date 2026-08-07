@@ -14,6 +14,7 @@
 
             <div class="p-6">
                 <p class="text-sm text-gray-700">Yakin ingin menghapus <strong id="bulkDeleteCount">0</strong> akun?</p>
+                <p class="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">Profil, seluruh jawaban, dan progres survei akun terpilih juga akan dihapus permanen.</p>
                 <ul id="bulkDeleteUserList" class="mt-3 max-h-48 list-disc space-y-1 overflow-y-auto pl-5 text-sm text-gray-600"></ul>
             </div>
 

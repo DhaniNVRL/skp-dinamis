@@ -129,12 +129,21 @@ Route::middleware('auth')->group(function () {
         )->name('admin.datauser.resetjawaban');
 
         Route::post(
+            '/datauser/{id}/reopen-survey',
+            'reopenSurvey'
+        )->name('admin.datauser.reopen-survey');
+
+        Route::post(
             '/datauser/{id}/resetprofile',
             'resetAccount'
         )->name('admin.datauser.resetaccount');
 
         Route::get('/datauser/{id}/show', 'show')
             ->name('admin.datauser.show');
+
+        Route::get('/datauser/{id}/answers', 'answers')
+            ->whereNumber('id')
+            ->name('admin.datauser.answers');
 
         Route::delete('/datauser/{id}', 'destroy')
             ->name('admin.datauser.destroy');

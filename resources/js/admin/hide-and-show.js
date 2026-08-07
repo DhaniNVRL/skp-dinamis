@@ -140,10 +140,27 @@ function initializeHideAndShow() {
                     Boolean(result.is_active)
                 );
 
+                const scopeType =
+                    button.dataset.scopeType ||
+                    "Sub Unit";
+
+                const targetNames =
+                    button.dataset.targetNames ||
+                    "yang dipilih";
+
+                const isNowActive =
+                    Boolean(result.is_active);
+
                 showHideShowNotification(
-                    result.message ||
-                        "Status pertanyaan berhasil diperbarui.",
-                    "success"
+                    isNowActive
+                        ? `Pertanyaan tampil di ${scopeType} ${targetNames}.`
+                        : `Pertanyaan ini dihapus di ${scopeType} ${targetNames}.`,
+                    isNowActive
+                        ? "success"
+                        : "removed",
+                    isNowActive
+                        ? "Pertanyaan ditampilkan"
+                        : "Pertanyaan disembunyikan"
                 );
             } catch (error) {
                 console.error(error);
@@ -267,7 +284,8 @@ function getResponseError(result) {
 
 function showHideShowNotification(
     message,
-    type
+    type,
+    title = null
 ) {
     const notification =
         document.getElementById(
@@ -278,20 +296,80 @@ function showHideShowNotification(
         return;
     }
 
-    notification.textContent =
-        message;
+    const titleElement =
+        notification.querySelector(
+            "#hideShowNotificationTitle"
+        );
+
+    const messageElement =
+        notification.querySelector(
+            "#hideShowNotificationMessage"
+        );
+
+    const icon = notification.querySelector(
+        "#hideShowNotificationIcon"
+    );
+
+    const isSuccess = type === "success";
+
+    if (titleElement) {
+        titleElement.textContent =
+            title ||
+            (isSuccess
+                ? "Proses berhasil"
+                : "Proses gagal");
+    }
+
+    if (messageElement) {
+        messageElement.textContent = message;
+    }
 
     notification.classList.remove(
         "hidden",
-        "bg-green-600",
-        "bg-red-600"
+        "border-green-200",
+        "bg-green-50",
+        "text-green-800",
+        "border-red-200",
+        "bg-red-50",
+        "text-red-800"
     );
 
-    notification.classList.add(
-        type === "success"
-            ? "bg-green-600"
-            : "bg-red-600"
-    );
+    notification.classList.add(...(
+        isSuccess
+            ? [
+                "border-green-200",
+                "bg-green-50",
+                "text-green-800",
+            ]
+            : [
+                "border-red-200",
+                "bg-red-50",
+                "text-red-800",
+            ]
+    ));
+
+    if (icon) {
+        icon.classList.remove(
+            "bg-green-100",
+            "text-green-600",
+            "bg-red-100",
+            "text-red-600"
+        );
+
+        icon.classList.add(...(
+            isSuccess
+                ? ["bg-green-100", "text-green-600"]
+                : ["bg-red-100", "text-red-600"]
+        ));
+
+        const iconElement = icon.querySelector("i");
+
+        if (iconElement) {
+            iconElement.className = isSuccess
+                ? "fa-solid fa-circle-check"
+                : "fa-solid fa-circle-exclamation";
+        }
+    }
 
     window.clearTimeout(
         notification.hideTimer
@@ -307,6 +385,16 @@ function showHideShowNotification(
             3000
         );
 }
+
+document.addEventListener("click", function (event) {
+    if (!event.target.closest("[data-hide-show-notification-close]")) {
+        return;
+    }
+
+    document
+        .getElementById("hideShowNotification")
+        ?.classList.add("hidden");
+});
 
 document.addEventListener("change", function (event) {
     const checkbox = event.target.closest(

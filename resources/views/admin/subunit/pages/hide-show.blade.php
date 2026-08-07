@@ -63,6 +63,7 @@
                     'form' => $form,
                     'allSubunits' => $allSubunits,
                     'activeMapSubUnit' => $activeMapSubUnit,
+                    'unitName' => $units->name,
                 ]
             )
         @endforeach
@@ -71,6 +72,21 @@
     {{-- NOTIFICATION --}}
     <div
         id="hideShowNotification"
-        class="pointer-events-none fixed bottom-6 right-6 z-[100] hidden max-w-sm rounded-lg px-4 py-3 text-sm font-medium text-white shadow-xl"
-    ></div>
+        role="status"
+        aria-live="polite"
+        class="fixed bottom-16 right-4 z-[80] hidden w-[calc(100vw-2rem)] max-w-sm rounded-xl border p-4 shadow-2xl sm:right-6"
+    >
+        <div class="flex items-start gap-3">
+            <div id="hideShowNotificationIcon" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+                <p id="hideShowNotificationTitle" class="font-semibold"></p>
+                <p id="hideShowNotificationMessage" class="mt-1 break-words text-sm"></p>
+            </div>
+            <button type="button" data-hide-show-notification-close class="shrink-0 opacity-70 transition hover:opacity-100" aria-label="Tutup notifikasi">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
 </div>

@@ -65,6 +65,7 @@ class User extends Authenticatable
                 'survey_sessions.status',
                 'survey_sessions.started_at',
                 'survey_sessions.finished_at',
+                'survey_sessions.reopened_at',
                 'survey_sessions.created_at',
                 'survey_sessions.updated_at',
             ])

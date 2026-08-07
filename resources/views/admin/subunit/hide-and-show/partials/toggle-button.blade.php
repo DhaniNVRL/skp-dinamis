@@ -4,6 +4,8 @@
     data-form-id="{{ $formId }}"
     data-question-id="{{ $questionId }}"
     data-subunit-ids='@json(array_values($subunitIds))'
+    data-scope-type="{{ $scopeType }}"
+    data-target-names="{{ collect($targetNames)->filter()->implode(', ') }}"
     data-active="{{ $isActive ? '1' : '0' }}"
     aria-pressed="{{ $isActive ? 'true' : 'false' }}"
     class="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition

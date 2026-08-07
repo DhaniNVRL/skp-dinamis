@@ -9,9 +9,12 @@ use App\Models\Group;
 use App\Models\Unit;
 use App\Models\Activity;
 use App\Models\Answer;
+use App\Models\Form;
 use App\Models\UserProfile;
+use App\Services\AnswerReviewFormatter;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -24,22 +27,14 @@ use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 class DataUserController extends Controller
 {
 
-    // public function index()
-    // {
-
-    //     $roles = Role::all();
-    //     $activities = Activity::all();
-    //     $users = User::all();
-    //     $userprofiles = UserProfile::with(['user.role', 'activity', 'group', 'unit'])->get();
-    //     return view('/admin/datauser' , compact('users', 'roles', 'activities', 'userprofiles'));
-    // }
-
     public function index(Request $request)
     {
         $query = UserProfile::query()
             ->whereHas('user')
             ->with([
-                'user.role',
+                'user' => fn ($userQuery) => $userQuery
+                    ->with(['role', 'surveySession'])
+                    ->withCount('answers'),
                 'activity',
                 'group',
                 'unit',
@@ -334,6 +329,61 @@ class DataUserController extends Controller
         return view('admin.detailuserd', compact('user','role','activity','group','unit'));
     }
 
+    public function answers(string $id, AnswerReviewFormatter $formatter)
+    {
+        $user = User::query()
+            ->with([
+                'role',
+                'profile.activity',
+                'profile.group',
+                'profile.unit',
+                'surveySession',
+            ])
+            ->findOrFail($id);
+
+        $answers = Answer::query()
+            ->where('user_id', $user->id)
+            ->with([
+                'form:id,name',
+                'question:id,no_header,no,name,questiontype_id',
+                'question.options:id,question_id,no,answer_text,answer_text2,has_child',
+                'competitor:id,name',
+                'subunit:id,name',
+            ])
+            ->orderBy('form_id')
+            ->orderBy('question_id')
+            ->orderBy('id')
+            ->get()
+            ->each(function (Answer $answer) use ($formatter): void {
+                $answer->setAttribute(
+                    'review_details',
+                    $formatter->format($answer)
+                );
+            });
+
+        $session = $user->surveySession;
+        $status = $session?->status === 'completed'
+            ? 'completed'
+            : (($session?->status === 'in_progress' || $session?->started_at || $answers->isNotEmpty())
+                ? 'in_progress'
+                : 'not_started');
+
+        $survey = [
+            'status' => $status,
+            'status_label' => match ($status) {
+                'completed' => 'Sudah Mengisi',
+                'in_progress' => 'Sedang Mengisi',
+                default => 'Belum Mengisi',
+            },
+            'started_at' => $session?->started_at?->format('d-m-Y H:i'),
+            'finished_at' => $session?->finished_at?->format('d-m-Y H:i'),
+            'reopened_at' => $session?->reopened_at?->format('d-m-Y H:i'),
+            'answers_count' => $answers->count(),
+        ];
+
+        return view('admin.users.answers', compact('user', 'answers', 'survey'));
+    }
+
     public function edit(string $id)
     {
         $user = User::query()
@@ -382,17 +432,51 @@ class DataUserController extends Controller
     {
         $user = User::query()->findOrFail($id);
 
-        DB::transaction(function () use ($user) {
-            Answer::query()
-                ->where('user_id', $user->id)
-                ->delete();
-
-            $user->surveySessions()->delete();
-        });
+        $deletedAnswers = Answer::query()
+            ->where('user_id', $user->id)
+            ->delete();
 
         return redirect()
             ->back()
-            ->with('success', 'Jawaban user berhasil direset.');
+            ->with(
+                'successdelete',
+                $deletedAnswers.' jawaban user berhasil dihapus. Akun dan status survey tidak diubah.'
+            );
+    }
+
+    public function reopenSurvey(string $id)
+    {
+        $user = User::query()
+            ->with(['profile', 'surveySession'])
+            ->findOrFail($id);
+
+        $session = $user->surveySession;
+
+        if (! $session || $session->status !== 'completed') {
+            return back()->with(
+                'error',
+                'Survey hanya dapat dibuka kembali setelah berstatus selesai.'
+            );
+        }
+
+        $firstFormId = Form::query()
+            ->where('group_id', $user->profile?->group_id)
+            ->orderBy('no_urut')
+            ->orderBy('id')
+            ->value('id');
+
+        $session->update([
+            'status' => 'in_progress',
+            'current_form_id' => $firstFormId,
+            'started_at' => now(),
+            'finished_at' => null,
+            'reopened_at' => now(),
+        ]);
+
+        return back()->with(
+            'success',
+            'Akun berhasil dibuka kembali. User sekarang dapat login dan mengakses survey.'
+        );
     }
 
     public function update(Request $request, $id)
@@ -460,21 +544,35 @@ class DataUserController extends Controller
     {
         abort_if((int) $id === (int) auth()->id(), 422, 'Akun yang sedang digunakan tidak dapat dihapus.');
 
-        if (Answer::query()->where('user_id', $id)->exists()) {
-            return back()->with(
-                'error',
-                'User tidak dapat dihapus karena memiliki jawaban. Reset jawaban terlebih dahulu jika memang diperlukan.'
-            );
-        }
-
-        DB::transaction(function () use ($id) {
+        $deletedAnswers = DB::transaction(function () use ($id): int {
             $user = User::query()->findOrFail($id);
+
+            $answerCount = Answer::query()
+                ->where('user_id', $user->id)
+                ->count();
+
+            Answer::query()
+                ->where('user_id', $user->id)
+                ->delete();
+
+            $user->surveySessions()->delete();
+
+            if (Schema::hasTable('sessions')) {
+                DB::table('sessions')
+                    ->where('user_id', $user->id)
+                    ->delete();
+            }
 
             $user->profile()->delete();
             $user->delete();
+
+            return $answerCount;
         });
 
-        return redirect()->back()->with('successdelete', 'Data berhasil dihapus.');
+        return redirect()->back()->with(
+            'successdelete',
+            'Akun, profil, dan '.$deletedAnswers.' data jawaban berhasil dihapus.'
+        );
     }
 
     public function bulkDelete(Request $request)
@@ -488,23 +586,42 @@ class DataUserController extends Controller
             return back()->with('error', 'Akun yang sedang digunakan tidak dapat dihapus.');
         }
 
-        if (Answer::query()->whereIn('user_id', $validated['ids'])->exists()) {
-            return back()->with('error', 'Sebagian user memiliki jawaban dan tidak dapat dihapus.');
-        }
+        $result = DB::transaction(function () use ($validated): array {
+            $ids = array_map('intval', $validated['ids']);
+            $answerCount = Answer::query()
+                ->whereIn('user_id', $ids)
+                ->count();
 
-        DB::transaction(function () use ($validated) {
+            Answer::query()
+                ->whereIn('user_id', $ids)
+                ->delete();
+
+            if (Schema::hasTable('survey_sessions')) {
+                DB::table('survey_sessions')
+                    ->whereIn('user_id', $ids)
+                    ->delete();
+            }
+
+            if (Schema::hasTable('sessions')) {
+                DB::table('sessions')
+                    ->whereIn('user_id', $ids)
+                    ->delete();
+            }
+
             UserProfile::query()
-                ->whereIn('user_id', $validated['ids'])
+                ->whereIn('user_id', $ids)
                 ->delete();
 
             User::query()
-                ->whereIn('id', $validated['ids'])
+                ->whereIn('id', $ids)
                 ->delete();
+
+            return [count($ids), $answerCount];
         });
 
         return redirect()->back()->with(
-            'success',
-            'User berhasil dihapus.'
+            'successdelete',
+            $result[0].' akun beserta '.$result[1].' data jawaban berhasil dihapus.'
         );
     }
 }

@@ -44,9 +44,9 @@
                         <span class="inline-flex min-w-[40px] justify-center rounded-lg bg-blue-50 px-2.5 py-1 text-sm font-semibold text-blue-700">{{ $profile->user?->answers_count ?? 0 }}</span>
                     </td>
                     <td class="px-4 py-3 text-center">
-                        <button type="button" data-respondent-detail data-url="{{ route('monitoring.respondent.detail', ['userId' => $profile->user_id]) }}" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700">
+                        <a href="{{ route('monitoring.respondent.detail', ['userId' => $profile->user_id]) }}" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700">
                             <i class="fa-solid fa-eye"></i>Detail
-                        </button>
+                        </a>
                     </td>
                 </tr>
             @empty

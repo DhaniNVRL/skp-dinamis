@@ -6,8 +6,8 @@ use App\Models\Activity;
 use App\Models\Group;
 use App\Models\Unit;
 use App\Models\UserProfile;
+use App\Services\AnswerReviewFormatter;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MonitoringDashboardController extends Controller
@@ -81,6 +81,7 @@ class MonitoringDashboardController extends Controller
                                     'survey_sessions.status',
                                     'survey_sessions.started_at',
                                     'survey_sessions.finished_at',
+                                    'survey_sessions.reopened_at',
                                     'survey_sessions.updated_at',
                                 ]);
                             },
@@ -149,7 +150,10 @@ class MonitoringDashboardController extends Controller
         ));
     }
 
-    public function respondentDetail(int $userId): JsonResponse
+    public function respondentDetail(
+        int $userId,
+        AnswerReviewFormatter $formatter
+    )
     {
         $profile = UserProfile::query()
             ->where('user_id', $userId)
@@ -170,11 +174,14 @@ class MonitoringDashboardController extends Controller
                                 $answerQuery
                                     ->with([
                                         'form:id,name',
-                                        'question:id,no_header,no,name',
+                                        'question:id,no_header,no,name,questiontype_id',
+                                        'question.options:id,question_id,no,answer_text,answer_text2,has_child',
                                         'competitor:id,name',
                                         'subunit:id,name',
                                     ])
-                                    ->latest('id');
+                                    ->orderBy('form_id')
+                                    ->orderBy('question_id')
+                                    ->orderBy('id');
                             },
                         ]);
                 },
@@ -189,41 +196,31 @@ class MonitoringDashboardController extends Controller
             $answers->count()
         );
 
-        return response()->json([
-            'profile' => [
-                'user_id'       => $profile->user_id,
-                'username'      => $profile->user?->username,
-                'fullname'      => $profile->fullname,
-                'email'         => $profile->email,
-                'no_handphone'  => $profile->no_handphone,
-                'role'          => $profile->user?->role?->name,
-                'activity'      => $profile->activity?->name,
-                'group'         => $profile->group?->name,
-                'unit'          => $profile->unit?->name,
-            ],
-            'survey' => [
-                'status'       => $status,
-                'status_label' => match ($status) {
-                    'completed'   => 'Sudah Mengisi',
-                    'in_progress' => 'Sedang Mengisi',
-                    default       => 'Belum Mengisi',
-                },
-                'started_at'    => optional($session?->started_at)->format('d-m-Y H:i'),
-                'finished_at'   => optional($session?->finished_at)->format('d-m-Y H:i'),
-                'answers_count' => $answers->count(),
-            ],
-            'answers' => $answers->map(function ($answer) {
-                return [
-                    'id'         => $answer->id,
-                    'form'       => $answer->form?->name,
-                    'question'   => $answer->question?->name,
-                    'question_no'=> trim(($answer->question?->no_header ?? '') . ($answer->question?->no ?? '')),
-                    'competitor' => $answer->competitor?->name,
-                    'subunit'    => $answer->subunit?->name,
-                    'answer'     => $this->normalizeAnswer($answer->answer),
-                    'updated_at' => optional($answer->updated_at)->format('d-m-Y H:i'),
-                ];
-            })->values(),
+        $answers->each(function ($answer) use ($formatter): void {
+            $answer->setAttribute(
+                'review_details',
+                $formatter->format($answer)
+            );
+        });
+
+        $survey = [
+            'status' => $status,
+            'status_label' => match ($status) {
+                'completed' => 'Sudah Mengisi',
+                'in_progress' => 'Sedang Mengisi',
+                default => 'Belum Mengisi',
+            },
+            'started_at' => $session?->started_at?->format('d-m-Y H:i'),
+            'finished_at' => $session?->finished_at?->format('d-m-Y H:i'),
+            'reopened_at' => $session?->reopened_at?->format('d-m-Y H:i'),
+            'answers_count' => $answers->count(),
+        ];
+
+        return view('admin.dashboard.respondent-detail', [
+            'user' => $profile->user,
+            'profile' => $profile,
+            'answers' => $answers,
+            'survey' => $survey,
         ]);
     }
 
@@ -294,16 +291,4 @@ class MonitoringDashboardController extends Controller
         return 'not_started';
     }
 
-    private function normalizeAnswer($answer)
-    {
-        if (!is_string($answer)) {
-            return $answer;
-        }
-
-        $decoded = json_decode($answer, true);
-
-        return json_last_error() === JSON_ERROR_NONE
-            ? $decoded
-            : $answer;
-    }
 }

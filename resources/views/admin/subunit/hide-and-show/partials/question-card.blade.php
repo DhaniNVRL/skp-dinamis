@@ -3,11 +3,15 @@
 
     $activeSubunitIds = collect(
         $activeMapSubUnit[$mapKey] ?? []
-    )->map(fn ($id) => (int) $id);
+    )->map(
+        fn ($id) => (int) $id
+    );
 
     $allSubunitIds = $allSubunits
         ->pluck('id')
-        ->map(fn ($id) => (int) $id);
+        ->map(
+            fn ($id) => (int) $id
+        );
 
     $allAreActive = $allSubunitIds->isNotEmpty()
         && $allSubunitIds->every(
@@ -15,8 +19,9 @@
         );
 
     $questionNumber = trim(
-        ($question->no_header ?? '') .
-        ($question->no ?? '')
+        (string) ($question->no_header ?? '')
+        .
+        (string) ($question->no ?? '')
     );
 
     $isHeader = (int) (
@@ -24,6 +29,17 @@
         ?? $question->id_questiontypes
         ?? 0
     ) === 1;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resolve Unit Name
+    |--------------------------------------------------------------------------
+    */
+    $resolvedUnitName =
+        $unitName
+        ?? data_get($unit ?? null, 'name')
+        ?? data_get($units ?? null, 'name')
+        ?? '-';
 @endphp
 
 <div class="rounded-lg border border-gray-200">
@@ -82,6 +98,8 @@
                             'formId' => $form->id,
                             'questionId' => $question->id,
                             'subunitIds' => [$subunit->id],
+                            'scopeType' => 'Sub Unit',
+                            'targetNames' => [$subunit->name],
                             'isActive' => $isActive,
                         ]
                     )
@@ -116,6 +134,8 @@
                     'formId' => $form->id,
                     'questionId' => $question->id,
                     'subunitIds' => $allSubunitIds->all(),
+                    'scopeType' => 'Unit',
+                    'targetNames' => [$unitName],
                     'isActive' => $allAreActive,
                 ]
             )

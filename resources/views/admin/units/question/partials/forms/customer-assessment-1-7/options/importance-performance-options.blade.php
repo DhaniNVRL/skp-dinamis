@@ -5,7 +5,7 @@
 <div
     x-data="{ selectedOptions: [] }"
     class="mb-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
->
+    >
 
     <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
 

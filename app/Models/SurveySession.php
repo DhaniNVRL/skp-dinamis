@@ -15,11 +15,13 @@ class SurveySession extends Model
         'status',
         'started_at',
         'finished_at',
+        'reopened_at',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
+        'reopened_at' => 'datetime',
     ];
 
     public function user()
