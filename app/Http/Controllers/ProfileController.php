@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Activity;
+use App\Models\Answer;
 use App\Models\CompleteProfile;
 use App\Models\Group;
 use App\Models\SurveySession;
@@ -26,8 +28,21 @@ class ProfileController extends Controller
         )->first();
 
         if ($existingProfile) {
+            if (
+                ! $existingProfile->group_id ||
+                ! $existingProfile->unit_id
+            ) {
+                return redirect()->route('profile.edit');
+            }
+
             return redirect()->route('profile.show');
         }
+
+        abort_if(
+            auth()->user()?->hasRole('surveyor'),
+            403,
+            'Activity akun Surveyor belum ditentukan oleh administrator.'
+        );
 
         $groups = Group::with('activity')
             ->orderBy('name')
@@ -91,6 +106,12 @@ class ProfileController extends Controller
     {
         $profile = $this->getUserProfile();
 
+        if ($this->hasCompletedSurvey()) {
+            return redirect()
+                ->route('user.dashboard')
+                ->with('error', 'Profil terkunci karena survei telah selesai. Admin harus melakukan Reset Account untuk membuka pengisian kembali.');
+        }
+
         if (!$profile) {
             return redirect()
                 ->route('profile.complete')
@@ -142,6 +163,12 @@ class ProfileController extends Controller
     {
         $profile = $this->getUserProfile();
 
+        if ($this->hasCompletedSurvey()) {
+            return redirect()
+                ->route('user.dashboard')
+                ->with('error', 'Profil terkunci karena survei telah selesai. Admin harus melakukan Reset Account untuk membuka pengisian kembali.');
+        }
+
         if (!$profile) {
             return redirect()
                 ->route('profile.complete');
@@ -155,7 +182,10 @@ class ProfileController extends Controller
             filled($profile->group_id) &&
             filled($profile->unit_id);
 
-        if ($isProfileComplete) {
+        $canSelectActivity = $this->canSelectActivity();
+        $canEditProfile = $this->canEditProfile();
+
+        if ($isProfileComplete && ! $canEditProfile) {
             return redirect()
                 ->route('profile.show')
                 ->with(
@@ -164,10 +194,15 @@ class ProfileController extends Controller
                 );
         }
 
-        $groups = Group::where(
-            'activity_id',
-            $profile->activity_id
-        )
+        $activities = $canSelectActivity
+            ? Activity::query()->orderBy('name')->get(['id', 'name'])
+            : collect();
+
+        $groups = Group::query()
+            ->when(
+                ! $canSelectActivity,
+                fn ($query) => $query->where('activity_id', $profile->activity_id)
+            )
             ->orderBy('name')
             ->get();
 
@@ -194,6 +229,9 @@ class ProfileController extends Controller
             'groups' => $groups,
             'units' => $units,
             'completeProfile' => $completeProfile,
+            'activities' => $activities,
+            'canSelectActivity' => $canSelectActivity,
+            'canEditProfile' => $canEditProfile,
         ]);
     }
 
@@ -217,7 +255,11 @@ class ProfileController extends Controller
             filled($profile->group_id) &&
             filled($profile->unit_id);
 
-        if ($isProfileComplete) {
+        $canSelectActivity = $this->canSelectActivity();
+        $canEditProfile = $this->canEditProfile();
+        $isSurveyor = auth()->user()?->hasRole('surveyor') ?? false;
+
+        if ($isProfileComplete && ! $canEditProfile) {
             return redirect()
                 ->route('profile.show')
                 ->with(
@@ -228,10 +270,10 @@ class ProfileController extends Controller
 
         if ($this->hasCompletedSurvey()) {
             return redirect()
-                ->route('profile.show')
+                ->route('user.dashboard')
                 ->with(
                     'error',
-                    'Profil tidak dapat diubah karena survei telah selesai.'
+                    'Profil tidak dapat diubah karena survei telah selesai. Admin harus melakukan Reset Account terlebih dahulu.'
                 );
         }
 
@@ -240,13 +282,17 @@ class ProfileController extends Controller
             $profile
         );
 
+        $selectedActivityId = $canSelectActivity
+            ? (int) $validated['activity_id']
+            : (int) $profile->activity_id;
+
         $group = Group::where(
             'id',
             $validated['group_id']
         )
             ->where(
                 'activity_id',
-                $profile->activity_id
+                $selectedActivityId
             )
             ->firstOrFail();
 
@@ -263,10 +309,23 @@ class ProfileController extends Controller
         DB::transaction(function () use (
             $profile,
             $group,
-            $unit
+            $unit,
+            $canSelectActivity,
+            $canEditProfile,
+            $selectedActivityId
         ) {
+            $selectionChanged =
+                (int) $profile->activity_id !== $selectedActivityId ||
+                (int) $profile->group_id !== (int) $group->id ||
+                (int) $profile->unit_id !== (int) $unit->id;
+
+            if ($canEditProfile && $selectionChanged) {
+                Answer::where('user_id', auth()->id())->delete();
+                SurveySession::where('user_id', auth()->id())->delete();
+            }
+
             $profile->update([
-                'activity_id' => $profile->activity_id,
+                'activity_id' => $selectedActivityId,
                 'group_id' => $group->id,
                 'unit_id' => $unit->id,
             ]);
@@ -276,7 +335,9 @@ class ProfileController extends Controller
             ->route('profile.show')
             ->with(
                 'success',
-                'Profil responden berhasil dilengkapi.'
+                $isSurveyor
+                    ? 'Profil simulasi Surveyor berhasil diperbarui.'
+                    : 'Profil responden berhasil dilengkapi.'
             );
     }
 
@@ -296,6 +357,7 @@ class ProfileController extends Controller
         * Tolak jika Group bukan bagian Activity responden.
         */
         if (
+            ! $this->canSelectActivity() &&
             (int) $group->activity_id !==
             (int) $profile->activity_id
         ) {
@@ -350,11 +412,29 @@ class ProfileController extends Controller
     private function validateProfile(
         Request $request
     ): array {
+        $canSelectActivity = $this->canSelectActivity();
+        $profileActivityId = UserProfile::query()
+            ->where('user_id', auth()->id())
+            ->value('activity_id');
+        $selectedActivityId = $canSelectActivity
+            ? $request->input('activity_id')
+            : $profileActivityId;
+
         return $request->validate([
+            'activity_id' => [
+                Rule::requiredIf($canSelectActivity),
+                'nullable',
+                'integer',
+                Rule::exists('activities', 'id'),
+            ],
             'group_id' => [
                 'required',
                 'integer',
-                Rule::exists('groups', 'id'),
+                Rule::exists('groups', 'id')
+                    ->when(
+                        $selectedActivityId,
+                        fn ($rule) => $rule->where('activity_id', $selectedActivityId)
+                    ),
             ],
 
             /*
@@ -395,6 +475,42 @@ class ProfileController extends Controller
             'unit_id.exists'
                 => 'Unit tidak sesuai dengan bidang kerja yang dipilih.',
         ]);
+    }
+
+    /**
+     * Reset mandiri hanya untuk akun Surveyor yang sedang login.
+     */
+    public function resetOwnAccount()
+    {
+        abort_unless(
+            auth()->user()?->hasRole('surveyor'),
+            403,
+            'Reset Account mandiri hanya tersedia untuk Surveyor.'
+        );
+
+        $userId = (int) auth()->id();
+
+        DB::transaction(function () use ($userId): void {
+            Answer::query()
+                ->where('user_id', $userId)
+                ->delete();
+
+            SurveySession::query()
+                ->where('user_id', $userId)
+                ->delete();
+
+            UserProfile::query()
+                ->where('user_id', $userId)
+                ->update([
+                    'activity_id' => null,
+                    'group_id' => null,
+                    'unit_id' => null,
+                ]);
+        });
+
+        return redirect()
+            ->route('user.dashboard')
+            ->with('success', 'Reset Account berhasil. Seluruh jawaban, progres survei, dan pilihan profil telah dihapus.');
     }
 
     /*
@@ -504,7 +620,18 @@ class ProfileController extends Controller
         Request $request,
         UserProfile $profile
     ): array {
+        $canSelectActivity = $this->canSelectActivity();
+        $selectedActivityId = $canSelectActivity
+            ? $request->input('activity_id')
+            : $profile->activity_id;
+
         return $request->validate([
+            'activity_id' => [
+                Rule::requiredIf($canSelectActivity),
+                'nullable',
+                'integer',
+                Rule::exists('activities', 'id'),
+            ],
             /*
             * Group wajib berasal dari Activity responden.
             */
@@ -514,11 +641,11 @@ class ProfileController extends Controller
 
                 Rule::exists('groups', 'id')
                     ->where(function ($query) use (
-                        $profile
+                        $selectedActivityId
                     ) {
                         $query->where(
                             'activity_id',
-                            $profile->activity_id
+                            $selectedActivityId
                         );
                     }),
             ],
@@ -561,5 +688,19 @@ class ProfileController extends Controller
             'unit_id.exists'
                 => 'Unit tidak sesuai dengan bidang kerja yang dipilih.',
         ]);
+    }
+
+    private function canSelectActivity(): bool
+    {
+        $roleName = strtolower((string) auth()->user()?->role?->name);
+
+        return $roleName === 'surveyor';
+    }
+
+    private function canEditProfile(): bool
+    {
+        $roleName = strtolower((string) auth()->user()?->role?->name);
+
+        return in_array($roleName, ['user', 'surveyor'], true);
     }
 }

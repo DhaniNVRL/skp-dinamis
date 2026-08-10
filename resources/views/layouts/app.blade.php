@@ -59,9 +59,9 @@
                     'layouts.partials.sidebar-pm'
                 )
 
-            @elseif (auth()->user()->hasRole('surveyor'))
+            @elseif (auth()->user()->hasRole('monitoring'))
                 @include(
-                    'layouts.partials.sidebar-surveyor'
+                    'layouts.partials.sidebar-monitoring'
                 )
 
             @else

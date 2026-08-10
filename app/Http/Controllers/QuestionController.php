@@ -408,6 +408,10 @@ class QuestionController extends Controller
             $question,
             $validated
         ): void {
+            Answer::query()
+                ->where('question_id', $question->id)
+                ->delete();
+
             $question->update([
                 'group_id' =>
                     $validated['group_id'],
@@ -436,7 +440,7 @@ class QuestionController extends Controller
             ])
             ->with(
                 'success',
-                'Pertanyaan berhasil diperbarui.'
+                'Pertanyaan berhasil diperbarui. Jawaban responden untuk pertanyaan tersebut telah dihapus agar tetap konsisten.'
             );
     }
 

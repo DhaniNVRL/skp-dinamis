@@ -15,9 +15,9 @@
         <button
             id="unitPreviousPage"
             type="button"
-            class="rounded-lg border border-gray-300
-                px-3 py-2 text-sm text-gray-600
-                transition hover:bg-gray-50
+            class="rounded-lg border border-blue-500 bg-white
+                px-3 py-2 text-sm text-blue-700
+                transition hover:bg-gray-500/5
                 disabled:cursor-not-allowed disabled:opacity-40"
         >
             Sebelumnya
@@ -31,9 +31,9 @@
         <button
             id="unitNextPage"
             type="button"
-            class="rounded-lg border border-gray-300
-                px-3 py-2 text-sm text-gray-600
-                transition hover:bg-gray-50
+            class="rounded-lg border border-blue-500 bg-white
+                px-3 py-2 text-sm text-blue-700
+                transition hover:bg-gray-500/5
                 disabled:cursor-not-allowed disabled:opacity-40"
         >
             Berikutnya

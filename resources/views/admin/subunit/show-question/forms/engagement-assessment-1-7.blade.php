@@ -60,8 +60,6 @@
                                     'maximum' => 7,
                                     'includeZero' => false,
                                     'name' => "engagement_{$question->id}",
-                                    'leftLabel' => 'Sangat tidak setuju',
-                                    'rightLabel' => 'Sangat setuju',
                                 ]
                             )
                         </div>

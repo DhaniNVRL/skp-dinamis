@@ -1,28 +1,46 @@
 @extends('layouts.app')
 
 @section('title', $form->name ?? 'Survei')
+@section('suppressGlobalValidationErrors', true)
 
 @section('content')
+    @if (auth()->user()?->hasRole('surveyor'))
+        <div class="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-800">
+            <span class="font-semibold"><i class="fa-solid fa-person-chalkboard mr-2"></i>Mode Simulasi Surveyor</span>
+            — jawaban pada halaman ini merupakan contoh tata cara pengisian dan tidak dihitung sebagai responden.
+            <div class="mt-3 flex justify-end">
+                <button id="surveyorAutofillButton" type="button"
+                        title="Isi seluruh pertanyaan pada form ini dengan data dummy"
+                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Isi Otomatis</span>
+                </button>
+            </div>
+        </div>
+    @endif
+
 <div id="surveyPage" class="mx-auto max-w-[1600px] space-y-6">
     @include('user.survey.partials.form-header')
 
-    @if ($errors->any())
-        <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            <p class="font-semibold">Semua pertanyaan wajib diisi.</p>
-            <ul class="mt-2 list-disc space-y-1 pl-5">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    @php
+        $serverInvalidQuestionIds = collect($errors->keys())
+            ->map(function ($key) {
+                return preg_match('/^answers\.(\d+)(?:\.|$)/', $key, $matches)
+                    ? (int) $matches[1]
+                    : null;
+            })
+            ->filter()
+            ->unique()
+            ->values();
+    @endphp
 
     <form
         id="surveyAnswerForm"
         action="{{ route('survey.save', $form) }}"
         method="POST"
         novalidate
-        class="space-y-6"
+        data-server-invalid-question-ids='@json($serverInvalidQuestionIds)'
+        class="space-y-6 pb-4"
     >
         @csrf
 

@@ -25,31 +25,16 @@
         <i class="fa-solid fa-key"></i>
     </a>
 
-    @if (($profileUser->answers_count ?? 0) > 0)
-        <button
-            type="button"
-            data-modal-open="deleteAnswersModal"
-            data-name="{{ $profile->fullname ?: $profileUser->username }}"
-            data-action="{{ route('admin.datauser.resetjawaban', $profileUser->id) }}"
-            class="text-rose-500 transition hover:text-rose-700"
-            title="Hapus Jawaban Saja"
-        >
-            <i class="fa-solid fa-eraser"></i>
-        </button>
-    @endif
-
-    @if ($profileUser->surveySession?->status === 'completed')
-        <button
-            type="button"
-            data-modal-open="reopenSurveyModal"
-            data-name="{{ $profile->fullname ?: $profileUser->username }}"
-            data-action="{{ route('admin.datauser.reopen-survey', $profileUser->id) }}"
-            class="text-emerald-600 transition hover:text-emerald-800"
-            title="Buka Kembali Survey"
-        >
-            <i class="fa-solid fa-lock-open"></i>
-        </button>
-    @endif
+    <button
+        type="button"
+        data-modal-open="resetProfileModal"
+        data-name="{{ $profile->fullname ?: $profileUser->username }}"
+        data-action="{{ route('admin.datauser.resetaccount', $profileUser->id) }}"
+        class="text-cyan-600 transition hover:text-cyan-800"
+        title="Reset Account: Hapus Jawaban, Profil Survey, dan Progres"
+    >
+        <i class="fa-solid fa-user-rotate"></i>
+    </button>
 
     <button
         type="button"

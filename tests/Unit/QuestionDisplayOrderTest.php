@@ -51,8 +51,23 @@ class QuestionDisplayOrderTest extends TestCase
         ]);
 
         $this->assertSame(
-            ['Judul D1', 'Jawaban D1', 'Jawaban D10', 'Jawaban D2'],
+            ['Judul D1', 'Jawaban D1', 'Jawaban D2', 'Jawaban D10'],
             Form::query()->findOrFail(1)->questions->pluck('name')->all()
+        );
+    }
+
+    public function test_prefixed_varchar_numbers_use_natural_order(): void
+    {
+        DB::table('forms')->insert(['id' => 3, 'formtype_id' => 1]);
+        DB::table('questions')->insert([
+            ['id' => 7, 'form_id' => 3, 'no_header' => 'C', 'no' => '10', 'name' => 'Pertanyaan C10', 'questiontype_id' => 1],
+            ['id' => 8, 'form_id' => 3, 'no_header' => 'C', 'no' => '2', 'name' => 'Pertanyaan C2', 'questiontype_id' => 1],
+            ['id' => 9, 'form_id' => 3, 'no_header' => 'C', 'no' => '1', 'name' => 'Pertanyaan C1', 'questiontype_id' => 1],
+        ]);
+
+        $this->assertSame(
+            ['Pertanyaan C1', 'Pertanyaan C2', 'Pertanyaan C10'],
+            Form::query()->findOrFail(3)->questions->pluck('name')->all()
         );
     }
 

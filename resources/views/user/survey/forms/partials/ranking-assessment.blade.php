@@ -254,26 +254,6 @@
                             @endfor
                         </div>
 
-                        <div
-                            class="mt-5 rounded-lg border
-                                   border-blue-200 bg-blue-50
-                                   px-4 py-3 text-sm text-blue-700"
-                        >
-                            <div class="flex items-start gap-2">
-                                <i
-                                    class="fa-solid fa-circle-info
-                                           mt-0.5"
-                                ></i>
-
-                                <div>
-                                    Pilihan biasa hanya dapat digunakan
-                                    satu kali. Pilihan yang memiliki
-                                    jawaban tambahan dapat digunakan
-                                    lebih dari satu kali.
-                                </div>
-                            </div>
-                        </div>
-
                         <p
                             data-question-error
                             class="mt-3 hidden text-sm

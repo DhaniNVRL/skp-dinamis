@@ -16,9 +16,122 @@ document.addEventListener(
         initializeChildOptions(page);
         initializeCustomerAssessment(page);
         initializeSurveyValidation(form);
+        initializeServerValidation(form);
         initializeRankingAssessment(page);
+        initializeSurveyorAutofill(form);
     }
 );
+
+function initializeSurveyorAutofill(form) {
+    const button = document.getElementById("surveyorAutofillButton");
+    if (!button) return;
+
+    button.addEventListener("click", function () {
+        const originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Mengisi...</span>';
+
+        fillRankingSelects(form);
+        fillRadioGroups(form);
+        fillRequiredCheckboxGroups(form);
+        fillRegularSelects(form);
+        fillDummyTextFields(form);
+        fillRequiredCheckboxGroups(form);
+        fillDummyTextFields(form);
+        clearAllValidation(form);
+
+        button.classList.remove("bg-blue-600", "hover:bg-blue-700");
+        button.classList.add("bg-emerald-600", "hover:bg-emerald-700");
+        button.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>Dummy Terisi</span>';
+
+        window.setTimeout(function () {
+            button.disabled = false;
+            button.classList.remove("bg-emerald-600", "hover:bg-emerald-700");
+            button.classList.add("bg-blue-600", "hover:bg-blue-700");
+            button.innerHTML = originalHtml;
+        }, 1800);
+    });
+}
+
+function fillRankingSelects(form) {
+    form.querySelectorAll("[data-ranking-container]").forEach(function (container) {
+        const usedValues = new Set();
+        container.querySelectorAll("[data-ranking-select]:not(:disabled)").forEach(function (select) {
+            const option = Array.from(select.options).find(function (candidate) {
+                return candidate.value !== "" && !candidate.disabled && !usedValues.has(candidate.value);
+            });
+            if (!option) return;
+            select.value = option.value;
+            usedValues.add(option.value);
+            dispatchDummyEvents(select);
+        });
+    });
+}
+
+function fillRadioGroups(form) {
+    const groups = new Map();
+    form.querySelectorAll('input[type="radio"]:not(:disabled)').forEach(function (radio) {
+        if (!groups.has(radio.name)) groups.set(radio.name, []);
+        groups.get(radio.name).push(radio);
+    });
+
+    groups.forEach(function (radios) {
+        const numeric = radios.filter(function (radio) {
+            return radio.value !== "" && Number.isFinite(Number(radio.value));
+        });
+        const selected = numeric.length > 0
+            ? numeric.reduce(function (best, radio) {
+                return Number(radio.value) > Number(best.value) ? radio : best;
+            })
+            : radios[radios.length - 1];
+        selected.checked = true;
+        dispatchDummyEvents(selected);
+    });
+}
+
+function fillRequiredCheckboxGroups(form) {
+    form.querySelectorAll("[data-required-group]").forEach(function (group) {
+        if (group.closest(".hidden")) return;
+        const checkboxes = Array.from(group.querySelectorAll('input[type="checkbox"]:not(:disabled)'));
+        if (checkboxes.length === 0 || checkboxes.some(function (item) { return item.checked; })) return;
+        checkboxes[0].checked = true;
+        dispatchDummyEvents(checkboxes[0]);
+    });
+}
+
+function fillRegularSelects(form) {
+    form.querySelectorAll("select:not([data-ranking-select]):not(:disabled)").forEach(function (select) {
+        const option = Array.from(select.options).find(function (candidate) {
+            return candidate.value !== "" && !candidate.disabled;
+        });
+        if (!option) return;
+        select.value = option.value;
+        dispatchDummyEvents(select);
+    });
+}
+
+function fillDummyTextFields(form) {
+    const selector = "input:not([type='hidden']):not([type='radio']):not([type='checkbox']):not([type='submit']):not([type='button']):not(:disabled), textarea:not(:disabled)";
+    form.querySelectorAll(selector).forEach(function (field) {
+        const type = (field.type || "text").toLowerCase();
+        if (type === "number" || type === "range") field.value = field.min !== "" ? field.min : "1";
+        else if (type === "date") field.value = new Date().toISOString().slice(0, 10);
+        else if (type === "datetime-local") field.value = new Date().toISOString().slice(0, 16);
+        else if (type === "time") field.value = "09:00";
+        else if (type === "email") field.value = "surveyor.dummy@example.com";
+        else if (type === "tel") field.value = "081234567890";
+        else if (type === "url") field.value = "https://example.com";
+        else field.value = field.tagName === "TEXTAREA"
+            ? "Contoh jawaban pengisian oleh Surveyor."
+            : "Contoh Surveyor";
+        dispatchDummyEvents(field);
+    });
+}
+
+function dispatchDummyEvents(field) {
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.dispatchEvent(new Event("change", { bubbles: true }));
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -390,6 +503,28 @@ function initializeSurveyValidation(
     );
 }
 
+function initializeServerValidation(form) {
+    let invalidQuestionIds = [];
+
+    try {
+        invalidQuestionIds = JSON.parse(
+            form.dataset.serverInvalidQuestionIds || "[]"
+        );
+    } catch (_) {
+        invalidQuestionIds = [];
+    }
+
+    invalidQuestionIds.forEach(function (questionId) {
+        const container = form.querySelector(
+            `[data-question-container][data-question-id="${questionId}"]`
+        );
+
+        if (container) {
+            markQuestionInvalid(container);
+        }
+    });
+}
+
 function validateQuestionContainer(
     container
 ) {
@@ -503,8 +638,7 @@ function validateQuestionContainer(
 }
 
 function markQuestionInvalid(
-    container,
-    message
+    container
 ) {
     container.classList.remove(
         "border-gray-200"
@@ -513,18 +647,16 @@ function markQuestionInvalid(
     container.classList.add(
         "border-red-500",
         "ring-2",
-        "ring-red-100"
+        "ring-red-100",
+        "transition-colors"
     );
 
-    const error =
-        container.querySelector(
-            "[data-question-error]"
-        );
+    container.style.backgroundColor =
+        "rgb(239 68 68 / 20%)";
 
-    if (error) {
-        error.textContent = message;
-        error.classList.remove("hidden");
-    }
+    container
+        .querySelector("[data-question-error]")
+        ?.classList.add("hidden");
 }
 
 function clearQuestionValidation(
@@ -533,7 +665,12 @@ function clearQuestionValidation(
     container.classList.remove(
         "border-red-500",
         "ring-2",
-        "ring-red-100"
+        "ring-red-100",
+        "transition-colors"
+    );
+
+    container.style.removeProperty(
+        "background-color"
     );
 
     container.classList.add(

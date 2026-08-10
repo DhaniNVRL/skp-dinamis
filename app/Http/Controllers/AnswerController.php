@@ -119,7 +119,7 @@ class AnswerController extends Controller
         abort_if(
             $session?->status === 'completed',
             403,
-            'Survei sudah selesai.'
+            'Survei sudah selesai dan akun harus direset oleh Admin sebelum jawaban dapat diubah.'
         );
 
         /*
@@ -143,14 +143,7 @@ class AnswerController extends Controller
          * questiontype_id 1 adalah jawaban singkat.
          */
         $form->load([
-            'questions' => function ($query) {
-                $query
-                    ->orderBy('no_header')
-                    ->orderByRaw(
-                        'CAST(no AS UNSIGNED) ASC'
-                    )
-                    ->orderBy('id');
-            },
+            'questions',
 
             'questions.options' => function (
                 $query
@@ -681,6 +674,70 @@ class AnswerController extends Controller
 
     /*
     |--------------------------------------------------------------------------
+    | VALIDATE RANKING
+    |--------------------------------------------------------------------------
+    */
+    private function validateRankingAnswer(
+        Form $form,
+        Question $question,
+        array $payload,
+        array &$errors
+    ): void {
+        $maximumRank = (int) $form->formtype_id === 6
+            ? 3
+            : 5;
+
+        $rankings = Arr::get($payload, 'value', []);
+        $rankings = is_array($rankings)
+            ? $rankings
+            : [];
+
+        $selectedOptionIds = [];
+
+        for ($rank = 1; $rank <= $maximumRank; $rank++) {
+            $ranking = (array) Arr::get(
+                $rankings,
+                (string) $rank,
+                []
+            );
+
+            $optionId = Arr::get($ranking, 'option_id');
+            $errorKey = "answers.{$question->id}.value.{$rank}.option_id";
+
+            if (!filled($optionId)) {
+                $errors[$errorKey] = "Ranking {$rank} untuk pertanyaan {$question->name} wajib dipilih.";
+                continue;
+            }
+
+            $option = $question->options->firstWhere(
+                'id',
+                (int) $optionId
+            );
+
+            if (!$option) {
+                $errors[$errorKey] = "Pilihan Ranking {$rank} untuk pertanyaan {$question->name} tidak valid.";
+                continue;
+            }
+
+            if (in_array((int) $option->id, $selectedOptionIds, true)) {
+                $errors[$errorKey] = "Pilihan pada setiap urutan Ranking untuk pertanyaan {$question->name} tidak boleh sama.";
+                continue;
+            }
+
+            $selectedOptionIds[] = (int) $option->id;
+
+            if (
+                (int) $option->has_child === 1
+                && !filled(Arr::get($ranking, 'child'))
+            ) {
+                $errors[
+                    "answers.{$question->id}.value.{$rank}.child"
+                ] = "Jawaban tambahan untuk {$option->answer_text} wajib diisi.";
+            }
+        }
+    }
+    /*
+    |--------------------------------------------------------------------------
     | VALIDATE CUSTOMER ASSESSMENT
     |--------------------------------------------------------------------------
     */
@@ -1105,5 +1162,5 @@ class AnswerController extends Controller
             'survey.finish.page'
         );
     }
-    
+
 }

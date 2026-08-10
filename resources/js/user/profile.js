@@ -42,6 +42,10 @@ function initializeProfileUnitDropdown() {
         "group_id"
     );
 
+    const activitySelect = document.getElementById(
+        "activity_id"
+    );
+
     const unitSelect = document.getElementById(
         "unit_id"
     );
@@ -72,12 +76,48 @@ function initializeProfileUnitDropdown() {
 
     const baseUrl = page.dataset.unitsUrl;
 
+    if (activitySelect) {
+        activitySelect.addEventListener("change", function () {
+            filterGroupsByActivity();
+            resetUnitSelect();
+            unitSelect.disabled = true;
+        });
+
+        filterGroupsByActivity(true);
+    }
+
     groupSelect.addEventListener(
         "change",
         function () {
             loadUnits(groupSelect.value);
         }
     );
+
+    function filterGroupsByActivity(preserveSelection = false) {
+        if (!activitySelect) {
+            return;
+        }
+
+        const activityId = String(activitySelect.value || "");
+        const currentGroupId = preserveSelection ? String(groupSelect.value || "") : "";
+
+        Array.from(groupSelect.options).forEach(function (option) {
+            if (!option.value) {
+                return;
+            }
+
+            const visible = activityId !== "" && option.dataset.activityId === activityId;
+            option.hidden = !visible;
+            option.disabled = !visible;
+        });
+
+        groupSelect.disabled = activityId === "";
+        groupSelect.value = currentGroupId;
+
+        if (groupSelect.selectedOptions[0]?.disabled) {
+            groupSelect.value = "";
+        }
+    }
 
     async function loadUnits(groupId) {
         resetUnitSelect();

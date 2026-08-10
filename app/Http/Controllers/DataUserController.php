@@ -200,15 +200,25 @@ class DataUserController extends Controller
                     'username' => ['required', 'string', 'max:191', 'unique:users,username'],
                     'password' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
                     'role_id' => ['required', 'integer', 'exists:roles,id'],
-                    'activity_id' => ['required', 'integer', 'exists:activities,id'],
+                    'activity_id' => ['nullable', 'integer', 'exists:activities,id'],
                 ]);
 
                 $normalizedUsername = strtolower($item['username']);
 
-                if ($validator->fails() || isset($seenUsernames[$normalizedUsername])) {
+                $activityIsOptional = in_array((int) $item['role_id'], [1, 2], true);
+
+                if (
+                    $validator->fails() ||
+                    (! $activityIsOptional && empty($item['activity_id'])) ||
+                    isset($seenUsernames[$normalizedUsername])
+                ) {
                     throw ValidationException::withMessages([
                         'file' => 'Data user pada baris '.($index + 1).' tidak valid atau duplikat.',
                     ]);
+                }
+
+                if ($activityIsOptional) {
+                    $item['activity_id'] = null;
                 }
 
                 $seenUsernames[$normalizedUsername] = true;
@@ -264,25 +274,39 @@ class DataUserController extends Controller
             'username.*' => ['required', 'string', 'max:191', 'distinct', 'unique:users,username'],
             'password' => 'required|array|min:1',
             'password.*' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
-            'activity_id' => 'required|array|min:1',
-            'activity_id.*' => 'required|exists:activities,id',
+            'activity_id' => 'nullable|array',
+            'activity_id.*' => 'nullable|exists:activities,id',
             'role_id' => 'required|array|min:1',
             'role_id.*' => 'required|exists:roles,id',
         ]);
 
         $rowCount = count($request->username);
         if (count($request->password) !== $rowCount
-            || count($request->activity_id) !== $rowCount
             || count($request->role_id) !== $rowCount) {
             throw ValidationException::withMessages([
-                'username' => 'Jumlah username, password, activity, dan role harus sama.',
+                'username' => 'Jumlah username, password, dan role harus sama.',
             ]);
         }
 
         $usernameList = $request->username;
         $passwordList = $request->password;
-        $activityList = $request->input('activity_id', []);
+        $activityList = array_pad(
+            $request->input('activity_id', []),
+            $rowCount,
+            null
+        );
         $roleList = $request->role_id;
+
+        foreach ($roleList as $index => $roleId) {
+            if (
+                ! in_array((int) $roleId, [1, 2], true) &&
+                empty($activityList[$index])
+            ) {
+                throw ValidationException::withMessages([
+                    "activity_id.$index" => 'Activity wajib dipilih untuk role ini.',
+                ]);
+            }
+        }
         DB::transaction(function () use (
             $usernameList,
             $passwordList,
@@ -298,8 +322,9 @@ class DataUserController extends Controller
                 ]);
                 UserProfile::create([
                     'user_id' => $user->id,
-                    'activity_id' => $activityList[$i]
-                        ?? Activity::query()->min('id'),
+                    'activity_id' => in_array((int) $roleList[$i], [1, 2], true)
+                        ? null
+                        : $activityList[$i],
                     'group_id' => null,
                     'unit_id' => null,
                     'fullname' => null,
@@ -428,56 +453,7 @@ class DataUserController extends Controller
             ->with('success', 'Password user berhasil diperbarui.');
     }
 
-    public function resetjawaban(string $id)
-    {
-        $user = User::query()->findOrFail($id);
 
-        $deletedAnswers = Answer::query()
-            ->where('user_id', $user->id)
-            ->delete();
-
-        return redirect()
-            ->back()
-            ->with(
-                'successdelete',
-                $deletedAnswers.' jawaban user berhasil dihapus. Akun dan status survey tidak diubah.'
-            );
-    }
-
-    public function reopenSurvey(string $id)
-    {
-        $user = User::query()
-            ->with(['profile', 'surveySession'])
-            ->findOrFail($id);
-
-        $session = $user->surveySession;
-
-        if (! $session || $session->status !== 'completed') {
-            return back()->with(
-                'error',
-                'Survey hanya dapat dibuka kembali setelah berstatus selesai.'
-            );
-        }
-
-        $firstFormId = Form::query()
-            ->where('group_id', $user->profile?->group_id)
-            ->orderBy('no_urut')
-            ->orderBy('id')
-            ->value('id');
-
-        $session->update([
-            'status' => 'in_progress',
-            'current_form_id' => $firstFormId,
-            'started_at' => now(),
-            'finished_at' => null,
-            'reopened_at' => now(),
-        ]);
-
-        return back()->with(
-            'success',
-            'Akun berhasil dibuka kembali. User sekarang dapat login dan mengakses survey.'
-        );
-    }
 
     public function update(Request $request, $id)
     {
@@ -490,9 +466,17 @@ class DataUserController extends Controller
             ],
             'password'      => ['nullable', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
             'role_id'       => 'required|exists:roles,id',
-            'activity_id'   => 'required|exists:activities,id',
+            'activity_id'   => 'nullable|exists:activities,id',
         ]);
         $user = User::findOrFail($id);
+
+        $activityIsOptional = in_array((int) $validated['role_id'], [1, 2], true);
+
+        if (! $activityIsOptional && empty($validated['activity_id'])) {
+            throw ValidationException::withMessages([
+                'activity_id' => 'Activity wajib dipilih untuk role ini.',
+            ]);
+        }
 
         if ((int) $user->id === (int) auth()->id()
             && (int) $validated['role_id'] !== (int) $user->role_id) {
@@ -513,7 +497,15 @@ class DataUserController extends Controller
         $user->profile()->updateOrCreate(
             ['user_id' => $user->id],
             [
-                'activity_id' => $validated['activity_id'],
+                'activity_id' => $activityIsOptional
+                    ? null
+                    : $validated['activity_id'],
+                'group_id' => $activityIsOptional
+                    ? null
+                    : $user->profile?->group_id,
+                'unit_id' => $activityIsOptional
+                    ? null
+                    : $user->profile?->unit_id,
                 'email' => $user->profile?->email
                     ?? 'pending-user-' . $user->id . '@invalid.local',
             ]
@@ -524,20 +516,37 @@ class DataUserController extends Controller
 
     public function resetAccount($id)
     {
-        $user = User::findOrFail($id);
+        $result = DB::transaction(function () use ($id): array {
+            $user = User::query()
+                ->with('profile')
+                ->findOrFail($id);
 
-        if ($user->profile) {
-            $user->profile->update([
+            $answerCount = Answer::query()
+                ->where('user_id', $user->id)
+                ->count();
+
+            Answer::query()
+                ->where('user_id', $user->id)
+                ->delete();
+
+            $sessionCount = $user->surveySessions()->count();
+            $user->surveySessions()->delete();
+
+            $user->profile?->update([
+                'activity_id' => null,
                 'group_id' => null,
                 'unit_id' => null,
-                'fullname' => null,
-                'no_handphone' => null,
             ]);
-        }
+
+            return [$answerCount, $sessionCount];
+        });
 
         return redirect()
-            ->route('admin.datauser.show', $id)
-            ->with('success', 'Data user berhasil direset.');
+            ->route('admin.datauser')
+            ->with(
+                'successdelete',
+                'Reset Account berhasil. '.$result[0].' jawaban dan '.$result[1].' progres survey dihapus; Activity, Group, dan Unit dikosongkan.'
+            );
     }
 
     public function destroy(string $id)

@@ -70,7 +70,8 @@ document.addEventListener(
 
 
         const row =
-            e.target.closest("tr");
+            e.target.closest("tr") ||
+            e.target.closest("form");
 
 
         const activityColumn =
@@ -95,7 +96,10 @@ document.addEventListener(
 
 
 
-        if(roleName === "admin"){
+        if(
+            roleName === "admin" ||
+            roleName === "surveyor"
+        ){
 
 
             activityColumn.classList.add(
@@ -374,6 +378,8 @@ document.addEventListener("click", function (e) {
     roleInput.value = String(role ?? "");
     activityInput.value = String(activity ?? "");
 
+    roleInput.dispatchEvent(new Event("change", { bubbles: true }));
+
 
     // Password selalu dikosongkan saat modal edit dibuka
     if (passwordInput) {
@@ -441,6 +447,23 @@ document.addEventListener("modal:opened", (event) => {
 
     if (!form || !name || !activeModalButton.dataset.action) {
         console.error("Konfigurasi modal hapus jawaban tidak lengkap.");
+        return;
+    }
+
+    name.textContent = activeModalButton.dataset.name || "user ini";
+    form.action = activeModalButton.dataset.action;
+});
+
+document.addEventListener("modal:opened", (event) => {
+    if (event.detail.id !== "resetProfileModal" || !activeModalButton) {
+        return;
+    }
+
+    const form = document.getElementById("resetProfileForm");
+    const name = document.getElementById("resetProfileUserName");
+
+    if (!form || !name || !activeModalButton.dataset.action) {
+        console.error("Konfigurasi modal reset profile tidak lengkap.");
         return;
     }
 

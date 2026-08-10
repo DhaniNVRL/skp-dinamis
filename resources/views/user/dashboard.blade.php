@@ -14,6 +14,8 @@
         && filled($profile->unit_id);
 
     $status = $surveySession?->status ?? 'not_started';
+    $surveyLocked = $status === 'completed'
+        && ($user?->hasRole('user') || $user?->hasRole('surveyor'));
 
     $statusLabel = match ($status) {
         'in_progress' => 'Sedang Berjalan',
@@ -29,6 +31,13 @@
 @endphp
 
 <div class="mx-auto max-w-6xl space-y-6">
+
+    @if ($user?->hasRole('surveyor'))
+        <div class="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-800">
+            <div class="font-semibold"><i class="fa-solid fa-person-chalkboard mr-2"></i>Mode Contoh Surveyor</div>
+            <p class="mt-1">Akun ini digunakan untuk memperagakan tata cara pengisian. Jawaban contoh tidak dihitung sebagai responden.</p>
+        </div>
+    @endif
 
     {{-- HEADER --}}
     <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -60,7 +69,18 @@
                     <i class="fa-solid fa-pen-to-square"></i>
                     Lengkapi Profil
                 </a>
-            @else
+            @elseif ($user?->hasRole('surveyor'))
+                <button
+                    type="button"
+                    data-modal-open="surveyorResetAccountModal"
+                    class="inline-flex items-center justify-center gap-2 rounded-lg
+                           bg-red-600 px-5 py-2.5 text-sm font-semibold text-white
+                           transition hover:bg-red-700"
+                >
+                    <i class="fa-solid fa-user-rotate"></i>
+                    Reset Account
+                </button>
+            @elseif (!$surveyLocked)
                 <button
                     type="button"
                     disabled
@@ -231,19 +251,12 @@
 
                     <p class="mt-2 text-center text-xs text-red-500">
                         Activity, group, dan unit wajib dilengkapi.
-                    </p>
-                @elseif ($status === 'completed')
-                    <button
-                        type="button"
-                        disabled
-                        class="inline-flex w-full cursor-not-allowed items-center justify-center
-                               gap-2 rounded-lg bg-green-100 px-5 py-3 font-semibold
-                               text-green-600"
-                    >
-                        <i class="fa-solid fa-circle-check"></i>
-                        Survei Selesai
-                    </button>
-                @elseif ($status === 'in_progress')
+                    </p>                @elseif ($status === 'completed')
+                    <p class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-center text-sm font-medium text-green-700">
+                        {{ $user?->hasRole('surveyor')
+                            ? 'Simulasi telah selesai dan dikunci sampai Admin melakukan Reset Account.'
+                            : 'Pengisian survei telah selesai dan dikunci.' }}
+                    </p>                @elseif ($status === 'in_progress')
                     <a
                         href="{{ route('survey.index') }}"
                         class="inline-flex w-full items-center justify-center gap-2
@@ -268,4 +281,36 @@
         </div>
     </div>
 </div>
+@if ($user?->hasRole('surveyor') && $profileComplete)
+    <div id="surveyorResetAccountModal" data-modal class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+        <div class="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-xl">
+            <form method="POST" action="{{ route('surveyor.reset-account') }}">
+                @csrf
+                <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Reset Account</h3>
+                        <p class="mt-1 text-sm text-gray-500">Tindakan ini tidak dapat dibatalkan.</p>
+                    </div>
+                    <button type="button" data-modal-close="surveyorResetAccountModal" class="text-gray-400 transition hover:text-red-600" aria-label="Tutup"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+                <div class="p-6">
+                    <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                            <div>
+                                <p class="font-semibold">Apakah Anda yakin?</p>
+                                <p class="mt-2">Karena seluruh jawaban, progres survei, Activity, Group, dan Unit akan terhapus untuk <strong class="text-red-900">{{ $user->username }}</strong>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+                    <button type="button" data-modal-close="surveyorResetAccountModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-100">Batal</button>
+                    <button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"><i class="fa-solid fa-user-rotate mr-2"></i>Ya, Reset Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+@endif
+
 @endsection

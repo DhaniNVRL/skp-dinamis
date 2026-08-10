@@ -12,6 +12,7 @@ use App\Models\UserProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class SurveyController extends Controller
@@ -29,7 +30,7 @@ class SurveyController extends Controller
 
         if ($session?->status === 'completed') {
             return redirect()->route('user.dashboard')
-                ->with('error', 'Survei Anda sudah selesai.');
+                ->with('error', 'Survei sudah selesai dan akun terkunci. Admin harus melakukan Reset Account sebelum pengisian dapat dimulai kembali.');
         }
 
         $form = $session?->current_form_id
@@ -68,21 +69,14 @@ class SurveyController extends Controller
         $session = SurveySession::where('user_id', Auth::id())->first();
         if ($session?->status === 'completed') {
             return redirect()->route('user.dashboard')
-                ->with('error', 'Survei yang telah selesai tidak dapat diedit.');
+                ->with('error', 'Survei yang telah selesai tidak dapat dibuka kembali sebelum Admin melakukan Reset Account.');
         }
 
         $form->load([
             'description',
             'formtype',
 
-            'questions' => function ($query) {
-                $query
-                    ->orderBy('no_header')
-                    ->orderByRaw(
-                        'CAST(no AS UNSIGNED) ASC'
-                    )
-                    ->orderBy('id');
-            },
+            'questions',
 
             'questions.questiontype',
 
@@ -162,6 +156,9 @@ class SurveyController extends Controller
             'answerMap' => $answerMap,
             'previousForm' => $currentIndex > 0 ? $forms[$currentIndex - 1] : null,
             'nextForm' => $currentIndex < $forms->count() - 1 ? $forms[$currentIndex + 1] : null,
+            'firstQuestionForm' => $forms->first(
+                fn (Form $item) => (int) $item->formtype_id !== 12
+            ),
             'isLastForm' => $currentIndex === $forms->count() - 1,
             'currentPosition' => $currentIndex + 1,
             'totalForms' => $forms->count(),
@@ -221,6 +218,12 @@ class SurveyController extends Controller
             * kembali.
             */
             if ($session->status === 'completed') {
+                if ($this->isSurveyor()) {
+                    return redirect()
+                        ->route('user.dashboard')
+                        ->with('error', 'Simulasi sudah selesai dan terkunci. Hubungi Admin untuk melakukan Reset Account.');
+                }
+
                 Auth::logout();
 
                 $request
@@ -240,6 +243,8 @@ class SurveyController extends Controller
             }
 
             $profile = $this->completeProfile();
+
+
             $incompleteForm = $this->firstIncompleteForm($profile);
 
             if ($incompleteForm) {
@@ -259,6 +264,12 @@ class SurveyController extends Controller
                 'finished_at' => now(),
                 'current_form_id' => null,
             ]);
+
+            if ($this->isSurveyor()) {
+                return redirect()
+                    ->route('user.dashboard')
+                    ->with('success', 'Simulasi selesai dan dikunci. Jawaban serta profil tetap tersimpan sampai Admin melakukan Reset Account.');
+            }
 
             /*
             * Logout responden.
@@ -296,6 +307,11 @@ class SurveyController extends Controller
         }
 
         return $profile;
+    }
+
+    private function isSurveyor(): bool
+    {
+        return Auth::user()?->hasRole('surveyor') ?? false;
     }
 
     private function firstIncompleteForm(UserProfile $profile): ?Form

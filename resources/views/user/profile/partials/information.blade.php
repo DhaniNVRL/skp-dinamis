@@ -1,8 +1,15 @@
 <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
     <div class="border-b border-gray-200 px-6 py-5">
-        <h2 class="text-lg font-semibold text-gray-800">
-            Informasi Responden
-        </h2>
+        <div class="flex items-center justify-between gap-4">
+            <h2 class="text-lg font-semibold text-gray-800">Informasi Responden</h2>
+            @if (auth()->user()?->hasRole('surveyor'))
+                <a href="{{ route('profile.edit') }}"
+                   class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    Pilih Profil Simulasi
+                </a>
+            @endif
+        </div>
 
         <p class="mt-1 text-sm text-gray-500">
             Informasi aktivitas, bidang kerja, dan unit responden.

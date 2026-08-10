@@ -1,3 +1,16 @@
+@php
+    $sidebarProfile = auth()->user()?->profile;
+    $sidebarProfileComplete = $sidebarProfile
+        && filled($sidebarProfile->activity_id)
+        && filled($sidebarProfile->group_id)
+        && filled($sidebarProfile->unit_id);
+
+    $sidebarSurveyLocked = (
+        auth()->user()?->hasRole('user')
+        || auth()->user()?->hasRole('surveyor')
+    ) && auth()->user()?->surveySession?->status === 'completed';
+@endphp
+
 <aside
     id="userSidebar"
     class="fixed bottom-12 left-0 top-16 z-40 w-64 overflow-y-auto border-r border-gray-800 bg-gray-900 text-white"
@@ -24,7 +37,9 @@
                     </div>
 
                     <div class="mt-0.5 text-xs text-gray-400">
-                        Responden
+                        {{ auth()->user()->hasRole('surveyor')
+                            ? 'Surveyor · Akun Contoh'
+                            : 'Responden' }}
                     </div>
                 </div>
             </div>
@@ -49,9 +64,23 @@
                         <i class="fa-solid fa-house w-5 text-center"></i>
                         <span>Beranda</span>
                     </a>
+
+                    @if (auth()->user()?->hasRole('surveyor'))
+                        <a
+                            href="{{ route('surveyor.dashboard') }}"
+                            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
+                                {{ request()->routeIs('surveyor.dashboard')
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}"
+                        >
+                            <i class="fa-solid fa-chart-column w-5 text-center" aria-hidden="true"></i>
+                            <span>Dashboard Monitoring</span>
+                        </a>
+                    @endif
                 </div>
             </div>
 
+            @if ($sidebarProfileComplete && !$sidebarSurveyLocked)
             {{-- SURVEY --}}
             <div>
                 <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
@@ -72,28 +101,7 @@
                 </div>
             </div>
 
-            {{-- ACCOUNT --}}
-            <div>
-                <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    Akun
-                </div>
-
-                <div class="space-y-1">
-                    <a
-                        href="{{ route('profile.show') }}"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
-                            {{ request()->routeIs(
-                                'profile.show',
-                                'profile.edit'
-                            )
-                                ? 'bg-blue-600 text-white'
-                                : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}"
-                    >
-                        <i class="fa-solid fa-user w-5 text-center"></i>
-                        <span>Profil</span>
-                    </a>
-                </div>
-            </div>
+            @endif
         </nav>
 
         {{-- LOGOUT --}}

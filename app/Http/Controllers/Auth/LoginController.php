@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\SurveySession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -46,11 +45,11 @@ class LoginController extends Controller
                 case 'admin':
                     return redirect()->route('admin.dashboard');
                 case 'surveyor':
-                    return redirect()->route('surveyor.dashboard');
+                    return redirect()->route('user.dashboard');
                 case 'pm':
                     return redirect()->route('pm.dashboard');
                 case 'monitoring':
-                    return redirect()->route('admin.dashboard');
+                    return redirect()->route('monitoring.dashboard');
                 case 'user':
                      $profile = $user->profile;
 
@@ -60,25 +59,6 @@ class LoginController extends Controller
                         is_null($profile->unit_id)
                     ) {
                         return redirect()->route('profile.complete');
-                    }
-
-                    // ==========================
-                    // Cek status survey
-                    // ==========================
-                    $session = SurveySession::where('user_id', $user->id)->first();
-
-                    if ($session && $session->status === 'completed') {
-
-                        Auth::logout();
-
-                        $request->session()->invalidate();
-                        $request->session()->regenerateToken();
-
-                        return redirect()
-                            ->route('login')
-                            ->withErrors([
-                                'username' => 'Survey Anda telah selesai. Akun ini sudah tidak dapat digunakan kembali.'
-                            ]);
                     }
 
                     return redirect()->route('user.dashboard');

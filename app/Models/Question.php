@@ -19,14 +19,17 @@ class Question extends Model
     /**
      * Urutan baku pertanyaan pada seluruh halaman admin dan survei.
      *
-     * Kolom no_header dan no sengaja diurutkan sebagai varchar. Apabila
-     * keduanya sama, tipe judul ditempatkan sebelum pertanyaan biasa,
-     * kemudian ID menjadi penentu urutan terakhir yang stabil.
+     * Kolom no_header dan no bertipe varchar, tetapi harus ditampilkan
+     * secara natural (C1, C2, ..., C10), bukan secara leksikografis
+     * (C1, C10, C2). Apabila keduanya sama, tipe judul ditempatkan sebelum
+     * pertanyaan biasa, kemudian ID menjadi penentu urutan terakhir.
      */
     public function scopeInDisplayOrder(Builder $query): Builder
     {
         return $query
+            ->orderByRaw('LENGTH(COALESCE(questions.no_header, \'\'))')
             ->orderBy('questions.no_header')
+            ->orderByRaw('LENGTH(COALESCE(questions.no, \'\'))')
             ->orderBy('questions.no')
             ->orderByRaw(
                 'CASE

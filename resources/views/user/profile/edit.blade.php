@@ -62,21 +62,44 @@
                     Aktivitas
                 </label>
 
-                <div class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-100 text-purple-600">
-                        <i class="fa-solid fa-briefcase"></i>
+                @if ($canSelectActivity)
+                    <select
+                        id="activity_id"
+                        name="activity_id"
+                        required
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    >
+                        <option value="">Pilih activity</option>
+                        @foreach ($activities as $activity)
+                            <option
+                                value="{{ $activity->id }}"
+                                @selected((string) old('activity_id', $profile->activity_id) === (string) $activity->id)
+                            >
+                                {{ $activity->name }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    @error('activity_id')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                @else
+                <div class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                        <i class="fa-solid fa-lock"></i>
                     </div>
 
-                    <div>
-                        <div class="font-medium text-gray-800">
+                    <div class="min-w-0">
+                        <div class="font-semibold text-emerald-800">
                             {{ $profile->activity?->name ?? '-' }}
                         </div>
 
-                        <div class="text-xs text-gray-500">
-                            Aktivitas tidak dapat diubah.
+                        <div class="mt-0.5 text-xs text-emerald-700">
+                            Activity telah ditentukan untuk akun Anda dan tidak dapat diubah.
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
 
             {{-- GROUP --}}
@@ -94,6 +117,7 @@
                     id="group_id"
                     name="group_id"
                     required
+                    @disabled(blank(old('activity_id', $profile->activity_id)))
                     class="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 >
                     <option value="">
@@ -103,6 +127,7 @@
                     @foreach ($groups as $group)
                         <option
                             value="{{ $group->id }}"
+                            data-activity-id="{{ $group->activity_id }}"
                             @selected(
                                 (string) old(
                                     'group_id',
@@ -137,6 +162,7 @@
                     id="unit_id"
                     name="unit_id"
                     required
+                    @disabled(blank(old('group_id', $profile->group_id)))
                     class="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100"
                 >
                     <option value="">
@@ -180,7 +206,11 @@
 
             <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
                 <i class="fa-solid fa-circle-info mr-2"></i>
-                Bidang kerja hanya menampilkan data dari aktivitas Anda. Unit akan mengikuti bidang kerja yang dipilih.
+                @if ($canSelectActivity)
+                    Pilih Activity, kemudian Group dan Unit. Jika pilihan profil diubah, jawaban dan progres sebelumnya akan dihapus agar data tidak tercampur.
+                @else
+                    Pilih Group yang tersedia pada Activity akun Anda, kemudian pilih Unit. Jika Group atau Unit diubah, jawaban dan progres sebelumnya akan dihapus agar data tetap konsisten.
+                @endif
             </div>
         </div>
 

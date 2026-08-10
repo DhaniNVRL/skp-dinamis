@@ -213,6 +213,16 @@
                     </div>
                 </div>
 
+                <div class="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+                    <div class="flex items-start gap-3">
+                        <i class="fa-solid fa-triangle-exclamation mt-0.5 text-red-600"></i>
+                        <div>
+                            <p class="text-sm font-semibold text-red-800">Jawaban responden akan dihapus</p>
+                            <p class="mt-1 text-xs leading-5 text-red-700">Saat perubahan disimpan, seluruh jawaban yang terhubung dengan ID pertanyaan ini akan dihapus permanen. Akun dan jawaban untuk pertanyaan lain tidak terpengaruh.</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             {{-- Footer --}}

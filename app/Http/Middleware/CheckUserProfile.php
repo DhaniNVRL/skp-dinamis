@@ -11,7 +11,11 @@ class CheckUserProfile
     {
         $user = auth()->user();
 
-        if ($user && strtolower($user->role->name ?? '') === 'user') {
+        if ($user && in_array(
+            strtolower($user->role->name ?? ''),
+            ['user', 'surveyor'],
+            true
+        )) {
 
             $profile = $user->profile;
 

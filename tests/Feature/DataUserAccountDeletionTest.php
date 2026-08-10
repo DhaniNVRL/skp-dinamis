@@ -26,6 +26,10 @@ class DataUserAccountDeletionTest extends TestCase
         Schema::create('user_profiles', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('activity_id')->nullable();
+            $table->unsignedBigInteger('group_id')->nullable();
+            $table->unsignedBigInteger('unit_id')->nullable();
+            $table->string('fullname')->nullable();
             $table->timestamps();
         });
 
@@ -115,6 +119,40 @@ class DataUserAccountDeletionTest extends TestCase
 
         $response->assertStatus(422);
         $this->assertDatabaseHas('users', ['id' => 1]);
+    }
+
+    public function test_reset_account_deletes_answers_and_progress_and_clears_activity_group_and_unit(): void
+    {
+        $admin = $this->createUser(1, 'admin');
+        $this->createUser(2, 'respondent');
+
+        DB::table('user_profiles')->insert([
+            'user_id' => 2,
+            'activity_id' => 5,
+            'group_id' => 10,
+            'unit_id' => 20,
+            'fullname' => 'Nama Tetap Dipertahankan',
+        ]);
+        DB::table('answers')->insert(['user_id' => 2, 'answer' => 'A']);
+        DB::table('survey_sessions')->insert(['user_id' => 2]);
+
+        $response = $this
+            ->withoutMiddleware()
+            ->actingAs($admin)
+            ->post(route('admin.datauser.resetaccount', 2));
+
+        $response->assertRedirect(route('admin.datauser'));
+        $response->assertSessionHas('successdelete');
+        $this->assertDatabaseMissing('answers', ['user_id' => 2]);
+        $this->assertDatabaseMissing('survey_sessions', ['user_id' => 2]);
+        $this->assertDatabaseHas('user_profiles', [
+            'user_id' => 2,
+            'activity_id' => null,
+            'group_id' => null,
+            'unit_id' => null,
+            'fullname' => 'Nama Tetap Dipertahankan',
+        ]);
+        $this->assertDatabaseHas('users', ['id' => 2]);
     }
 
     private function createUser(int $id, string $username): User

@@ -1,7 +1,7 @@
 @php
     $globalAlerts = [];
 
-    if ($errors->any()) {
+    if ($errors->any() && ! View::hasSection('suppressGlobalValidationErrors')) {
         $globalAlerts[] = [
             'type' => 'error',
             'title' => 'Validasi gagal ('.$errors->count().' kesalahan)',

@@ -5,8 +5,7 @@
     </div>
 
     <div class="flex flex-wrap gap-2">
-        <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50">Reset Profile</button>
+        <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50">Reset Account</button>
         <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50">Unlock Submit</button>
-        <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50">Delete Answer</button>
     </div>
 </div>

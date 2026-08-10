@@ -62,8 +62,6 @@
 @include('admin.users.modals.bulk-deleted')
 @include('admin.users.modals.create')
 @include('admin.users.modals.delete')
-@include('admin.users.modals.delete-answers')
-@include('admin.users.modals.reopen-survey')
 @include('admin.users.modals.edit')
 @include('admin.users.modals.reset-password')
 @include('admin.users.modals.reset-profile')

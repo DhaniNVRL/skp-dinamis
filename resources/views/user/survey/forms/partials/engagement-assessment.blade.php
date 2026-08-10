@@ -178,26 +178,7 @@
                                     @endforeach
                                 </div>
 
-                                {{-- SCALE LABEL --}}
-                                <div
-                                    class="mx-auto mt-5 flex
-                                           max-w-xl items-center
-                                           justify-between gap-4
-                                           text-xs text-gray-500"
-                                >
-                                    <span class="text-left">
-                                        {{ $minimumLabel }}
-                                    </span>
 
-                                    <div
-                                        class="h-px flex-1
-                                               bg-purple-200"
-                                    ></div>
-
-                                    <span class="text-right">
-                                        {{ $maximumLabel }}
-                                    </span>
-                                </div>
                             </div>
 
                             {{-- VALIDATION --}}

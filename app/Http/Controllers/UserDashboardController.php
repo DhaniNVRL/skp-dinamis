@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SurveySession;
+use App\Models\UserProfile;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class UserDashboardController extends Controller
 {

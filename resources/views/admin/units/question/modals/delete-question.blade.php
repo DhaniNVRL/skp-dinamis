@@ -97,7 +97,7 @@
                         </div>
 
                         <p class="mt-3 text-sm text-red-600">
-                            Data yang sudah dihapus tidak dapat dikembalikan.
+                            Pertanyaan, option, konfigurasi Sub Unit, dan seluruh jawaban responden berdasarkan ID pertanyaan ini akan dihapus permanen serta tidak dapat dikembalikan.
                         </p>
 
                     </div>
