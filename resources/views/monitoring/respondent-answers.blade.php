@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app-role-modern')
 
 @section('title', 'Lihat Jawaban Responden')
 

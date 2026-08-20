@@ -18,7 +18,7 @@ class QuestionTemplateSpreadsheet
         Form $form,
         Collection $questionTypes
     ): Spreadsheet {
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
 
         $questionSheet = $spreadsheet->getActiveSheet();
         $questionSheet->setTitle('INPUT_PERTANYAAN');
@@ -89,8 +89,8 @@ class QuestionTemplateSpreadsheet
         );
 
         $formLabel = $form->id
-            . ' - '
-            . $form->name;
+            .' - '
+            .$form->name;
 
         $safeFormLabel = str_replace(
             '"',
@@ -107,12 +107,12 @@ class QuestionTemplateSpreadsheet
         */
         for ($row = 2; $row <= $lastRow; $row++) {
             $sheet->setCellValue(
-                'B' . $row,
+                'B'.$row,
                 '=IF(E'
-                    . $row
-                    . '="","","'
-                    . $safeFormLabel
-                    . '")'
+                    .$row
+                    .'="","","'
+                    .$safeFormLabel
+                    .'")'
             );
         }
 
@@ -130,10 +130,10 @@ class QuestionTemplateSpreadsheet
 
         foreach ($questionTypes as $questionType) {
             $sheet->setCellValue(
-                'Z' . $typeRow,
+                'Z'.$typeRow,
                 $questionType['id']
-                    . ' - '
-                    . $questionType['name']
+                    .' - '
+                    .$questionType['name']
             );
 
             $typeRow++;
@@ -153,7 +153,7 @@ class QuestionTemplateSpreadsheet
         |--------------------------------------------------------------------------
         */
         for ($row = 2; $row <= $lastRow; $row++) {
-            $validation = new DataValidation();
+            $validation = new DataValidation;
 
             $validation->setType(
                 DataValidation::TYPE_LIST
@@ -185,10 +185,10 @@ class QuestionTemplateSpreadsheet
             );
 
             $validation->setFormula1(
-                '$Z$2:$Z$' . $lastTypeRow
+                '$Z$2:$Z$'.$lastTypeRow
             );
 
-            $sheet->getCell('F' . $row)
+            $sheet->getCell('F'.$row)
                 ->setDataValidation($validation);
         }
 
@@ -199,7 +199,7 @@ class QuestionTemplateSpreadsheet
         );
 
         $sheet->freezePane('A2');
-        $sheet->setAutoFilter('A1:F' . $lastRow);
+        $sheet->setAutoFilter('A1:F'.$lastRow);
 
         $sheet->getColumnDimension('A')->setWidth(22);
         $sheet->getColumnDimension('B')->setWidth(42);
@@ -208,25 +208,30 @@ class QuestionTemplateSpreadsheet
         $sheet->getColumnDimension('E')->setWidth(65);
         $sheet->getColumnDimension('F')->setWidth(55);
 
-        $sheet->getStyle('A2:A' . $lastRow)
+        $sheet->getStyle('A2:A'.$lastRow)
             ->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()
             ->setRGB('FEF3C7');
 
-        $sheet->getStyle('C2:F' . $lastRow)
+        $sheet->getStyle('C2:F'.$lastRow)
             ->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()
             ->setRGB('FEFCE8');
 
-        $sheet->getStyle('E2:F' . $lastRow)
+        $sheet->getStyle('E2:F'.$lastRow)
             ->getAlignment()
             ->setWrapText(true);
 
+        // Simpan nomor sebagai teks agar kode seperti L1A dan angka berawalan nol tidak diubah Excel.
+        $sheet->getStyle('D2:D'.$lastRow)
+            ->getNumberFormat()
+            ->setFormatCode('@');
+
         $this->addBorders(
             $sheet,
-            'A1:F' . $lastRow
+            'A1:F'.$lastRow
         );
     }
 
@@ -256,14 +261,14 @@ class QuestionTemplateSpreadsheet
             ->getText()
             ->createTextRun(
                 "Has Child:\n"
-                . "0 - Tidak: option tidak mempunyai input lanjutan.\n"
-                . "1 - Iya: option mempunyai input lanjutan."
+                ."0 - Tidak: option tidak mempunyai input lanjutan.\n"
+                .'1 - Iya: option mempunyai input lanjutan.'
             );
 
         $sheet->getComment('E1')
             ->getText()
             ->createTextRun(
-                "answer_text2 bersifat opsional dan dapat dikosongkan."
+                'answer_text2 bersifat opsional dan dapat dikosongkan.'
             );
 
         $lastRow = $this->maximumRows + 1;
@@ -280,7 +285,7 @@ class QuestionTemplateSpreadsheet
 
         for ($row = 2; $row <= $lastRow; $row++) {
             $sheet->setCellValue(
-                'Z' . $row,
+                'Z'.$row,
                 "='INPUT_PERTANYAAN'!A{$row}"
             );
         }
@@ -294,7 +299,7 @@ class QuestionTemplateSpreadsheet
         |--------------------------------------------------------------------------
         */
         for ($row = 2; $row <= $lastRow; $row++) {
-            $codeValidation = new DataValidation();
+            $codeValidation = new DataValidation;
 
             $codeValidation->setType(
                 DataValidation::TYPE_LIST
@@ -326,10 +331,10 @@ class QuestionTemplateSpreadsheet
             );
 
             $codeValidation->setFormula1(
-                '$Z$2:$Z$' . $lastRow
+                '$Z$2:$Z$'.$lastRow
             );
 
-            $sheet->getCell('A' . $row)
+            $sheet->getCell('A'.$row)
                 ->setDataValidation($codeValidation);
 
             /*
@@ -337,7 +342,7 @@ class QuestionTemplateSpreadsheet
             | Dropdown has_child
             |--------------------------------------------------------------------------
             */
-            $childValidation = new DataValidation();
+            $childValidation = new DataValidation;
 
             $childValidation->setType(
                 DataValidation::TYPE_LIST
@@ -366,14 +371,14 @@ class QuestionTemplateSpreadsheet
 
             $childValidation->setPrompt(
                 '0 - Tidak berarti tidak memiliki input lanjutan. '
-                . '1 - Iya berarti memiliki input lanjutan.'
+                .'1 - Iya berarti memiliki input lanjutan.'
             );
 
             $childValidation->setFormula1(
                 '"0 - Tidak,1 - Iya"'
             );
 
-            $sheet->getCell('D' . $row)
+            $sheet->getCell('D'.$row)
                 ->setDataValidation($childValidation);
         }
 
@@ -384,7 +389,7 @@ class QuestionTemplateSpreadsheet
         );
 
         $sheet->freezePane('A2');
-        $sheet->setAutoFilter('A1:E' . $lastRow);
+        $sheet->setAutoFilter('A1:E'.$lastRow);
 
         $sheet->getColumnDimension('A')->setWidth(22);
         $sheet->getColumnDimension('B')->setWidth(12);
@@ -392,19 +397,19 @@ class QuestionTemplateSpreadsheet
         $sheet->getColumnDimension('D')->setWidth(24);
         $sheet->getColumnDimension('E')->setWidth(50);
 
-        $sheet->getStyle('A2:E' . $lastRow)
+        $sheet->getStyle('A2:E'.$lastRow)
             ->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()
             ->setRGB('FEFCE8');
 
-        $sheet->getStyle('C2:E' . $lastRow)
+        $sheet->getStyle('C2:E'.$lastRow)
             ->getAlignment()
             ->setWrapText(true);
 
         $this->addBorders(
             $sheet,
-            'A1:E' . $lastRow
+            'A1:E'.$lastRow
         );
     }
 
@@ -430,8 +435,8 @@ class QuestionTemplateSpreadsheet
                 $form->formtype_id,
                 $form->name,
                 $form->id
-                    . ' - '
-                    . $form->name,
+                    .' - '
+                    .$form->name,
             ],
         ]);
 
@@ -479,11 +484,11 @@ class QuestionTemplateSpreadsheet
                     $questionType['name'],
                     $questionType['description'] ?? '',
                     $questionType['id']
-                        . ' - '
-                        . $questionType['name'],
+                        .' - '
+                        .$questionType['name'],
                 ],
                 null,
-                'A' . $row
+                'A'.$row
             );
 
             $row++;
@@ -505,31 +510,31 @@ class QuestionTemplateSpreadsheet
         $sheet->getColumnDimension('C')->setWidth(75);
         $sheet->getColumnDimension('D')->setWidth(58);
 
-        $sheet->getStyle('B2:D' . $lastRow)
+        $sheet->getStyle('B2:D'.$lastRow)
             ->getAlignment()
             ->setWrapText(true);
 
         $sheet->setAutoFilter(
-            'A1:D' . $lastRow
+            'A1:D'.$lastRow
         );
 
         $this->addBorders(
             $sheet,
-            'A1:D' . $lastRow
+            'A1:D'.$lastRow
         );
 
         $informationRow = $lastRow + 3;
 
         $sheet->setCellValue(
-            'A' . $informationRow,
+            'A'.$informationRow,
             'Form'
         );
 
         $sheet->setCellValue(
-            'B' . $informationRow,
+            'B'.$informationRow,
             $form->id
-                . ' - '
-                . $form->name
+                .' - '
+                .$form->name
         );
     }
 
@@ -545,8 +550,8 @@ class QuestionTemplateSpreadsheet
             [
                 'Form',
                 $form->id
-                    . ' - '
-                    . $form->name,
+                    .' - '
+                    .$form->name,
             ],
             [
                 'Form Type ID',
@@ -555,8 +560,8 @@ class QuestionTemplateSpreadsheet
             [
                 'Group',
                 $form->group_id
-                    . ' - '
-                    . ($form->group?->name ?? '-'),
+                    .' - '
+                    .($form->group?->name ?? '-'),
             ],
             [
                 '',
@@ -644,13 +649,13 @@ class QuestionTemplateSpreadsheet
         $sheet->getColumnDimension('B')->setWidth(100);
 
         $sheet->getStyle(
-            'B2:B' . count($instructions)
+            'B2:B'.count($instructions)
         )->getAlignment()
             ->setWrapText(true);
 
         $this->addBorders(
             $sheet,
-            'A6:B' . count($instructions)
+            'A6:B'.count($instructions)
         );
     }
 

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('admin.layouts.app-modern')
 
 @section('title', 'Question Type')
 
@@ -91,3 +91,4 @@ document.getElementById('questionTypeSelectAll')?.addEventListener('change', fun
 });
 </script>
 @endpush
+

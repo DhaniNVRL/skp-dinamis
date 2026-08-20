@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app-role-modern')
 
 @section('title', 'Monitoring Survey')
 
@@ -66,3 +66,4 @@
     });
 </script>
 @endpush
+

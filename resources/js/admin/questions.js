@@ -109,6 +109,14 @@ document.addEventListener("DOMContentLoaded", function () {
             case 11:
                 return document.getElementById(
                     "competitorTypeOptions"
+                );
+            case 13:
+                return document.getElementById(
+                    "competitor17TypeOptions"
+                );
+            case 14:
+                return document.getElementById(
+                    "respondentCompetitorTypeOptions"
                 );         
 
             default:
@@ -601,6 +609,14 @@ document.addEventListener("DOMContentLoaded", function () {
             case 11:
                 return document.getElementById(
                     "competitorTypeOptions"
+                );
+            case 13:
+                return document.getElementById(
+                    "competitor17TypeOptions"
+                );
+            case 14:
+                return document.getElementById(
+                    "respondentCompetitorTypeOptions"
                 );
 
             default:

@@ -9,21 +9,12 @@ class ActivityTableSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('activities')->upsert([
-            [
-                'id' => 1,
-                'name' => 'SKP TJB Power Services 2026',
-                'description' => 'SKP TJB Power Services 2026',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'id' => 2,
-                'name' => 'SKP PLN UIP2B JAMALI 2026',
-                'description' => 'SKP PLN UIP2B JAMALI 2026',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ], ['id'], ['name', 'description', 'updated_at']);
+        DB::table('activities')->upsert([[
+            'id' => 1,
+            'name' => 'test',
+            'description' => 'Activity test untuk mencoba seluruh tipe form dan pertanyaan.',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]], ['id'], ['name', 'description', 'updated_at']);
     }
 }

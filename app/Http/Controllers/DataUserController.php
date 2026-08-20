@@ -9,9 +9,11 @@ use App\Models\Group;
 use App\Models\Unit;
 use App\Models\Activity;
 use App\Models\Answer;
+use App\Models\RespondentCompetitor;
 use App\Models\Form;
 use App\Models\UserProfile;
 use App\Services\AnswerReviewFormatter;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -373,6 +375,7 @@ class DataUserController extends Controller
                 'question:id,no_header,no,name,questiontype_id',
                 'question.options:id,question_id,no,answer_text,answer_text2,has_child',
                 'competitor:id,name',
+                'respondentCompetitor:id,name',
                 'subunit:id,name',
             ])
             ->orderBy('form_id')
@@ -407,6 +410,60 @@ class DataUserController extends Controller
         ];
 
         return view('admin.users.answers', compact('user', 'answers', 'survey'));
+    }
+
+    public function downloadAnswersPdf(
+        string $id,
+        AnswerReviewFormatter $formatter
+    ) {
+        $user = User::query()
+            ->with([
+                'role',
+                'profile.activity',
+                'profile.group',
+                'profile.unit',
+                'surveySession',
+            ])
+            ->findOrFail($id);
+
+        abort_unless(
+            $user->surveySession?->status === 'completed',
+            422,
+            'PDF review jawaban hanya tersedia setelah survey selesai.'
+        );
+
+        $answers = Answer::query()
+            ->where('user_id', $user->id)
+            ->with([
+                'form:id,name',
+                'question:id,no_header,no,name,questiontype_id',
+                'question.options:id,question_id,no,answer_text,answer_text2,has_child',
+                'competitor:id,name',
+                'respondentCompetitor:id,name',
+                'subunit:id,name',
+            ])
+            ->orderBy('form_id')
+            ->orderBy('question_id')
+            ->orderBy('id')
+            ->get()
+            ->each(function (Answer $answer) use ($formatter): void {
+                $answer->setAttribute('review_details', $formatter->format($answer));
+            });
+
+        $filename = 'review-jawaban-'.str($user->username)
+            ->slug('-')
+            ->append('.pdf')
+            ->toString();
+
+        return Pdf::loadView('admin.users.answers-pdf', [
+            'user' => $user,
+            'profile' => $user->profile,
+            'session' => $user->surveySession,
+            'answers' => $answers,
+            'generatedAt' => now(),
+        ])
+            ->setPaper('a4', 'landscape')
+            ->download($filename);
     }
 
     public function edit(string $id)
@@ -514,6 +571,74 @@ class DataUserController extends Controller
         return back()->with('success', 'User berhasil diperbarui.');
     }
 
+    public function deleteAnswers(string $id)
+    {
+        $result = DB::transaction(function () use ($id): array {
+            $user = User::query()->lockForUpdate()->findOrFail($id);
+            $answerCount = Answer::query()->where('user_id', $user->id)->count();
+            Answer::query()->where('user_id', $user->id)->delete();
+
+            return [$user->username, $answerCount];
+        });
+
+        return redirect()->route('admin.datauser')->with(
+            'successdelete',
+            $result[1].' jawaban milik '.$result[0].' berhasil dihapus. Profil, status survey, dan akun tetap dipertahankan.'
+        );
+    }
+
+    public function reopenSurvey(string $id)
+    {
+        $result = DB::transaction(function () use ($id): array {
+            $user = User::query()
+                ->with(['profile', 'surveySession'])
+                ->lockForUpdate()
+                ->findOrFail($id);
+            $profile = $user->profile;
+            $session = $user->surveySession;
+
+            if (! $profile?->activity_id || ! $profile?->group_id || ! $profile?->unit_id) {
+                throw ValidationException::withMessages([
+                    'user' => 'Akses survey belum dapat dibuka karena Activity, Group, atau Unit user belum lengkap.',
+                ]);
+            }
+
+            if (! $session || $session->status !== 'completed') {
+                throw ValidationException::withMessages([
+                    'user' => 'Akses hanya dapat dibuka kembali untuk akun yang surveinya sudah selesai.',
+                ]);
+            }
+
+            $firstForm = Form::query()
+                ->where('group_id', $profile->group_id)
+                ->orderBy('no_urut')
+                ->orderBy('id')
+                ->first();
+
+            if (! $firstForm) {
+                throw ValidationException::withMessages([
+                    'user' => 'Akses belum dapat dibuka karena Group user belum memiliki form survey.',
+                ]);
+            }
+
+            $session->update([
+                'activity_id' => $profile->activity_id,
+                'group_id' => $profile->group_id,
+                'unit_id' => $profile->unit_id,
+                'current_form_id' => $firstForm->id,
+                'status' => 'in_progress',
+                'finished_at' => null,
+                'reopened_at' => now(),
+            ]);
+
+            return [$user->username, $session->fresh()];
+        });
+
+        return redirect()->route('admin.datauser')->with(
+            'success',
+            'Akses survey '.$result[0].' berhasil dibuka kembali. Jawaban yang sudah ada tetap dipertahankan.'
+        );
+    }
     public function resetAccount($id)
     {
         $result = DB::transaction(function () use ($id): array {
@@ -528,6 +653,12 @@ class DataUserController extends Controller
             Answer::query()
                 ->where('user_id', $user->id)
                 ->delete();
+
+            if (Schema::hasTable('respondent_competitors')) {
+                RespondentCompetitor::query()
+                    ->where('user_id', $user->id)
+                    ->delete();
+            }
 
             $sessionCount = $user->surveySessions()->count();
             $user->surveySessions()->delete();
@@ -545,7 +676,7 @@ class DataUserController extends Controller
             ->route('admin.datauser')
             ->with(
                 'successdelete',
-                'Reset Account berhasil. '.$result[0].' jawaban dan '.$result[1].' progres survey dihapus; Activity, Group, dan Unit dikosongkan.'
+                'Reset Profile berhasil. '.$result[0].' jawaban dan '.$result[1].' progres survey dihapus; Activity, Group, dan Unit dikosongkan.'
             );
     }
 
@@ -563,6 +694,12 @@ class DataUserController extends Controller
             Answer::query()
                 ->where('user_id', $user->id)
                 ->delete();
+
+            if (Schema::hasTable('respondent_competitors')) {
+                RespondentCompetitor::query()
+                    ->where('user_id', $user->id)
+                    ->delete();
+            }
 
             $user->surveySessions()->delete();
 

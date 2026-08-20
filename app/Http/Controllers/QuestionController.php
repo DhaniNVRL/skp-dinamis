@@ -13,6 +13,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class QuestionController extends Controller
 {
@@ -106,7 +107,7 @@ class QuestionController extends Controller
                 'required',
                 'string',
                 'max:20',
-                'regex:/^\d+(?:\.\d+)?$/',
+                'regex:/^[\pL\pN]+(?:[.\-_\/][\pL\pN]+)*$/u',
             ],
 
             'questions.*.name' => [
@@ -161,8 +162,7 @@ class QuestionController extends Controller
             ->all();
 
         foreach (
-            $validated['questions']
-            as $index => $questionData
+            $validated['questions'] as $index => $questionData
         ) {
             if (
                 ! in_array(
@@ -172,8 +172,7 @@ class QuestionController extends Controller
                 )
             ) {
                 throw ValidationException::withMessages([
-                    "questions.{$index}.questiontype_id" =>
-                        'Tipe pertanyaan tidak sesuai dengan tipe form yang dipilih.',
+                    "questions.{$index}.questiontype_id" => 'Tipe pertanyaan tidak sesuai dengan tipe form yang dipilih.',
                 ]);
             }
         }
@@ -188,31 +187,24 @@ class QuestionController extends Controller
             $form
         ): void {
             foreach (
-                $validated['questions']
-                as $questionData
+                $validated['questions'] as $questionData
             ) {
                 Question::create([
-                    'group_id' =>
-                        $form->group_id,
+                    'group_id' => $form->group_id,
 
-                    'form_id' =>
-                        $form->id,
+                    'form_id' => $form->id,
 
-                    'no_header' =>
-                        $questionData['no_header'] ?? null,
+                    'no_header' => $questionData['no_header'] ?? null,
 
                     /*
                     | Simpan sebagai string.
                     | Jangan cast menjadi integer/float.
                     */
-                    'no' =>
-                        (string) $questionData['no'],
+                    'no' => (string) $questionData['no'],
 
-                    'name' =>
-                        $questionData['name'],
+                    'name' => $questionData['name'],
 
-                    'questiontype_id' =>
-                        $questionData['questiontype_id'],
+                    'questiontype_id' => $questionData['questiontype_id'],
                 ]);
             }
         });
@@ -299,7 +291,7 @@ class QuestionController extends Controller
                 'required',
                 'string',
                 'max:20',
-                'regex:/^\d+(?:\.\d+)?$/',
+                'regex:/^[\pL\pN]+(?:[.\-_\/][\pL\pN]+)*$/u',
             ],
 
             'name' => [
@@ -358,8 +350,7 @@ class QuestionController extends Controller
             ->getQuestionTypesByForm($form)
             ->pluck('id')
             ->map(
-                fn ($questionTypeId) =>
-                    (int) $questionTypeId
+                fn ($questionTypeId) => (int) $questionTypeId
             )
             ->all();
 
@@ -371,8 +362,7 @@ class QuestionController extends Controller
             )
         ) {
             throw ValidationException::withMessages([
-                'questiontype_id' =>
-                    'Tipe pertanyaan tidak sesuai dengan tipe form yang dipilih.',
+                'questiontype_id' => 'Tipe pertanyaan tidak sesuai dengan tipe form yang dipilih.',
             ]);
         }
 
@@ -413,23 +403,17 @@ class QuestionController extends Controller
                 ->delete();
 
             $question->update([
-                'group_id' =>
-                    $validated['group_id'],
+                'group_id' => $validated['group_id'],
 
-                'form_id' =>
-                    $validated['form_id'],
+                'form_id' => $validated['form_id'],
 
-                'no_header' =>
-                    $validated['no_header'] ?? null,
+                'no_header' => $validated['no_header'] ?? null,
 
-                'no' =>
-                    (string) $validated['no'],
+                'no' => (string) $validated['no'],
 
-                'name' =>
-                    $validated['name'],
+                'name' => $validated['name'],
 
-                'questiontype_id' =>
-                    $validated['questiontype_id'],
+                'questiontype_id' => $validated['questiontype_id'],
             ]);
         });
 
@@ -576,8 +560,7 @@ class QuestionController extends Controller
         */
         if ((int) $form->formtype_id === 12) {
             throw ValidationException::withMessages([
-                'ids' =>
-                    'Form tipe Description tidak memiliki pertanyaan yang dapat dihapus.',
+                'ids' => 'Form tipe Description tidak memiliki pertanyaan yang dapat dihapus.',
             ]);
         }
 
@@ -602,8 +585,7 @@ class QuestionController extends Controller
             !== count($validated['ids'])
         ) {
             throw ValidationException::withMessages([
-                'ids' =>
-                    'Sebagian pertanyaan tidak berasal dari form yang dipilih.',
+                'ids' => 'Sebagian pertanyaan tidak berasal dari form yang dipilih.',
             ]);
         }
 
@@ -671,7 +653,7 @@ class QuestionController extends Controller
                 ->with(
                     'successdelete',
                     count($validated['ids'])
-                    . ' pertanyaan beserta option dan jawaban responden berhasil dihapus.'
+                    .' pertanyaan beserta option dan jawaban responden berhasil dihapus.'
                 );
         } catch (\Throwable $error) {
             report($error);
@@ -708,14 +690,11 @@ class QuestionController extends Controller
                 ->get()
                 ->map(function ($questionType) {
                     return [
-                        'id' =>
-                            (int) $questionType->id,
+                        'id' => (int) $questionType->id,
 
-                        'name' =>
-                            $questionType->name,
+                        'name' => $questionType->name,
 
-                        'description' =>
-                            $questionType->description ?? '',
+                        'description' => $questionType->description ?? '',
                     ];
                 });
         }
@@ -730,40 +709,32 @@ class QuestionController extends Controller
                 [
                     'id' => 1,
                     'name' => 'Judul Pertanyaan',
-                    'description' =>
-                        'Digunakan sebagai judul atau pemisah kelompok pertanyaan.',
+                    'description' => 'Digunakan sebagai judul atau pemisah kelompok pertanyaan.',
                 ],
                 [
                     'id' => 2,
                     'name' => 'Kepentingan & Kinerja',
-                    'description' =>
-                        'Penilaian Kepentingan dan Kinerja skala 1 sampai 5.',
+                    'description' => 'Penilaian Kepentingan dan Kinerja skala 1 sampai 5.',
                 ],
                 [
                     'id' => 3,
-                    'name' =>
-                        'Kepentingan & Kinerja dengan Alasan',
-                    'description' =>
-                        'Penilaian Kepentingan dan Kinerja dengan textarea alasan.',
+                    'name' => 'Kepentingan & Kinerja dengan Alasan',
+                    'description' => 'Penilaian Kepentingan dan Kinerja dengan textarea alasan.',
                 ],
                 [
                     'id' => 4,
-                    'name' =>
-                        'Kepentingan & Kinerja dengan Pilihan Alasan',
-                    'description' =>
-                        'Penilaian dengan pilihan alasan checkbox dan textarea lanjutan.',
+                    'name' => 'Kepentingan & Kinerja dengan Pilihan Alasan',
+                    'description' => 'Penilaian dengan pilihan alasan checkbox dan textarea lanjutan.',
                 ],
                 [
                     'id' => 5,
                     'name' => 'Satu Indikator',
-                    'description' =>
-                        'Penilaian menggunakan satu indikator skala 1 sampai 5.',
+                    'description' => 'Penilaian menggunakan satu indikator skala 1 sampai 5.',
                 ],
                 [
                     'id' => 6,
                     'name' => 'Jawaban Textarea',
-                    'description' =>
-                        'Pertanyaan dengan jawaban berbentuk textarea.',
+                    'description' => 'Pertanyaan dengan jawaban berbentuk textarea.',
                 ],
             ]);
         }
@@ -778,40 +749,32 @@ class QuestionController extends Controller
                 [
                     'id' => 1,
                     'name' => 'Judul Pertanyaan',
-                    'description' =>
-                        'Digunakan sebagai judul atau pemisah kelompok pertanyaan.',
+                    'description' => 'Digunakan sebagai judul atau pemisah kelompok pertanyaan.',
                 ],
                 [
                     'id' => 2,
                     'name' => 'Kepentingan & Kinerja',
-                    'description' =>
-                        'Penilaian Kepentingan dan Kinerja skala 1 sampai 7.',
+                    'description' => 'Penilaian Kepentingan dan Kinerja skala 1 sampai 7.',
                 ],
                 [
                     'id' => 3,
-                    'name' =>
-                        'Kepentingan & Kinerja dengan Alasan',
-                    'description' =>
-                        'Penilaian Kepentingan dan Kinerja dengan textarea alasan.',
+                    'name' => 'Kepentingan & Kinerja dengan Alasan',
+                    'description' => 'Penilaian Kepentingan dan Kinerja dengan textarea alasan.',
                 ],
                 [
                     'id' => 4,
-                    'name' =>
-                        'Kepentingan & Kinerja dengan Pilihan Alasan',
-                    'description' =>
-                        'Penilaian dengan pilihan alasan checkbox dan textarea lanjutan.',
+                    'name' => 'Kepentingan & Kinerja dengan Pilihan Alasan',
+                    'description' => 'Penilaian dengan pilihan alasan checkbox dan textarea lanjutan.',
                 ],
                 [
                     'id' => 5,
                     'name' => 'Satu Indikator',
-                    'description' =>
-                        'Penilaian menggunakan satu indikator skala 1 sampai 7.',
+                    'description' => 'Penilaian menggunakan satu indikator skala 1 sampai 7.',
                 ],
                 [
                     'id' => 6,
                     'name' => 'Jawaban Textarea',
-                    'description' =>
-                        'Pertanyaan dengan jawaban berbentuk textarea.',
+                    'description' => 'Pertanyaan dengan jawaban berbentuk textarea.',
                 ],
             ]);
         }
@@ -826,14 +789,12 @@ class QuestionController extends Controller
                 [
                     'id' => 1,
                     'name' => 'Judul Pertanyaan',
-                    'description' =>
-                        'Judul atau pemisah kelompok pertanyaan.',
+                    'description' => 'Judul atau pemisah kelompok pertanyaan.',
                 ],
                 [
                     'id' => 2,
                     'name' => 'Pertanyaan',
-                    'description' =>
-                        'Pertanyaan penilaian keterikatan skala 1 sampai 5.',
+                    'description' => 'Pertanyaan penilaian keterikatan skala 1 sampai 5.',
                 ],
             ]);
         }
@@ -848,14 +809,12 @@ class QuestionController extends Controller
                 [
                     'id' => 1,
                     'name' => 'Judul Pertanyaan',
-                    'description' =>
-                        'Judul atau pemisah kelompok pertanyaan.',
+                    'description' => 'Judul atau pemisah kelompok pertanyaan.',
                 ],
                 [
                     'id' => 2,
                     'name' => 'Pertanyaan',
-                    'description' =>
-                        'Pertanyaan penilaian keterikatan skala 1 sampai 7.',
+                    'description' => 'Pertanyaan penilaian keterikatan skala 1 sampai 7.',
                 ],
             ]);
         }
@@ -870,14 +829,12 @@ class QuestionController extends Controller
                 [
                     'id' => 1,
                     'name' => 'Judul Pertanyaan',
-                    'description' =>
-                        'Judul atau pemisah kelompok pertanyaan ranking.',
+                    'description' => 'Judul atau pemisah kelompok pertanyaan ranking.',
                 ],
                 [
                     'id' => 2,
                     'name' => 'Pertanyaan',
-                    'description' =>
-                        'Pertanyaan dengan pilihan ranking 1 sampai 3.',
+                    'description' => 'Pertanyaan dengan pilihan ranking 1 sampai 3.',
                 ],
             ]);
         }
@@ -892,14 +849,12 @@ class QuestionController extends Controller
                 [
                     'id' => 1,
                     'name' => 'Judul Pertanyaan',
-                    'description' =>
-                        'Judul atau pemisah kelompok pertanyaan ranking.',
+                    'description' => 'Judul atau pemisah kelompok pertanyaan ranking.',
                 ],
                 [
                     'id' => 2,
                     'name' => 'Pertanyaan',
-                    'description' =>
-                        'Pertanyaan dengan pilihan ranking 1 sampai 5.',
+                    'description' => 'Pertanyaan dengan pilihan ranking 1 sampai 5.',
                 ],
             ]);
         }
@@ -914,15 +869,12 @@ class QuestionController extends Controller
                 [
                     'id' => 1,
                     'name' => 'Judul Pertanyaan',
-                    'description' =>
-                        'Judul atau pemisah kelompok pertanyaan.',
+                    'description' => 'Judul atau pemisah kelompok pertanyaan.',
                 ],
                 [
                     'id' => 2,
-                    'name' =>
-                        'Keunggulan, Keluhan, dan Saran',
-                    'description' =>
-                        'Pertanyaan dengan tiga jawaban: Keunggulan, Keluhan, dan Saran.',
+                    'name' => 'Keunggulan, Keluhan, dan Saran',
+                    'description' => 'Pertanyaan dengan tiga jawaban: Keunggulan, Keluhan, dan Saran.',
                 ],
             ]);
         }
@@ -937,14 +889,12 @@ class QuestionController extends Controller
                 [
                     'id' => 1,
                     'name' => 'Judul Pertanyaan',
-                    'description' =>
-                        'Judul atau pemisah kelompok pertanyaan.',
+                    'description' => 'Judul atau pemisah kelompok pertanyaan.',
                 ],
                 [
                     'id' => 2,
                     'name' => 'Keluhan dan Saran',
-                    'description' =>
-                        'Pertanyaan dengan dua jawaban: Keluhan dan Saran.',
+                    'description' => 'Pertanyaan dengan dua jawaban: Keluhan dan Saran.',
                 ],
             ]);
         }
@@ -959,27 +909,25 @@ class QuestionController extends Controller
                 [
                     'id' => 1,
                     'name' => 'Judul Pertanyaan',
-                    'description' =>
-                        'Judul atau pemisah kelompok pertanyaan.',
+                    'description' => 'Judul atau pemisah kelompok pertanyaan.',
                 ],
                 [
                     'id' => 2,
                     'name' => 'Saran',
-                    'description' =>
-                        'Pertanyaan dengan jawaban berupa saran atau masukan.',
+                    'description' => 'Pertanyaan dengan jawaban berupa saran atau masukan.',
                 ],
             ]);
         }
 
         /*
         |--------------------------------------------------------------------------
-        | 11 / 13. Competitor
+        | 11 / 13 / 14. Competitor
         |--------------------------------------------------------------------------
         */
         elseif (
             in_array(
                 $formTypeId,
-                [11, 13],
+                [11, 13, 14],
                 true
             )
         ) {
@@ -987,14 +935,12 @@ class QuestionController extends Controller
                 [
                     'id' => 1,
                     'name' => 'Judul Pertanyaan',
-                    'description' =>
-                        'Judul atau pemisah kelompok pertanyaan kompetitor.',
+                    'description' => 'Judul atau pemisah kelompok pertanyaan kompetitor.',
                 ],
                 [
                     'id' => 2,
                     'name' => 'Pertanyaan',
-                    'description' =>
-                        'Pertanyaan penilaian terhadap kompetitor.',
+                    'description' => 'Pertanyaan penilaian terhadap kompetitor.',
                 ],
             ]);
         }
@@ -1036,13 +982,13 @@ class QuestionController extends Controller
 
         $fileName =
             'template-pertanyaan-form-'
-            . $form->id
-            . '.xlsx';
+            .$form->id
+            .'.xlsx';
 
         return response()->streamDownload(
             function () use ($spreadsheet) {
                 $writer =
-                    new \PhpOffice\PhpSpreadsheet\Writer\Xlsx(
+                    new Xlsx(
                         $spreadsheet
                     );
 
@@ -1055,8 +1001,7 @@ class QuestionController extends Controller
             },
             $fileName,
             [
-                'Content-Type' =>
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             ]
         );
     }
@@ -1157,24 +1102,21 @@ class QuestionController extends Controller
             | Validasi sheet
             |--------------------------------------------------------------------------
             */
-            if (!$questionSheet) {
+            if (! $questionSheet) {
                 throw ValidationException::withMessages([
-                    'file' =>
-                        'Sheet INPUT_PERTANYAAN tidak ditemukan.',
+                    'file' => 'Sheet INPUT_PERTANYAAN tidak ditemukan.',
                 ]);
             }
 
-            if (!$optionSheet) {
+            if (! $optionSheet) {
                 throw ValidationException::withMessages([
-                    'file' =>
-                        'Sheet INPUT_OPTIONS tidak ditemukan.',
+                    'file' => 'Sheet INPUT_OPTIONS tidak ditemukan.',
                 ]);
             }
 
-            if (!$masterFormSheet) {
+            if (! $masterFormSheet) {
                 throw ValidationException::withMessages([
-                    'file' =>
-                        'Sheet MASTER_FORM tidak ditemukan.',
+                    'file' => 'Sheet MASTER_FORM tidak ditemukan.',
                 ]);
             }
 
@@ -1193,8 +1135,7 @@ class QuestionController extends Controller
                 (int) $form->id
             ) {
                 throw ValidationException::withMessages([
-                    'file' =>
-                        'Template Excel tidak sesuai dengan form yang dipilih.',
+                    'file' => 'Template Excel tidak sesuai dengan form yang dipilih.',
                 ]);
             }
 
@@ -1257,8 +1198,7 @@ class QuestionController extends Controller
             |--------------------------------------------------------------------------
             */
             foreach (
-                $questionRows
-                as $index => $row
+                $questionRows as $index => $row
             ) {
                 /*
                 | Row pertama adalah header.
@@ -1322,8 +1262,7 @@ class QuestionController extends Controller
                 */
                 if ($code === '') {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Kode pertanyaan pada baris {$excelRow} wajib diisi.",
+                        'file' => "Kode pertanyaan pada baris {$excelRow} wajib diisi.",
                     ]);
                 }
 
@@ -1346,21 +1285,19 @@ class QuestionController extends Controller
                 */
                 if ($number === '') {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Nomor pertanyaan pada baris {$excelRow} wajib diisi.",
+                        'file' => "Nomor pertanyaan pada baris {$excelRow} wajib diisi.",
                     ]);
                 }
 
                 if (
                     ! preg_match(
-                        '/^\d+(?:\.\d+)?$/',
+                        '/^[\pL\pN]+(?:[.\-_\/][\pL\pN]+)*$/u',
                         $number
                     )
                 ) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Nomor pertanyaan pada baris {$excelRow} tidak valid. "
-                            . "Gunakan format seperti 0, 1, 2, 3.1, 3.10, dan seterusnya.",
+                        'file' => "Nomor pertanyaan pada baris {$excelRow} tidak valid. "
+                            .'Gunakan huruf/angka seperti 1, 3.1, L1A, L1B, atau L1C.',
                     ]);
                 }
 
@@ -1371,8 +1308,7 @@ class QuestionController extends Controller
                 */
                 if ($name === '') {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Nama pertanyaan pada baris {$excelRow} wajib diisi.",
+                        'file' => "Nama pertanyaan pada baris {$excelRow} wajib diisi.",
                     ]);
                 }
 
@@ -1385,8 +1321,7 @@ class QuestionController extends Controller
                     mb_strlen($noHeader) > 20
                 ) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "No header pada baris {$excelRow} maksimal 20 karakter.",
+                        'file' => "No header pada baris {$excelRow} maksimal 20 karakter.",
                     ]);
                 }
 
@@ -1399,8 +1334,7 @@ class QuestionController extends Controller
                     mb_strlen($name) > 1000
                 ) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Nama pertanyaan pada baris {$excelRow} maksimal 1000 karakter.",
+                        'file' => "Nama pertanyaan pada baris {$excelRow} maksimal 1000 karakter.",
                     ]);
                 }
 
@@ -1414,10 +1348,9 @@ class QuestionController extends Controller
                         $questionTypeValue
                     );
 
-                if (!$questionTypeId) {
+                if (! $questionTypeId) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Tipe pertanyaan pada baris {$excelRow} tidak valid.",
+                        'file' => "Tipe pertanyaan pada baris {$excelRow} tidak valid.",
                     ]);
                 }
 
@@ -1429,8 +1362,7 @@ class QuestionController extends Controller
                     )
                 ) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Tipe pertanyaan pada baris {$excelRow} tidak diizinkan untuk form ini.",
+                        'file' => "Tipe pertanyaan pada baris {$excelRow} tidak diizinkan untuk form ini.",
                     ]);
                 }
 
@@ -1457,8 +1389,7 @@ class QuestionController extends Controller
                     )
                 ) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Kode pertanyaan {$code} digunakan lebih dari satu kali.",
+                        'file' => "Kode pertanyaan {$code} digunakan lebih dari satu kali.",
                     ]);
                 }
 
@@ -1474,22 +1405,17 @@ class QuestionController extends Controller
                 $questionsForImport[
                     $normalizedCode
                 ] = [
-                    'code' =>
-                        $code,
+                    'code' => $code,
 
-                    'no_header' =>
-                        $noHeader !== ''
+                    'no_header' => $noHeader !== ''
                             ? $noHeader
                             : null,
 
-                    'no' =>
-                        $number,
+                    'no' => $number,
 
-                    'name' =>
-                        $name,
+                    'name' => $name,
 
-                    'questiontype_id' =>
-                        $questionTypeId,
+                    'questiontype_id' => $questionTypeId,
                 ];
             }
 
@@ -1502,8 +1428,7 @@ class QuestionController extends Controller
                 empty($questionsForImport)
             ) {
                 throw ValidationException::withMessages([
-                    'file' =>
-                        'Tidak ada pertanyaan yang dapat diimport.',
+                    'file' => 'Tidak ada pertanyaan yang dapat diimport.',
                 ]);
             }
 
@@ -1515,8 +1440,7 @@ class QuestionController extends Controller
             $optionsForImport = [];
 
             foreach (
-                $optionRows
-                as $index => $row
+                $optionRows as $index => $row
             ) {
                 if ($index === 0) {
                     continue;
@@ -1572,8 +1496,7 @@ class QuestionController extends Controller
                 */
                 if ($questionCode === '') {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Kode pertanyaan option pada baris {$excelRow} wajib diisi.",
+                        'file' => "Kode pertanyaan option pada baris {$excelRow} wajib diisi.",
                     ]);
                 }
 
@@ -1590,8 +1513,7 @@ class QuestionController extends Controller
                     )
                 ) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Kode pertanyaan {$questionCode} pada sheet INPUT_OPTIONS tidak ditemukan.",
+                        'file' => "Kode pertanyaan {$questionCode} pada sheet INPUT_OPTIONS tidak ditemukan.",
                     ]);
                 }
 
@@ -1602,8 +1524,7 @@ class QuestionController extends Controller
                 */
                 if ($number === '') {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Urutan option pada baris {$excelRow} wajib diisi.",
+                        'file' => "Urutan option pada baris {$excelRow} wajib diisi.",
                     ]);
                 }
 
@@ -1624,8 +1545,7 @@ class QuestionController extends Controller
                     ) === false
                 ) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Urutan option pada baris {$excelRow} harus bilangan bulat minimal 1.",
+                        'file' => "Urutan option pada baris {$excelRow} harus bilangan bulat minimal 1.",
                     ]);
                 }
 
@@ -1636,8 +1556,7 @@ class QuestionController extends Controller
                 */
                 if ($answerText === '') {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Nama option pada baris {$excelRow} wajib diisi.",
+                        'file' => "Nama option pada baris {$excelRow} wajib diisi.",
                     ]);
                 }
 
@@ -1645,8 +1564,7 @@ class QuestionController extends Controller
                     mb_strlen($answerText) > 255
                 ) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Nama option pada baris {$excelRow} maksimal 255 karakter.",
+                        'file' => "Nama option pada baris {$excelRow} maksimal 255 karakter.",
                     ]);
                 }
 
@@ -1670,8 +1588,7 @@ class QuestionController extends Controller
                     )
                 ) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Has child pada baris {$excelRow} harus dipilih dari dropdown: 0 - Tidak atau 1 - Iya.",
+                        'file' => "Has child pada baris {$excelRow} harus dipilih dari dropdown: 0 - Tidak atau 1 - Iya.",
                     ]);
                 }
 
@@ -1686,8 +1603,7 @@ class QuestionController extends Controller
                     $answerText2 === ''
                 ) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Label child pada baris {$excelRow} wajib diisi ketika has_child bernilai 1.",
+                        'file' => "Label child pada baris {$excelRow} wajib diisi ketika has_child bernilai 1.",
                     ]);
                 }
 
@@ -1695,8 +1611,7 @@ class QuestionController extends Controller
                     mb_strlen($answerText2) > 255
                 ) {
                     throw ValidationException::withMessages([
-                        'file' =>
-                            "Label child pada baris {$excelRow} maksimal 255 karakter.",
+                        'file' => "Label child pada baris {$excelRow} maksimal 255 karakter.",
                     ]);
                 }
 
@@ -1708,19 +1623,15 @@ class QuestionController extends Controller
                 $optionsForImport[
                     $normalizedCode
                 ][] = [
-                    'no' =>
-                        (int) $number,
+                    'no' => (int) $number,
 
-                    'answer_text' =>
-                        $answerText,
+                    'answer_text' => $answerText,
 
-                    'answer_text2' =>
-                        $answerText2 !== ''
+                    'answer_text2' => $answerText2 !== ''
                             ? $answerText2
                             : null,
 
-                    'has_child' =>
-                        (int) $hasChild,
+                    'has_child' => (int) $hasChild,
                 ];
             }
 
@@ -1739,8 +1650,7 @@ class QuestionController extends Controller
                     $optionCount = 0;
 
                     foreach (
-                        $questionsForImport
-                        as $code => $questionData
+                        $questionsForImport as $code => $questionData
                     ) {
                         /*
                         |--------------------------------------------------------------------------
@@ -1749,32 +1659,26 @@ class QuestionController extends Controller
                         */
                         $question =
                             Question::create([
-                                'group_id' =>
-                                    $form->group_id,
+                                'group_id' => $form->group_id,
 
-                                'form_id' =>
-                                    $form->id,
+                                'form_id' => $form->id,
 
-                                'no_header' =>
-                                    $questionData[
+                                'no_header' => $questionData[
                                         'no_header'
                                     ],
 
                                 /*
                                 | Tetap string.
                                 */
-                                'no' =>
-                                    (string) $questionData[
+                                'no' => (string) $questionData[
                                         'no'
                                     ],
 
-                                'name' =>
-                                    $questionData[
+                                'name' => $questionData[
                                         'name'
                                     ],
 
-                                'questiontype_id' =>
-                                    $questionData[
+                                'questiontype_id' => $questionData[
                                         'questiontype_id'
                                     ],
                             ]);
@@ -1789,29 +1693,24 @@ class QuestionController extends Controller
                         foreach (
                             $optionsForImport[
                                 $code
-                            ] ?? []
-                            as $optionData
+                            ] ?? [] as $optionData
                         ) {
                             $question
                                 ->options()
                                 ->create([
-                                    'no' =>
-                                        $optionData[
+                                    'no' => $optionData[
                                             'no'
                                         ],
 
-                                    'answer_text' =>
-                                        $optionData[
+                                    'answer_text' => $optionData[
                                             'answer_text'
                                         ],
 
-                                    'answer_text2' =>
-                                        $optionData[
+                                    'answer_text2' => $optionData[
                                             'answer_text2'
                                         ],
 
-                                    'has_child' =>
-                                        $optionData[
+                                    'has_child' => $optionData[
                                             'has_child'
                                         ],
                                 ]);
@@ -1821,11 +1720,9 @@ class QuestionController extends Controller
                     }
 
                     return [
-                        'questions' =>
-                            $questionCount,
+                        'questions' => $questionCount,
 
-                        'options' =>
-                            $optionCount,
+                        'options' => $optionCount,
                     ];
                 }
             );
@@ -1851,7 +1748,7 @@ class QuestionController extends Controller
                 ->with(
                     'success',
                     "{$result['questions']} pertanyaan dan "
-                    . "{$result['options']} option berhasil diimport."
+                    ."{$result['options']} option berhasil diimport."
                 );
         } catch (
             ValidationException $error
@@ -1907,8 +1804,7 @@ class QuestionController extends Controller
             $expectedHeaders
         ) {
             throw ValidationException::withMessages([
-                'file' =>
-                    'Judul kolom pada sheet INPUT_PERTANYAAN tidak sesuai template.',
+                'file' => 'Judul kolom pada sheet INPUT_PERTANYAAN tidak sesuai template.',
             ]);
         }
     }
@@ -1947,8 +1843,7 @@ class QuestionController extends Controller
             $expectedHeaders
         ) {
             throw ValidationException::withMessages([
-                'file' =>
-                    'Judul kolom pada sheet INPUT_OPTIONS tidak sesuai template.',
+                'file' => 'Judul kolom pada sheet INPUT_OPTIONS tidak sesuai template.',
             ]);
         }
     }

@@ -6,11 +6,13 @@ use App\Models\Activity;
 use App\Models\Answer;
 use App\Models\CompleteProfile;
 use App\Models\Group;
+use App\Models\RespondentCompetitor;
 use App\Models\SurveySession;
 use App\Models\Unit;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
@@ -195,7 +197,10 @@ class ProfileController extends Controller
         }
 
         $activities = $canSelectActivity
-            ? Activity::query()->orderBy('name')->get(['id', 'name'])
+            ? Activity::query()
+                ->with('completeProfile')
+                ->orderBy('name')
+                ->get(['id', 'name'])
             : collect();
 
         $groups = Group::query()
@@ -321,6 +326,9 @@ class ProfileController extends Controller
 
             if ($canEditProfile && $selectionChanged) {
                 Answer::where('user_id', auth()->id())->delete();
+                if (Schema::hasTable('respondent_competitors')) {
+                    RespondentCompetitor::where('user_id', auth()->id())->delete();
+                }
                 SurveySession::where('user_id', auth()->id())->delete();
             }
 
@@ -380,7 +388,7 @@ class ProfileController extends Controller
 
         $completeProfile = CompleteProfile::where(
             'activity_id',
-            $profile->activity_id
+            $group->activity_id
         )
             ->orderBy('id')
             ->first();
@@ -494,6 +502,12 @@ class ProfileController extends Controller
             Answer::query()
                 ->where('user_id', $userId)
                 ->delete();
+
+            if (Schema::hasTable('respondent_competitors')) {
+                RespondentCompetitor::query()
+                    ->where('user_id', $userId)
+                    ->delete();
+            }
 
             SurveySession::query()
                 ->where('user_id', $userId)

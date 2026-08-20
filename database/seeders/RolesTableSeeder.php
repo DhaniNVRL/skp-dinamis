@@ -7,20 +7,13 @@ use Illuminate\Support\Facades\DB;
 
 class RolesTableSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-   public function run(): void
+    public function run(): void
     {
-        foreach (['Admin', 'PM', 'Surveyor', 'Monitoring', 'User'] as $name) {
-            DB::table('roles')->insertOrIgnore([
-                [
-                    'name' => $name,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
-            ]);
-        }
+        DB::table('roles')->upsert([
+            ['id' => 1, 'name' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 2, 'name' => 'Surveyor', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 3, 'name' => 'Monitoring', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 4, 'name' => 'User', 'created_at' => now(), 'updated_at' => now()],
+        ], ['id'], ['name', 'updated_at']);
     }
-
 }

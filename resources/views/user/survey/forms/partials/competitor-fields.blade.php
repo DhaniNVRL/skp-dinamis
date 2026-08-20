@@ -163,268 +163,130 @@
         @endforeach
 
         {{-- ========================================================== --}}
-        {{-- TABEL PENILAIAN KOMPETITOR --}}
+        {{-- PENILAIAN KOMPETITOR: PERTANYAAN DI ATAS, KOMPETITOR DI BAWAH --}}
         {{-- ========================================================== --}}
 
         @if ($assessmentQuestions->isNotEmpty())
             @if ($competitors->isNotEmpty())
-                <section
-                    class="overflow-hidden rounded-xl
-                           border border-gray-200
-                           bg-white shadow-sm"
-                >
-                    <div class="overflow-x-auto">
-                        <table
-                            class="min-w-full
-                                   divide-y divide-gray-200"
+                <div class="space-y-5">
+                    @foreach ($assessmentQuestions as $question)
+                        @php
+                            $questionNumber = trim(
+                                (string) ($question->no_header ?? '')
+                                . (string) ($question->no ?? '')
+                            );
+                        @endphp
+
+                        <section
+                            data-question-container
+                            data-question-type="competitor"
+                            data-question-id="{{ $question->id }}"
+                            class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
                         >
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th
-                                        scope="col"
-                                        class="min-w-80 px-5 py-4
-                                               text-left text-xs
-                                               font-semibold uppercase
-                                               tracking-wide
-                                               text-gray-600"
-                                    >
-                                        Pertanyaan
-                                    </th>
+                            <header class="border-b border-gray-200 bg-gray-50 px-5 py-4">
+                                <div class="flex items-start gap-3">
+                                    @if ($questionNumber !== '')
+                                        <span class="inline-flex min-w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 px-2.5 py-1 text-sm font-semibold text-blue-700">
+                                            {{ $questionNumber }}
+                                        </span>
+                                    @endif
 
-                                    @foreach ($competitors as $competitor)
-                                        <th
-                                            scope="col"
-                                            class="min-w-64 px-5 py-4
-                                                   text-center text-xs
-                                                   font-semibold uppercase
-                                                   tracking-wide
-                                                   text-gray-600"
-                                        >
-                                            <div
-                                                class="flex flex-col
-                                                       items-center gap-2"
-                                            >
-                                                <span
-                                                    class="inline-flex h-9 w-9
-                                                           items-center
-                                                           justify-center
-                                                           rounded-lg
-                                                           bg-emerald-100
-                                                           text-emerald-600"
-                                                >
-                                                    <i class="fa-solid fa-building"></i>
-                                                </span>
+                                    <div class="min-w-0">
+                                        <h3 class="font-semibold leading-6 text-gray-800">
+                                            {{ $question->name }}
+                                        </h3>
+                                        <p class="mt-1 text-xs text-gray-500">
+                                            Berikan nilai untuk setiap kompetitor.
+                                        </p>
+                                    </div>
+                                </div>
+                            </header>
 
-                                                <span>
-                                                    {{ $competitor->name }}
-                                                </span>
-                                            </div>
-                                        </th>
-                                    @endforeach
-                                </tr>
-                            </thead>
-
-                            <tbody
-                                class="divide-y divide-gray-200
-                                       bg-white"
-                            >
-                                @foreach ($assessmentQuestions as $question)
+                            <div class="divide-y divide-gray-200">
+                                @foreach ($competitors as $competitor)
                                     @php
-                                        $questionNumber = trim(
-                                            (string) (
-                                                $question->no_header ?? ''
-                                            )
-                                            . (string) (
-                                                $question->no ?? ''
-                                            )
-                                        );
-                                    @endphp
-
-                                    <tr
-                                        data-question-container
-                                        data-question-type="competitor"
-                                        data-question-id="{{ $question->id }}"
-                                        class="align-top"
-                                    >
-                                        {{-- ================================== --}}
-                                        {{-- PERTANYAAN --}}
-                                        {{-- ================================== --}}
-
-                                        <td class="px-5 py-5">
-                                            <div
-                                                class="flex items-start
-                                                       gap-3"
-                                            >
-                                                @if ($questionNumber !== '')
-                                                    <span
-                                                        class="inline-flex
-                                                               min-w-10 shrink-0
-                                                               items-center
-                                                               justify-center
-                                                               rounded-lg
-                                                               bg-blue-100
-                                                               px-2.5 py-1
-                                                               text-sm
-                                                               font-semibold
-                                                               text-blue-700"
-                                                    >
-                                                        {{ $questionNumber }}
-                                                    </span>
-                                                @endif
-
-                                                <div class="min-w-0">
-                                                    <div
-                                                        class="font-semibold
-                                                               leading-6
-                                                               text-gray-800"
-                                                    >
-                                                        {{ $question->name }}
-                                                    </div>
-
-                                                    <p
-                                                        class="mt-1 text-xs
-                                                               text-gray-500"
-                                                    >
-                                                        Berikan nilai untuk
-                                                        setiap kompetitor.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        {{-- ================================== --}}
-                                        {{-- NILAI PER KOMPETITOR --}}
-                                        {{-- ================================== --}}
-
-                                        @foreach ($competitors as $competitor)
-                                            @php
-                                                /*
-                                                 * Ambil jawaban lama.
-                                                 *
-                                                 * Mendukung beberapa bentuk
-                                                 * answerMap yang mungkin sudah
-                                                 * digunakan controller.
-                                                 */
-
-                                                $storedValue = old(
-                                                    "answers.{$question->id}.{$competitor->id}.value",
+                                        $storedValue = old(
+                                            "answers.{$question->id}.{$competitor->id}.value",
+                                            data_get(
+                                                $answerMap,
+                                                "{$question->id}.{$competitor->id}.value",
+                                                data_get(
+                                                    $answerMap,
+                                                    "{$question->id}.0.{$competitor->id}.value",
                                                     data_get(
                                                         $answerMap,
-                                                        "{$question->id}.{$competitor->id}.value",
-                                                        data_get(
-                                                            $answerMap,
-                                                            "{$question->id}.0.{$competitor->id}.value",
-                                                            data_get(
-                                                                $answerMap,
-                                                                "{$question->id}.{$competitor->id}.0.value"
-                                                            )
-                                                        )
+                                                        "{$question->id}.{$competitor->id}.0.value"
                                                     )
-                                                );
+                                                )
+                                            )
+                                        );
 
-                                                $inputName =
-                                                    'answers['
-                                                    . $question->id
-                                                    . ']['
-                                                    . $competitor->id
-                                                    . '][value]';
-                                            @endphp
+                                        $inputName = 'answers['
+                                            . $question->id
+                                            . ']['
+                                            . $competitor->id
+                                            . '][value]';
+                                    @endphp
 
-                                            <td
-                                                class="px-5 py-5
-                                                       align-middle"
-                                            >
-                                                <div
-                                                    data-option-group
-                                                    class="flex flex-wrap
-                                                           items-center
-                                                           justify-center
-                                                           gap-2"
-                                                >
-                                                    @foreach ($scaleValues as $value)
-                                                        @php
-                                                            $inputId =
-                                                                'competitor-'
-                                                                . $question->id
-                                                                . '-'
-                                                                . $competitor->id
-                                                                . '-'
-                                                                . $value;
-                                                        @endphp
+                                    <div class="grid gap-4 px-5 py-4 transition hover:bg-gray-50 md:grid-cols-[minmax(12rem,18rem)_1fr] md:items-center">
+                                        <div class="flex min-w-0 items-center gap-3">
+                                            <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                                                <i class="fa-solid fa-building text-xs"></i>
+                                            </span>
+                                            <span class="break-words text-sm font-semibold text-gray-700">
+                                                {{ $competitor->name }}
+                                            </span>
+                                        </div>
 
-                                                        <label
-                                                            for="{{ $inputId }}"
-                                                            class="cursor-pointer"
+                                        <div class="min-w-0">
+                                            <div data-option-group class="flex flex-wrap items-center justify-center gap-2">
+                                                @foreach ($scaleValues as $value)
+                                                    @php
+                                                        $inputId = 'competitor-'
+                                                            . $question->id
+                                                            . '-'
+                                                            . $competitor->id
+                                                            . '-'
+                                                            . $value;
+                                                    @endphp
+
+                                                    @if ((int) $value === 0)
+                                                        <span class="mx-2 h-10 border-l border-gray-300" aria-hidden="true"></span>
+                                                    @endif
+
+                                                    <label for="{{ $inputId }}" class="cursor-pointer">
+                                                        <input
+                                                            id="{{ $inputId }}"
+                                                            type="radio"
+                                                            name="{{ $inputName }}"
+                                                            value="{{ $value }}"
+                                                            @checked((string) $storedValue === (string) $value)
+                                                            required
+                                                            class="peer sr-only"
                                                         >
-                                                            <input
-                                                                id="{{ $inputId }}"
-                                                                type="radio"
-                                                                name="{{ $inputName }}"
-                                                                value="{{ $value }}"
-                                                                @checked(
-                                                                    (string) $storedValue
-                                                                    ===
-                                                                    (string) $value
-                                                                )
-                                                                required
-                                                                class="peer sr-only"
-                                                            >
+                                                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-emerald-300 bg-white text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 peer-checked:border-emerald-600 peer-checked:bg-emerald-600 peer-checked:text-white peer-focus:ring-2 peer-focus:ring-emerald-200">
+                                                            {{ $value }}
+                                                        </span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
 
-                                                            <span
-                                                                class="inline-flex
-                                                                       h-10 w-10
-                                                                       items-center
-                                                                       justify-center
-                                                                       rounded-full
-                                                                       border
-                                                                       border-emerald-300
-                                                                       bg-white
-                                                                       text-sm
-                                                                       font-semibold
-                                                                       text-emerald-700
-                                                                       transition
-                                                                       hover:bg-emerald-50
-                                                                       peer-checked:border-emerald-600
-                                                                       peer-checked:bg-emerald-600
-                                                                       peer-checked:text-white
-                                                                       peer-focus:ring-2
-                                                                       peer-focus:ring-emerald-200"
-                                                            >
-                                                                {{ $value }}
-                                                            </span>
-                                                        </label>
-                                                    @endforeach
-                                                </div>
-
-                                                <p
-                                                    data-field-error
-                                                    class="mt-3 hidden
-                                                           text-center
-                                                           text-sm
-                                                           font-medium
-                                                           text-red-600"
-                                                >
-                                                    Penilaian wajib dipilih.
-                                                </p>
-                                            </td>
-                                        @endforeach
-                                    </tr>
+                                            <p data-field-error class="mt-3 hidden text-sm font-medium text-red-600">
+                                                Penilaian wajib dipilih.
+                                            </p>
+                                        </div>
+                                    </div>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
+                            </div>
+                        </section>
+                    @endforeach
+                </div>
             @else
-                @include(
-                    'user.survey.partials.empty',
-                    [
-                        'message' =>
-                            'Data kompetitor belum tersedia.',
-                    ]
-                )
+                @include('user.survey.partials.empty', [
+                    'message' => 'Data kompetitor belum tersedia.',
+                ])
             @endif
         @endif
-
     @empty
         @include(
             'user.survey.partials.empty',

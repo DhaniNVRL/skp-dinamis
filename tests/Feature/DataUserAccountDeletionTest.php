@@ -43,6 +43,22 @@ class DataUserAccountDeletionTest extends TestCase
         Schema::create('survey_sessions', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('activity_id')->nullable();
+            $table->unsignedBigInteger('group_id')->nullable();
+            $table->unsignedBigInteger('unit_id')->nullable();
+            $table->unsignedBigInteger('current_form_id')->nullable();
+            $table->string('status')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('finished_at')->nullable();
+            $table->timestamp('reopened_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('forms', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('group_id');
+            $table->unsignedInteger('no_urut')->nullable();
+            $table->string('name')->nullable();
             $table->timestamps();
         });
 
@@ -55,6 +71,7 @@ class DataUserAccountDeletionTest extends TestCase
     protected function tearDown(): void
     {
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('forms');
         Schema::dropIfExists('survey_sessions');
         Schema::dropIfExists('answers');
         Schema::dropIfExists('user_profiles');
@@ -155,6 +172,100 @@ class DataUserAccountDeletionTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => 2]);
     }
 
+    public function test_delete_answers_removes_only_answers_for_selected_user(): void
+    {
+        $admin = $this->createUser(1, 'admin');
+        $this->createUser(2, 'respondent');
+        $this->createUser(3, 'other-user');
+
+        DB::table('user_profiles')->insert([
+            'user_id' => 2,
+            'activity_id' => 5,
+            'group_id' => 10,
+            'unit_id' => 20,
+        ]);
+        DB::table('answers')->insert([
+            ['user_id' => 2, 'answer' => 'Target A'],
+            ['user_id' => 2, 'answer' => 'Target B'],
+            ['user_id' => 3, 'answer' => 'Harus tetap ada'],
+        ]);
+        DB::table('survey_sessions')->insert([
+            'user_id' => 2,
+            'status' => 'completed',
+        ]);
+
+        $response = $this
+            ->withoutMiddleware()
+            ->actingAs($admin)
+            ->delete(route('admin.datauser.delete-answers', 2));
+
+        $response->assertRedirect(route('admin.datauser'));
+        $response->assertSessionHas('successdelete');
+        $this->assertDatabaseMissing('answers', ['user_id' => 2]);
+        $this->assertDatabaseHas('answers', ['user_id' => 3]);
+        $this->assertDatabaseHas('user_profiles', [
+            'user_id' => 2,
+            'activity_id' => 5,
+            'group_id' => 10,
+            'unit_id' => 20,
+        ]);
+        $this->assertDatabaseHas('survey_sessions', [
+            'user_id' => 2,
+            'status' => 'completed',
+        ]);
+    }
+
+    public function test_reopen_survey_preserves_answers_and_marks_account_as_reopened(): void
+    {
+        $admin = $this->createUser(1, 'admin');
+        $this->createUser(2, 'respondent');
+
+        DB::table('user_profiles')->insert([
+            'user_id' => 2,
+            'activity_id' => 5,
+            'group_id' => 10,
+            'unit_id' => 20,
+        ]);
+        DB::table('forms')->insert([
+            'id' => 101,
+            'group_id' => 10,
+            'no_urut' => 1,
+            'name' => 'Form Pertama',
+        ]);
+        DB::table('answers')->insert(['user_id' => 2, 'answer' => 'Tetap ada']);
+        DB::table('survey_sessions')->insert([
+            'user_id' => 2,
+            'activity_id' => 5,
+            'group_id' => 10,
+            'unit_id' => 20,
+            'status' => 'completed',
+            'started_at' => now()->subDay(),
+            'finished_at' => now(),
+        ]);
+
+        $response = $this
+            ->withoutMiddleware()
+            ->actingAs($admin)
+            ->post(route('admin.datauser.reopen-survey', 2));
+
+        $response->assertRedirect(route('admin.datauser'));
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('answers', [
+            'user_id' => 2,
+            'answer' => 'Tetap ada',
+        ]);
+        $this->assertDatabaseHas('survey_sessions', [
+            'user_id' => 2,
+            'status' => 'in_progress',
+            'current_form_id' => 101,
+            'finished_at' => null,
+        ]);
+        $this->assertNotNull(
+            DB::table('survey_sessions')
+                ->where('user_id', 2)
+                ->value('reopened_at')
+        );
+    }
     private function createUser(int $id, string $username): User
     {
         DB::table('users')->insert([

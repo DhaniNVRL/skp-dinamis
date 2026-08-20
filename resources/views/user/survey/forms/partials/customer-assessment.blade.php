@@ -163,18 +163,32 @@
             {{-- ================================================================ --}}
 
             @if ($questionTypeId === 1)
+                @php
+                    $allProfileSubunitIds = collect($subunits ?? [])
+                        ->pluck('id')
+                        ->map(fn ($id) => (int) $id)
+                        ->unique()
+                        ->values();
 
-                <div
-                    class="rounded-xl border border-blue-200
-                           bg-blue-50 px-5 py-4"
-                >
-                    <h2
-                        class="text-center text-lg
-                               font-bold text-gray-800"
+                    $isGlobalHeaderActive = $allProfileSubunitIds->isNotEmpty()
+                        && $allProfileSubunitIds->every(
+                            fn ($id) => $activeSubunitIds->contains($id)
+                        );
+                @endphp
+
+                @if ($isGlobalHeaderActive)
+                    <div
+                        class="rounded-xl border border-blue-200
+                               bg-blue-50 px-5 py-4"
                     >
-                        {{ $question->name }}
-                    </h2>
-                </div>
+                        <h2
+                            class="text-center text-lg
+                                   font-bold text-gray-800"
+                        >
+                            {{ $question->name }}
+                        </h2>
+                    </div>
+                @endif
 
                 @continue
 
@@ -701,22 +715,6 @@
                                                border-amber-200
                                                bg-amber-50 p-5"
                                     >
-
-                                        <div class="mb-4">
-
-                                            <h4 class="font-semibold text-gray-900">
-                                                Pilihan Alasan
-                                            </h4>
-
-
-                                            <p class="mt-1 text-sm text-gray-500">
-                                                Pilih minimal satu alasan jika
-                                                Kinerja 1–{{ $reasonMaximum }}.
-                                            </p>
-
-                                        </div>
-
-
                                         <div
                                             data-reason-checkbox-group
 

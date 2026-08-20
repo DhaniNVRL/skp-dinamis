@@ -10,11 +10,13 @@ use App\Models\QuestionType;
 use App\Models\Question;
 use App\Models\Competitor;
 use App\Models\Description;
+use App\Models\SurveyBranchRule;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -45,6 +47,12 @@ class UnitController extends Controller
         $questionTypes = QuestionType::all();
 
         $competitors = Competitor::where('group_id', $id)->get();
+        $branchRules = Schema::hasTable('survey_branch_rules')
+            ? SurveyBranchRule::query()
+                ->where('group_id', $id)
+                ->with(['parentQuestion.options', 'affirmativeOption', 'dependentQuestions', 'skippedQuestions', 'skippedForms', 'skipForm'])
+                ->get()
+            : collect();
 
         return view('admin.units.index', [
             'groups' => $group,
@@ -53,6 +61,7 @@ class UnitController extends Controller
             'formTypes' => $formTypes,
             'questionTypes' => $questionTypes,
             'competitors' => $competitors,
+            'branchRules' => $branchRules,
         ]);
     }
 

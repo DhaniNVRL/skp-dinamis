@@ -471,6 +471,7 @@ class MonitoringController extends Controller
                 'question:id,no_header,no,name,questiontype_id',
                 'question.options:id,question_id,no,answer_text,answer_text2,has_child',
                 'competitor:id,name',
+                'respondentCompetitor:id,name',
                 'subunit:id,name',
             ])
             ->orderBy('form_id')

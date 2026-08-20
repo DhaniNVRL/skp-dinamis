@@ -48,7 +48,7 @@ class AnswerReviewFormatter
                     $optionName = $options->get((int) $optionId)?->answer_text;
                     $details[] = [
                         'label' => $optionName
-                            ? 'Keterangan — '.$optionName
+                            ? 'Keterangan - '.$optionName
                             : 'Keterangan',
                         'value' => $this->value($childValue, $options, false),
                     ];

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Answer;
 use App\Models\Competitor;
 use App\Models\Form;
+use App\Models\RespondentCompetitor;
 use App\Models\SubUnit;
 use App\Models\SubUnitQuestion;
 use App\Models\SurveySession;
@@ -13,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class SurveyController extends Controller
@@ -72,6 +74,15 @@ class SurveyController extends Controller
                 ->with('error', 'Survei yang telah selesai tidak dapat dibuka kembali sebelum Admin melakukan Reset Account.');
         }
 
+        $branching = app(\App\Services\SurveyBranchingService::class);
+        if ($branching->shouldSkipForm($form, (int) Auth::id())) {
+            $nextVisibleForm = $branching->nextVisibleForm($form, (int) Auth::id());
+
+            return $nextVisibleForm
+                ? redirect()->route('survey.show', $nextVisibleForm)
+                : redirect()->route('survey.finish.page');
+        }
+
         $form->load([
             'description',
             'formtype',
@@ -96,6 +107,11 @@ class SurveyController extends Controller
 
         $currentIndex = $forms->search(fn (Form $item) => $item->is($form));
         abort_if($currentIndex === false, 404);
+        $visibleForms = $forms
+            ->reject(fn (Form $item) => $branching->shouldSkipForm($item, (int) Auth::id()))
+            ->values();
+        $visibleCurrentIndex = $visibleForms->search(fn (Form $item) => $item->is($form));
+        abort_if($visibleCurrentIndex === false, 404);
 
         $subunits = SubUnit::where('unit_id', $profile->unit_id)
             ->orderBy('name')
@@ -123,6 +139,15 @@ class SurveyController extends Controller
         $competitors = Competitor::where('group_id', $profile->group_id)
             ->orderBy('name')
             ->get();
+        // Database lama dapat belum memiliki tabel untuk form pembanding
+        // dinamis. Jangan biarkan seluruh halaman survei berakhir 500.
+        $respondentCompetitors = Schema::hasTable('respondent_competitors')
+            ? RespondentCompetitor::query()
+                ->where('user_id', Auth::id())
+                ->where('form_id', $form->id)
+                ->orderBy('position')
+                ->get()
+            : collect();
 
         $answerMap = [];
         Answer::where('user_id', Auth::id())
@@ -130,7 +155,8 @@ class SurveyController extends Controller
             ->get()
             ->each(function (Answer $answer) use (&$answerMap): void {
                 $value = $answer->answer;
-                $answerMap[$answer->question_id][$answer->subunit_id ?? 0][$answer->competitor_id ?? 0]
+                $targetId = $answer->respondent_competitor_id ?? $answer->competitor_id ?? 0;
+                $answerMap[$answer->question_id][$answer->subunit_id ?? 0][$targetId]
                     = is_array($value) ? $value : ['value' => $answer->answer];
             });
 
@@ -153,15 +179,19 @@ class SurveyController extends Controller
             'subunits' => $subunits,
             'activeMapSubUnit' => $activeMapSubUnit,
             'competitors' => $competitors,
+            'respondentCompetitors' => $respondentCompetitors,
             'answerMap' => $answerMap,
-            'previousForm' => $currentIndex > 0 ? $forms[$currentIndex - 1] : null,
-            'nextForm' => $currentIndex < $forms->count() - 1 ? $forms[$currentIndex + 1] : null,
-            'firstQuestionForm' => $forms->first(
+            'conditionalBranches' => $branching->definitions($form),
+            'previousForm' => $visibleCurrentIndex > 0 ? $visibleForms[$visibleCurrentIndex - 1] : null,
+            'nextForm' => $visibleCurrentIndex < $visibleForms->count() - 1 ? $visibleForms[$visibleCurrentIndex + 1] : null,
+            'firstQuestionForm' => $visibleForms->first(
                 fn (Form $item) => (int) $item->formtype_id !== 12
             ),
-            'isLastForm' => $currentIndex === $forms->count() - 1,
-            'currentPosition' => $currentIndex + 1,
-            'totalForms' => $forms->count(),
+            'isLastForm' => $visibleCurrentIndex === $visibleForms->count() - 1,
+            // Nomor tampilan mengikuti no_urut asli. Form yang dilewati tidak
+            // membuat form setelahnya dinomori ulang (mis. 6 langsung 8).
+            'currentPosition' => (int) $form->no_urut,
+            'totalForms' => max((int) $forms->max('no_urut'), $forms->count()),
         ]);
     }
 
@@ -319,8 +349,9 @@ class SurveyController extends Controller
         $forms = Form::query()
             ->where('group_id', $profile->group_id)
             ->with([
-                'questions:id,form_id,questiontype_id',
+                'questions:id,form_id,no_header,no,questiontype_id',
                 'questions.questiontype:id,name',
+                'questions.options:id,question_id,answer_text',
             ])
             ->orderBy('no_urut')
             ->orderBy('id')
@@ -356,8 +387,11 @@ class SurveyController extends Controller
                 ) => true,
             ]);
 
+        $branching = app(\App\Services\SurveyBranchingService::class);
+
         foreach ($forms as $form) {
-            if ((int) $form->formtype_id === self::DESCRIPTION_TYPE) {
+            if ((int) $form->formtype_id === self::DESCRIPTION_TYPE
+                || $branching->shouldSkipForm($form, (int) Auth::id())) {
                 continue;
             }
 
@@ -367,6 +401,23 @@ class SurveyController extends Controller
             $questions = $form->questions
                 ->whereIn('id', $activeQuestionIds)
                 ->reject(fn ($question) => $this->isTitleQuestion($form, $question));
+
+            if ((int) $form->formtype_id === 1) {
+                $savedPayloads = Answer::query()
+                    ->where('user_id', Auth::id())
+                    ->where('form_id', $form->id)
+                    ->get()
+                    ->mapWithKeys(fn (Answer $answer) => [
+                        $answer->question_id => is_array($answer->answer)
+                            ? $answer->answer
+                            : ['value' => $answer->answer],
+                    ])
+                    ->all();
+                $hiddenIds = $branching->hiddenQuestionIds($form, $savedPayloads);
+                $questions = $questions->reject(
+                    fn ($question) => $hiddenIds->contains((int) $question->id)
+                );
+            }
 
             foreach ($questions as $question) {
                 if (in_array((int) $form->formtype_id, self::PER_SUBUNIT_TYPES, true)) {
@@ -385,6 +436,31 @@ class SurveyController extends Controller
                     continue;
                 }
 
+                if ((int) $form->formtype_id === 14) {
+                    $respondentCompetitorIds = RespondentCompetitor::query()
+                        ->where('user_id', Auth::id())
+                        ->where('form_id', $form->id)
+                        ->pluck('id');
+
+                    if ($respondentCompetitorIds->isEmpty()) {
+                        return $form;
+                    }
+
+                    foreach ($respondentCompetitorIds as $respondentCompetitorId) {
+                        $saved = Answer::query()
+                            ->where('user_id', Auth::id())
+                            ->where('form_id', $form->id)
+                            ->where('question_id', $question->id)
+                            ->where('respondent_competitor_id', $respondentCompetitorId)
+                            ->get()
+                            ->contains(fn (Answer $answer) => $this->hasMeaningfulValue($answer->answer));
+                        if (! $saved) {
+                            return $form;
+                        }
+                    }
+
+                    continue;
+                }
                 if (in_array((int) $form->formtype_id, self::COMPETITOR_TYPES, true)) {
                     foreach ($competitorIds as $competitorId) {
                         if (! $answerKeys->has($this->answerKey($form->id, $question->id, null, $competitorId))) {
@@ -446,3 +522,4 @@ class SurveyController extends Controller
             || (is_numeric($value) && $value !== '');
     }
 }
+

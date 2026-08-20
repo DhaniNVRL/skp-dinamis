@@ -131,18 +131,55 @@
 
         @else
 
-            <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-
-                <i class="fa-solid fa-building-circle-exclamation text-2xl text-gray-400"></i>
-
-                <p class="mt-3 text-sm font-medium text-gray-600">
-                    Belum ada kompetitor
-                </p>
-
-                <p class="mt-1 text-xs text-gray-500">
-                    Tambahkan kompetitor agar tabel penilaian dapat ditampilkan.
-                </p>
-
+            <div class="overflow-x-auto rounded-lg border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="min-w-64 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                                Kompetitor
+                            </th>
+                                <th class="w-14 px-2 py-3 text-center text-xs font-semibold text-gray-600">
+                                    1
+                                </th>                                <th class="w-14 px-2 py-3 text-center text-xs font-semibold text-gray-600">
+                                    2
+                                </th>                                <th class="w-14 px-2 py-3 text-center text-xs font-semibold text-gray-600">
+                                    3
+                                </th>                                <th class="w-14 px-2 py-3 text-center text-xs font-semibold text-gray-600">
+                                    4
+                                </th>                                <th class="w-14 px-2 py-3 text-center text-xs font-semibold text-gray-600">
+                                    5
+                                </th>                                <th class="w-14 px-2 py-3 text-center text-xs font-semibold text-gray-600 border-l border-gray-300">
+                                    0
+                                </th>                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        <tr>
+                            <td class="px-4 py-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-400">
+                                        <i class="fa-solid fa-building-circle-exclamation text-xs"></i>
+                                    </span>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-600">Belum ada kompetitor</p>
+                                        <p class="mt-0.5 text-xs text-gray-500">Tambahkan nama kompetitor untuk mengaktifkan penilaian skala 1–5.</p>
+                                    </div>
+                                </div>
+                            </td>
+                                <td class="px-2 py-4 text-center">
+                                    <input type="radio" disabled aria-label="Nilai 1" class="h-4 w-4 border-gray-300 text-violet-600">
+                                </td>                                <td class="px-2 py-4 text-center">
+                                    <input type="radio" disabled aria-label="Nilai 2" class="h-4 w-4 border-gray-300 text-violet-600">
+                                </td>                                <td class="px-2 py-4 text-center">
+                                    <input type="radio" disabled aria-label="Nilai 3" class="h-4 w-4 border-gray-300 text-violet-600">
+                                </td>                                <td class="px-2 py-4 text-center">
+                                    <input type="radio" disabled aria-label="Nilai 4" class="h-4 w-4 border-gray-300 text-violet-600">
+                                </td>                                <td class="px-2 py-4 text-center">
+                                    <input type="radio" disabled aria-label="Nilai 5" class="h-4 w-4 border-gray-300 text-violet-600">
+                                </td>                                <td class="px-2 py-4 text-center border-l border-gray-300">
+                                    <input type="radio" disabled aria-label="Nilai 0" class="h-4 w-4 border-gray-300 text-violet-600">
+                                </td>                        </tr>
+                    </tbody>
+                </table>
             </div>
 
         @endif

@@ -69,6 +69,7 @@ class SubUnitController extends Controller
             ->where('group_id', $unit->group_id)
             ->with([
                 'formtype',
+                'description',
                 'questions' => function ($query) {
                     $query
                         ->orderBy('no_header')
@@ -749,3 +750,4 @@ class SubUnitController extends Controller
         );
     }
 }
+

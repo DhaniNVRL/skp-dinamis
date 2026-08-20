@@ -32,6 +32,29 @@
 
     /*
     |--------------------------------------------------------------------------
+    | Header Penilaian Pelanggan hanya mempunyai satu konfigurasi
+    |--------------------------------------------------------------------------
+    |
+    | Form type 2 dan 3 memang dinilai per Sub Unit. Namun pertanyaan bertipe
+    | Header/Title adalah judul bersama, sehingga toggle-nya tidak boleh
+    | diulang untuk setiap Sub Unit. Satu toggle ini tetap menyimpan/menghapus
+    | mapping untuk seluruh Sub Unit agar jalur pembacaan preview dan survey
+    | tetap konsisten dengan pertanyaan lainnya.
+    */
+    $formTypeId = (int) (
+        $form->formtype_id
+        ?? $form->id_formtype
+        ?? 0
+    );
+
+    $usesSingleHeaderToggle = $isHeader
+        && in_array($formTypeId, [2, 3], true);
+
+    $usesPerSubUnitToggle = $isPerSubUnit
+        && ! $usesSingleHeaderToggle;
+
+    /*
+    |--------------------------------------------------------------------------
     | Resolve Unit Name
     |--------------------------------------------------------------------------
     */
@@ -62,7 +85,7 @@
         </div>
     </div>
 
-    @if ($isPerSubUnit)
+    @if ($usesPerSubUnitToggle)
         {{-- SATU BARIS UNTUK SETIAP SUB UNIT --}}
         <div class="divide-y divide-gray-100">
             @foreach ($allSubunits as $subunit)
@@ -116,7 +139,9 @@
 
                 <div>
                     <div class="text-sm font-medium text-gray-700">
-                        Berlaku untuk seluruh Sub Unit
+                        {{ $usesSingleHeaderToggle
+                            ? 'Judul berlaku untuk seluruh Sub Unit'
+                            : 'Berlaku untuk seluruh Sub Unit' }}
                     </div>
 
                     <div

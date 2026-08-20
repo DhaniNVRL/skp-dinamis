@@ -16,6 +16,7 @@
         11,
         12,
         13,
+        14,
     ];
 
     $totalVisibleForms = 0;
@@ -97,19 +98,16 @@
                     })
                     ->values();
 
-                $hasDescription = (
-                    $form->description
-                    && !empty(
-                        $form->description->content
-                    )
-                );
+                $descriptionContent = $form->description?->content
+                    ?? $form->description?->description
+                    ?? $form->description?->text
+                    ?? null;
+
+                $hasDescription = filled($descriptionContent);
 
                 $canShowForm =
                     $activeQuestions->isNotEmpty()
-                    || (
-                        $formTypeId === 12
-                        && $hasDescription
-                    );
+                    || $hasDescription;
 
                 if ($canShowForm) {
                     $totalVisibleForms++;

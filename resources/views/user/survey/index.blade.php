@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app-role-modern')
 
 @section('title', $form->name ?? 'Survei')
 @section('suppressGlobalValidationErrors', true)
@@ -46,56 +46,8 @@
 
         <div class="space-y-6">
 
-    {{-- FORM DESCRIPTION --}}
-    @if (
-        (int) $form->formtype_id !== 12 &&
-        $form->description
-    )
-        @php
-            $descriptionContent =
-                $form->description->content
-                ?? $form->description->description
-                ?? $form->description->text
-                ?? null;
-        @endphp
-
-        @if ($descriptionContent)
-            <div
-                class="overflow-hidden rounded-xl border
-                       border-indigo-200 bg-white shadow-sm"
-            >
-                <div
-                    class="flex items-center gap-3 border-b
-                           border-indigo-200 bg-indigo-50 px-6 py-4"
-                >
-                    <span
-                        class="inline-flex h-10 w-10 items-center
-                               justify-center rounded-lg bg-indigo-100
-                               text-indigo-600"
-                    >
-                        <i class="fa-solid fa-circle-info"></i>
-                    </span>
-
-                    <div>
-                        <h2 class="font-semibold text-gray-900">
-                            Petunjuk Pengisian
-                        </h2>
-
-                        <p class="text-sm text-gray-500">
-                            Bacalah petunjuk sebelum mengisi pertanyaan.
-                        </p>
-                    </div>
-                </div>
-
-                <article
-                    class="prose max-w-none px-6 py-5 text-gray-700"
-                >
-                    {!! $descriptionContent !!}
-                </article>
-            </div>
-        @endif
-    @endif
-
+    {{-- Dipakai bersama oleh Responden dan Surveyor; Form Description (type 12) dirender terpisah. --}}
+    @include('user.survey.forms.partials.form-description')
     {{-- FORM QUESTIONS --}}
     <div
         class="rounded-xl border border-gray-200
@@ -151,6 +103,10 @@
                         @include('user.survey.forms.description')
                         @break
 
+                    @case(14)
+                        @include('user.survey.forms.respondent-competitor-assessment')
+                        @break
+
                     @case(13)
                         @include('user.survey.forms.competitor-assessment-1-7')
                         @break
@@ -171,3 +127,5 @@
 
 @push('scripts')
 @endpush
+
+

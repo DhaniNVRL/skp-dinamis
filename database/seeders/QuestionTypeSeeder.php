@@ -67,6 +67,12 @@ class QuestionTypeSeeder extends Seeder
                 'description' => 'Nomor telepon',
                 'created_at' => now(),
                 'updated_at' => now(),
+            ],[
+                'id'=>10,
+                'name' => 'Header',
+                'description' => 'Menampilkan judul atau pemisah bagian tanpa kolom jawaban.',
+                'created_at' => now(),
+                'updated_at' => now(),
             ]
         ], ['id'], ['name', 'description', 'updated_at']);
     }

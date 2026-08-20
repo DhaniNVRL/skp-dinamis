@@ -92,6 +92,27 @@ class QuestionAnswerConsistencyTest extends TestCase
         $this->assertDatabaseHas('answers', ['question_id' => 31]);
     }
 
+    public function test_create_question_accepts_alphanumeric_number(): void
+    {
+        $response = $this->withoutMiddleware()->post(route('question.store'), [
+            'group_id' => 10,
+            'form_id' => 20,
+            'questions' => [[
+                'no_header' => 'L',
+                'no' => 'L1A',
+                'name' => 'Pertanyaan alfanumerik',
+                'questiontype_id' => 2,
+            ]],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('questions', [
+            'no_header' => 'L',
+            'no' => 'L1A',
+            'name' => 'Pertanyaan alfanumerik',
+        ]);
+    }
+
     public function test_delete_question_also_deletes_its_answers_options_and_visibility(): void
     {
         $this->insertQuestion(30, 'Pertanyaan dihapus');

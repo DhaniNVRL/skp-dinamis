@@ -113,6 +113,7 @@
             >
                 <button
                     id="addUnitRow"
+                    data-add-row="createUnitBody"
                     type="button"
                     class="inline-flex items-center justify-center gap-2
                            rounded-lg border border-green-600

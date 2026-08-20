@@ -13,6 +13,7 @@ use App\Http\Controllers\FormTypeController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\MonitoringDashboardController;
 use App\Http\Controllers\MonitoringController;
+use App\Http\Controllers\RawDataController;
 use App\Http\Controllers\OptionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestionController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SubUnitController;
 use App\Http\Controllers\SubUnitQuestionController;
 use App\Http\Controllers\SurveyController;
+use App\Http\Controllers\SurveyBranchRuleController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserDashboardController;
 
@@ -65,8 +67,7 @@ Route::middleware('auth')->group(function () {
             '/admin/dashboard',
             [MonitoringDashboardController::class, 'index']
         )->name('admin.dashboard');
-
-        Route::get(
+Route::get(
             '/pm/dashboard',
             [MonitoringDashboardController::class, 'index']
         )->name('pm.dashboard');
@@ -106,6 +107,10 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:Admin')->group(function () {
 
+        Route::get('/raw-data', [RawDataController::class, 'index'])
+            ->name('admin.raw-data.index');
+        Route::get('/raw-data/download', [RawDataController::class, 'download'])
+            ->name('admin.raw-data.download');
         Route::controller(DataUserController::class)->group(function () {
             Route::get('/datauser', 'index')
                 ->name('admin.datauser');
@@ -142,6 +147,15 @@ Route::middleware('auth')->group(function () {
                 '/datauser/{id}/resetprofile',
                 'resetAccount'
             )->name('admin.datauser.resetaccount');
+            Route::delete(
+                '/datauser/{id}/answers',
+                'deleteAnswers'
+            )->name('admin.datauser.delete-answers');
+
+            Route::post(
+                '/datauser/{id}/reopen-survey',
+                'reopenSurvey'
+            )->name('admin.datauser.reopen-survey');
 
             Route::get('/datauser/{id}/show', 'show')
                 ->name('admin.datauser.show');
@@ -149,6 +163,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/datauser/{id}/answers', 'answers')
                 ->whereNumber('id')
                 ->name('admin.datauser.answers');
+
+            Route::get('/datauser/{id}/answers/pdf', 'downloadAnswersPdf')
+                ->whereNumber('id')
+                ->name('admin.datauser.answers.pdf');
 
             Route::delete('/datauser/{id}', 'destroy')
                 ->name('admin.datauser.destroy');
@@ -223,6 +241,13 @@ Route::middleware('auth')->group(function () {
             Route::delete('/cprofile/{id}', 'destroy')
                     ->name('cprofile.destroy');
         });
+
+        Route::post('/groups/{group}/branch-rules', [SurveyBranchRuleController::class, 'store'])
+            ->name('admin.branch-rules.store');
+        Route::put('/groups/{group}/branch-rules/{rule}', [SurveyBranchRuleController::class, 'update'])
+    ->name('admin.branch-rules.update');
+Route::delete('/groups/{group}/branch-rules/{rule}', [SurveyBranchRuleController::class, 'destroy'])
+            ->name('admin.branch-rules.destroy');
 
         Route::controller(UnitController::class)->group(function () {
             Route::get('/masterdataunit', 'masterdata')
@@ -573,3 +598,6 @@ Route::get('/', function () {
         default => abort(403, 'Role tidak dikenali.'),
     };
 });
+
+
+

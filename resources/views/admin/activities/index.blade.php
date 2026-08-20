@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('admin.layouts.app-modern')
 
 @section('title', 'Activity')
 
@@ -68,3 +68,4 @@
 @push('templates')
     @include('admin.activities.templates.create-row')
 @endpush
+

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('admin.layouts.app-modern')
 
 @section('title', 'Unit & Input Pertanyaan')
 
@@ -221,6 +221,7 @@
     @include('admin.units.question.templates.forms.suggestion')
     @include('admin.units.question.templates.forms.competitor-1-5')
     @include('admin.units.question.templates.forms.competitor-1-7')
+@include('admin.units.question.templates.forms.respondent-competitor')
 
 @endpush
 
@@ -229,3 +230,4 @@
     <script src="{{ asset('js/unit-question-crud-fixes.js') }}?v=20260806-1"></script>
     <script src="{{ asset('js/question-bulk-selection.js') }}?v=20260806-1"></script>
 @endpush
+

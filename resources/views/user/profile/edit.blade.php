@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app-role-modern')
 
 @section('title', 'Edit Profil Responden')
 
@@ -73,6 +73,8 @@
                         @foreach ($activities as $activity)
                             <option
                                 value="{{ $activity->id }}"
+                                data-group-label="{{ $activity->completeProfile?->group_question ?? 'Bidang Kerja / Group' }}"
+                                data-unit-label="{{ $activity->completeProfile?->unit_question ?? 'Unit / Jabatan' }}"
                                 @selected((string) old('activity_id', $profile->activity_id) === (string) $activity->id)
                             >
                                 {{ $activity->name }}
@@ -234,3 +236,4 @@
     </form>
 </div>
 @endsection
+

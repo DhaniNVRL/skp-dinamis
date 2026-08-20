@@ -20,11 +20,10 @@ class RoleController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-     {
-        $roles = Role::all();
-        // return response()->json($roles);
+    {
+        $roles = Role::query()->orderBy('id')->get();
 
-        return view('/admin/masterdata/role', compact('roles'));
+        return view('admin.masterdata.role', compact('roles'));
     }
 
     /**
@@ -41,20 +40,28 @@ class RoleController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'id' => ['required', 'array', 'min:1'],
+            'id.*' => ['required', 'integer', 'min:1', 'distinct', 'unique:roles,id'],
             'name' => ['required', 'array', 'min:1'],
             'name.*' => ['required', 'string', 'max:191', 'distinct', 'unique:roles,name'],
+        ], [
+            'id.*.unique' => 'ID role sudah digunakan.',
+            'id.*.distinct' => 'ID role tidak boleh duplikat dalam input yang sama.',
+            'name.*.unique' => 'Nama role sudah digunakan.',
+            'name.*.distinct' => 'Nama role tidak boleh duplikat dalam input yang sama.',
         ]);
 
-        $nameList = $request->input('name');
-
-        DB::transaction(function () use ($nameList): void {
-            foreach ($nameList as $name) {
-                Role::create(['name' => trim($name)]);
+        DB::transaction(function () use ($validated): void {
+            foreach ($validated['name'] as $index => $name) {
+                Role::create([
+                    'id' => (int) $validated['id'][$index],
+                    'name' => trim($name),
+                ]);
             }
         });
-        return redirect()->back()->with('success', 'Data berhasil disimpan!');
-    }
 
+        return redirect()->back()->with('success', 'Role berhasil ditambahkan.');
+    }
     public function export(){
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();

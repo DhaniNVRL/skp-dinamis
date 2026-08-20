@@ -88,13 +88,13 @@ function initializeUnitTabs(page) {
 */
 function initializeCreateUnit() {
     const modal = document.getElementById("createUnitModal");
-    const tableBody = document.getElementById("unitCreateBody");
+    const tableBody = document.getElementById("createUnitBody");
     const template = document.getElementById(
-        "createRowUnitTemplate"
+        "createUnitRowTemplate"
     );
 
     const addButton = document.querySelector(
-        '[data-add-row="unitCreateBody"]'
+        '[data-add-row="createUnitBody"]'
     );
 
     if (!modal) {
@@ -106,14 +106,14 @@ function initializeCreateUnit() {
 
     if (!tableBody) {
         console.warn(
-            "Table body #unitCreateBody tidak ditemukan."
+            "Table body #createUnitBody tidak ditemukan."
         );
         return;
     }
 
     if (!template) {
         console.warn(
-            "Template #createRowUnitTemplate tidak ditemukan."
+            "Template #createUnitRowTemplate tidak ditemukan."
         );
         return;
     }
@@ -194,7 +194,7 @@ function initializeCreateUnit() {
         "click",
         function (event) {
             const removeButton = event.target.closest(
-                "[data-remove-row]"
+                "[data-remove-unit-row]"
             );
 
             if (!removeButton) {

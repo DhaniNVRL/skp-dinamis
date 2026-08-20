@@ -161,6 +161,17 @@
         )
         @break
 
+    {{-- RESPONDENT-DEFINED COMPETITOR ASSESSMENT 1-7 --}}
+    @case(14)
+        @include(
+            'admin.subunit.show-question.forms.respondent-competitor-assessment',
+            [
+                'form' => $form,
+                'questions' => $questions,
+            ]
+        )
+        @break
+
     @default
         <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
             Form type {{ $formTypeId }} belum didukung.

@@ -101,7 +101,8 @@
                             <td class="px-4 py-4 text-sm text-gray-600">
                                 @if ($answer->subunit?->name)
                                     <div class="rounded-lg border border-purple-100 bg-purple-50 px-3 py-2"><p class="text-[11px] font-semibold uppercase tracking-wide text-purple-500">Sub Unit yang dinilai</p><p class="mt-1 font-medium text-purple-800">{{ $answer->subunit->name }}</p></div>
-                                @elseif ($answer->competitor?->name)
+                                @elseif ($answer->respondentCompetitor?->name)
+                                    <div class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2"><p class="text-[11px] font-semibold uppercase tracking-wide text-blue-500">Kompetitor pilihan responden</p><p class="mt-1 font-medium text-blue-800">{{ $answer->respondentCompetitor->name }}</p></div>                                @elseif ($answer->competitor?->name)
                                     <div class="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2"><p class="text-[11px] font-semibold uppercase tracking-wide text-amber-500">Kompetitor yang dinilai</p><p class="mt-1 font-medium text-amber-800">{{ $answer->competitor->name }}</p></div>
                                 @else
                                     <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">Global</span>

@@ -32,3 +32,36 @@ body {
   left: 0;
   overflow-y: auto;
 }
+/* Ukuran baku untuk seluruh modal tambah dan edit data. */
+:is([data-modal][id^="create"], [data-modal][id^="edit"], #globalModal) {
+  padding: clamp(0.75rem, 2vw, 1.5rem) !important;
+}
+
+:is([data-modal][id^="create"], [data-modal][id^="edit"], #globalModal) > div {
+  box-sizing: border-box;
+  width: min(72rem, calc(100vw - 1.5rem)) !important;
+  min-width: 0 !important;
+  max-width: 72rem !important;
+  max-height: calc(100vh - 1.5rem) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+:is([data-modal][id^="create"], [data-modal][id^="edit"]) > div > form {
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 640px) {
+  :is([data-modal][id^="create"], [data-modal][id^="edit"], #globalModal) > div {
+    width: calc(100vw - 1rem) !important;
+    max-height: calc(100vh - 1rem) !important;
+    border-radius: 0.75rem;
+  }
+}

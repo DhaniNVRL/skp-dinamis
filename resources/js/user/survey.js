@@ -14,6 +14,7 @@ document.addEventListener(
         }
 
         initializeChildOptions(page);
+        initializeConditionalQuestions(page);
         initializeCustomerAssessment(page);
         initializeSurveyValidation(form);
         initializeServerValidation(form);
@@ -22,6 +23,61 @@ document.addEventListener(
     }
 );
 
+function initializeConditionalQuestions(page) {
+    const conditionalCards = Array.from(
+        page.querySelectorAll('[data-conditional-question]')
+    );
+
+    if (conditionalCards.length === 0) return;
+
+    conditionalCards.forEach(function (card) {
+        card.querySelectorAll('input, textarea, select').forEach(function (field) {
+            field.dataset.conditionalRequired = field.required ? '1' : '0';
+        });
+    });
+
+    const refresh = function () {
+        conditionalCards.forEach(function (card) {
+            let rules = { show_rules: [], hide_rules: [] };
+
+            try {
+                rules = JSON.parse(card.dataset.conditionalRules || '{}');
+            } catch (error) {
+                rules = { show_rules: [], hide_rules: [] };
+            }
+
+            const matches = function (trigger) {
+                const parentId = String(trigger.parent_id || '');
+                const selected = page.querySelector(
+                    `input[name="answers[${parentId}][value]"]:checked`
+                ) || page.querySelector(
+                    `select[name="answers[${parentId}][value]"]`
+                );
+                return Boolean(selected) && (trigger.option_ids || []).map(String).includes(String(selected.value));
+            };
+            const showRules = Array.isArray(rules.show_rules) ? rules.show_rules : [];
+            const hideRules = Array.isArray(rules.hide_rules) ? rules.hide_rules : [];
+            const visible = (showRules.length === 0 || showRules.some(matches)) && !hideRules.some(matches);
+
+            card.hidden = !visible;
+            card.classList.toggle('hidden', !visible);
+            card.querySelectorAll('input, textarea, select').forEach(function (field) {
+                field.disabled = !visible;
+                field.required = visible && field.dataset.conditionalRequired === '1';
+            });
+
+            if (!visible) {
+                clearQuestionValidation(card);
+            }
+        });
+    };
+
+    page.addEventListener('change', function (event) {
+        if (event.target.matches('input[type="radio"], select')) refresh();
+    });
+
+    refresh();
+}
 function initializeSurveyorAutofill(form) {
     const button = document.getElementById("surveyorAutofillButton");
     if (!button) return;

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app-role-modern')
 
 @section('title', 'Dashboard Responden')
 
@@ -152,7 +152,7 @@
 
                     <div>
                         <div class="text-sm text-gray-500">
-                            Bidang Kerja / Group
+                            {{ $completeProfile?->group_question ?? 'Bidang Kerja / Group' }}
                         </div>
 
                         <div class="mt-1 font-semibold text-gray-900">
@@ -169,7 +169,7 @@
 
                     <div>
                         <div class="text-sm text-gray-500">
-                            Unit / Jabatan
+                            {{ $completeProfile?->unit_question ?? 'Unit / Jabatan' }}
                         </div>
 
                         <div class="mt-1 font-semibold text-gray-900">

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('admin.layouts.app-modern')
 
 @section('title', 'Review Jawaban User')
 
@@ -11,3 +11,4 @@
         'profile' => $user->profile,
     ])
 @endsection
+

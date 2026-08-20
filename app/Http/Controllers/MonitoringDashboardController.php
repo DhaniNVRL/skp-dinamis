@@ -137,7 +137,7 @@ class MonitoringDashboardController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.dashboard.index', compact(
+        return view('admin.dashboard.modern', compact(
             'respondents',
             'activities',
             'groups',
@@ -177,6 +177,7 @@ class MonitoringDashboardController extends Controller
                                         'question:id,no_header,no,name,questiontype_id',
                                         'question.options:id,question_id,no,answer_text,answer_text2,has_child',
                                         'competitor:id,name',
+                'respondentCompetitor:id,name',
                                         'subunit:id,name',
                                     ])
                                     ->orderBy('form_id')
@@ -292,3 +293,5 @@ class MonitoringDashboardController extends Controller
     }
 
 }
+
+

@@ -56,6 +56,11 @@ class Form extends Model
         return $this->hasMany(Competitor::class, 'form_id');
     }
 
+    public function respondentCompetitors()
+    {
+        return $this->hasMany(RespondentCompetitor::class);
+    }
+
     public function subUnitQuestions()
     {
         return $this->hasMany(SubUnitQuestion::class, 'form_id');

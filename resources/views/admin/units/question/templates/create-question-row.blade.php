@@ -18,11 +18,11 @@
         {{-- Nomor --}}
         <td class="px-4 py-3 align-top">
             <input
-                type="number"
+                type="text"
                 data-question-field="no"
-                min="0"
+                maxlength="20"
                 required
-                placeholder="1"
+                placeholder="Contoh: 1 atau L1A"
                 class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
                        focus:border-indigo-500 focus:outline-none
                        focus:ring-1 focus:ring-indigo-500"

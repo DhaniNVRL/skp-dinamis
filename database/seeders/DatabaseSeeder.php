@@ -10,11 +10,14 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesTableSeeder::class,
+            FormTypeSeeder::class,
+            QuestionTypeSeeder::class,
             ActivityTableSeeder::class,
             GroupsTableSeeder::class,
             UnitsTableSeeder::class,
-            FormTypeSeeder::class,
-            QuestionTypeSeeder::class,
+            SubUnitsTableSeeder::class,
+            DemoSurveySeeder::class,
+            UsersTableSeeder::class,
         ]);
     }
 }

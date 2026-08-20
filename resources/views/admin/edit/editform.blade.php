@@ -1,4 +1,4 @@
-@extends('admin.layouts.app')
+@extends('admin.layouts.app-modern')
 
 @section('title', 'Edit Activity')
 
@@ -61,3 +61,4 @@
   </form>
 </div>
 @endsection
+

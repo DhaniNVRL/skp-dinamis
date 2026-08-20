@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('admin.layouts.app-modern')
 
 @section('title', 'Form Type')
 
@@ -104,3 +104,4 @@ document.getElementById('formTypeSelectAll')?.addEventListener('change', functio
 });
 </script>
 @endpush
+

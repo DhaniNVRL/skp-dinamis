@@ -15,7 +15,7 @@
                 </h2>
 
                 <p class="mt-1 text-sm text-gray-600">
-                    Preview pertanyaan berdasarkan pengaturan Hide and Show.
+                    Preview pertanyaan berdasarkan pengaturan Hide and Show. Form Description selalu ditampilkan.
                 </p>
             </div>
         </div>

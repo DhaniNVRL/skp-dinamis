@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('admin.layouts.app-modern')
 
 @section('title', 'Group & Complete Profile')
 
@@ -48,3 +48,4 @@
 @push('scripts')
     <script src="{{ asset('js/groups-bulk-selection.js') }}?v=20260806-2"></script>
 @endpush
+

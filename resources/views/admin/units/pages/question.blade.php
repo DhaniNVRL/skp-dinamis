@@ -9,6 +9,10 @@
     )
 
     @include(
+        'admin.units.question.partials.branching-configuration'
+    )
+
+    @include(
         'admin.units.question.partials.form-card'
     )
 

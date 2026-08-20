@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app-role-modern')
 
 @section('title', 'Selesaikan Survei')
 
@@ -15,3 +15,4 @@
     </div>
 </div>
 @endsection
+

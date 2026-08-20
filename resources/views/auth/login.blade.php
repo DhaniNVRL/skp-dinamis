@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}?v=20260820">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=20260820">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>

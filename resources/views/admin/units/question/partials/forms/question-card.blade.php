@@ -12,6 +12,7 @@
         10 => 'admin.units.question.partials.forms.suggestion.question-body',
         11 => 'admin.units.question.partials.forms.competitor-1-5.question-body',
         13 => 'admin.units.question.partials.forms.competitor-1-7.question-body',
+        14 => 'admin.units.question.partials.forms.respondent-competitor.question-body',
         default => null,
     };
 @endphp

@@ -1,17 +1,24 @@
-@extends('admin.layouts.app')
+@extends('admin.layouts.app-modern')
 
-@section('title', 'Edit Activity')
+@section('title', 'Edit Role')
 
 @section('content')
 <div class="max-w-xl mx-auto mt-10 bg-white shadow-md rounded px-8 pt-6 pb-8">
-  <h2 class="text-2xl font-semibold mb-6 text-center">Edit Kegiatan</h2>
+  <h2 class="text-2xl font-semibold mb-6 text-center">Edit Role</h2>
 
   <form action="{{ route('roles.update', $role->id) }}" method="POST">
     @csrf
     @method('PUT')
 
     <div class="mb-4">
-      <label for="name" class="block text-gray-700 font-bold mb-2">Nama Kegiatan:</label>
+      <label for="role_id" class="block text-gray-700 font-bold mb-2">ID Role:</label>
+      <input type="text" id="role_id" value="{{ $role->id }}" readonly
+             class="w-full rounded border bg-gray-100 px-3 py-2 text-gray-500">
+      <p class="mt-1 text-xs text-gray-500">ID tidak dapat diubah karena digunakan sebagai relasi akun.</p>
+    </div>
+
+    <div class="mb-4">
+      <label for="name" class="block text-gray-700 font-bold mb-2">Nama Role:</label>
       <input type="text" name="name" id="name" value="{{ old('name', $role->name) }}"
              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
       @error('name')
@@ -30,3 +37,4 @@
   </form>
 </div>
 @endsection
+

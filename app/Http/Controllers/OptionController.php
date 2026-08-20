@@ -103,11 +103,6 @@ class OptionController extends Controller
             $validated['question_id']
         );
 
-        if (SurveySession::query()->where('group_id', $question->group_id)->exists()) {
-            return back()->with('error', 'Option tidak dapat ditambahkan karena survei pada group ini sudah dimulai.');
-        }
-
-
         DB::transaction(function () use ($validated) {
 
             foreach (
@@ -192,10 +187,6 @@ class OptionController extends Controller
 
         $option = Option::with('question.form')
             ->findOrFail($id);
-
-        if (SurveySession::query()->where('group_id', $option->question->group_id)->exists()) {
-            return back()->with('error', 'Option tidak dapat diubah karena survei pada group ini sudah dimulai.');
-        }
 
         $hasChild = (bool) $validated['has_child'];
 

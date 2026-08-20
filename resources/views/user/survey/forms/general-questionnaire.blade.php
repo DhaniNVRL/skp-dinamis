@@ -75,7 +75,32 @@
             return (int) $a->id <=> (int) $b->id;
         })
         ->values();
-@endphp
+
+    $conditionalByQuestion = collect($conditionalBranches ?? [])
+        ->flatMap(function (array $branch) {
+            $trigger = [
+                'parent_id' => (int) $branch['parent_id'],
+                'option_ids' => array_map('intval', $branch['affirmative_option_ids']),
+            ];
+
+            $shown = collect($branch['dependent_question_ids'] ?? [])->map(fn ($questionId) => [
+                'question_id' => (int) $questionId,
+                'mode' => 'show',
+                'trigger' => $trigger,
+            ]);
+            $skipped = collect($branch['skipped_question_ids'] ?? [])->map(fn ($questionId) => [
+                'question_id' => (int) $questionId,
+                'mode' => 'hide',
+                'trigger' => $trigger,
+            ]);
+
+            return $shown->concat($skipped);
+        })
+        ->groupBy('question_id')
+        ->map(fn ($rules) => [
+            'show_rules' => $rules->where('mode', 'show')->pluck('trigger')->values()->all(),
+            'hide_rules' => $rules->where('mode', 'hide')->pluck('trigger')->values()->all(),
+        ]);@endphp
 
 
 <div class="space-y-5">
@@ -150,6 +175,17 @@
                 .
                 (string) ($question->no ?? '')
             );
+
+            $conditionalRule = $conditionalByQuestion->get((int) $question->id);
+            $matchesConditionalTrigger = function (array $trigger) use ($answerMap): bool {
+                $selected = data_get($answerMap, $trigger['parent_id'].'.0.0.value');
+                return in_array((int) $selected, array_map('intval', $trigger['option_ids']), true);
+            };
+            $showRules = collect($conditionalRule['show_rules'] ?? []);
+            $hideRules = collect($conditionalRule['hide_rules'] ?? []);
+            $conditionalVisible = ! $conditionalRule
+                || (($showRules->isEmpty() || $showRules->contains($matchesConditionalTrigger))
+                    && ! $hideRules->contains($matchesConditionalTrigger));
         @endphp
 
 
@@ -163,6 +199,11 @@
                 data-question-container
                 data-question-title
                 data-question-id="{{ $question->id }}"
+                @if ($conditionalRule)
+                    data-conditional-question
+                    data-conditional-rules='@json($conditionalRule)'
+                    @unless ($conditionalVisible) hidden @endunless
+                @endif
                 class="overflow-hidden rounded-xl
                        border border-blue-200
                        bg-gradient-to-r
@@ -190,10 +231,15 @@
                 data-question-container
                 data-question-id="{{ $question->id }}"
                 data-question-type="{{ $questionTypeId }}"
+                @if ($conditionalRule)
+                    data-conditional-question
+                    data-conditional-rules='@json($conditionalRule)'
+                    @unless ($conditionalVisible) hidden @endunless
+                @endif
                 class="rounded-xl border
                        border-gray-200
                        bg-white p-5
-                       shadow-sm"
+                       shadow-sm {{ $conditionalVisible ? '' : 'hidden' }}"
             >
 
                 {{-- ======================================================== --}}

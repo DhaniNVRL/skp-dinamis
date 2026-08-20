@@ -13,6 +13,7 @@ class Answer extends Model
         'question_id',
         'subunit_id',
         'competitor_id',
+        'respondent_competitor_id',
         'answer',
     ];
 
@@ -73,5 +74,10 @@ class Answer extends Model
     public function competitor()
     {
         return $this->belongsTo(Competitor::class);
+    }
+
+    public function respondentCompetitor()
+    {
+        return $this->belongsTo(RespondentCompetitor::class);
     }
 }

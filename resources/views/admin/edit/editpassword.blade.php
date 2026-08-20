@@ -1,4 +1,4 @@
-@extends('admin.layouts.app')
+@extends('admin.layouts.app-modern')
 
 @section('title', 'Edit Activity')
 
@@ -143,4 +143,5 @@
   });
 </script>
 @endsection
+
 

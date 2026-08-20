@@ -20,7 +20,7 @@
 @endphp
 
 <div class="space-y-3">
-    <div class="flex flex-wrap items-center gap-y-3">
+    <div class="flex flex-wrap items-center justify-center gap-y-3">
         {{-- NILAI UTAMA --}}
         <div class="flex flex-wrap items-center gap-2">
             @for ($score = 1; $score <= $scaleMaximum; $score++)

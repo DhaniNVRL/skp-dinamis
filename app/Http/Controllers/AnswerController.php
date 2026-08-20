@@ -6,6 +6,7 @@ use App\Models\Answer;
 use App\Models\Competitor;
 use App\Models\Form;
 use App\Models\Question;
+use App\Models\RespondentCompetitor;
 use App\Models\SubUnit;
 use App\Models\SubUnitQuestion;
 use App\Models\SurveySession;
@@ -219,6 +220,18 @@ class AnswerController extends Controller
             []
         );
 
+        $branching = app(\App\Services\SurveyBranchingService::class);
+        $hiddenConditionalQuestionIds = $branching->hiddenQuestionIds($form, $answers);
+        $questions = $questions
+            ->reject(fn ($question) => $hiddenConditionalQuestionIds->contains((int) $question->id))
+            ->values();
+
+        if ((int) $form->formtype_id === 14) {
+            return $this->saveRespondentCompetitorAnswers(
+                $request, $form, $profile, $questions, $answers
+            );
+        }
+
         /*
          * Server-side validation.
          */
@@ -246,8 +259,17 @@ class AnswerController extends Controller
                 $questions,
                 $activeRows,
                 $competitorIds,
-                $answers
+                $answers,
+                $hiddenConditionalQuestionIds
             ): void {
+                if ($hiddenConditionalQuestionIds->isNotEmpty()) {
+                    Answer::query()
+                        ->where('user_id', Auth::id())
+                        ->where('form_id', $form->id)
+                        ->whereIn('question_id', $hiddenConditionalQuestionIds)
+                        ->delete();
+                }
+
                 foreach (
                     $questions as $question
                 ) {
@@ -416,6 +438,106 @@ class AnswerController extends Controller
         }
     }
 
+    private function saveRespondentCompetitorAnswers(
+        Request $request,
+        Form $form,
+        UserProfile $profile,
+        Collection $questions,
+        array $answers
+    ): RedirectResponse {
+        $rows = collect((array) $request->input('respondent_competitors', []));
+        $errors = [];
+
+        if ($rows->isEmpty() || $rows->count() > 10) {
+            $errors['respondent_competitors'] = 'Jumlah kompetitor harus antara 1 sampai 10.';
+        }
+
+        $names = [];
+        foreach ($rows as $index => $row) {
+            $name = trim((string) Arr::get((array) $row, 'name'));
+            if ($name === '') {
+                $errors["respondent_competitors.{$index}.name"] = 'Nama kompetitor wajib diisi.';
+            } elseif (in_array(mb_strtolower($name), $names, true)) {
+                $errors["respondent_competitors.{$index}.name"] = 'Nama kompetitor tidak boleh sama.';
+            }
+            $names[] = mb_strtolower($name);
+
+            foreach ($questions as $question) {
+                if ($this->isTitleQuestion($form, $question)) {
+                    continue;
+                }
+                $value = Arr::get($answers, "{$question->id}.{$index}.value");
+                if (! in_array((string) $value, ['0','1','2','3','4','5','6','7'], true)) {
+                    $errors["answers.{$question->id}.{$index}.value"] = "Penilaian {$question->name} untuk {$name} wajib dipilih.";
+                }
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        DB::transaction(function () use ($rows, $form, $profile, $questions, $answers): void {
+            $existing = RespondentCompetitor::query()
+                ->where('user_id', Auth::id())
+                ->where('form_id', $form->id)
+                ->get()->keyBy('id');
+            $submittedIds = $rows
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->filter(fn (int $id) => $existing->has($id))
+                ->values();
+
+            // Hapus baris yang dibuang lebih dahulu agar pergeseran posisi tidak
+            // berbenturan dengan unique(user_id, form_id, position).
+            RespondentCompetitor::query()
+                ->where('user_id', Auth::id())
+                ->where('form_id', $form->id)
+                ->whereNotIn('id', $submittedIds)
+                ->delete();
+            $existing = $existing->only($submittedIds->all());
+            $kept = [];
+
+            foreach ($rows->values() as $position => $row) {
+                $row = (array) $row;
+                $requestedId = (int) ($row['id'] ?? 0);
+                $competitor = $requestedId && $existing->has($requestedId)
+                    ? $existing->get($requestedId)
+                    : new RespondentCompetitor();
+                $competitor->fill([
+                    'user_id' => Auth::id(),
+                    'activity_id' => $profile->activity_id,
+                    'form_id' => $form->id,
+                    'position' => $position + 1,
+                    'name' => trim((string) $row['name']),
+                ])->save();
+                $kept[] = $competitor->id;
+
+                foreach ($questions as $question) {
+                    if ($this->isTitleQuestion($form, $question)) {
+                        continue;
+                    }
+                    $value = Arr::get($answers, "{$question->id}.{$rows->keys()->get($position)}.value");
+                    Answer::query()->updateOrCreate([
+                        'user_id' => Auth::id(),
+                        'form_id' => $form->id,
+                        'question_id' => $question->id,
+                        'subunit_id' => null,
+                        'competitor_id' => null,
+                        'respondent_competitor_id' => $competitor->id,
+                    ], ['answer' => ['value' => $value]]);
+                }
+            }
+
+            RespondentCompetitor::query()
+                ->where('user_id', Auth::id())
+                ->where('form_id', $form->id)
+                ->whereNotIn('id', $kept)
+                ->delete();
+        });
+
+        return $this->goToNextForm($form);
+    }
     /*
     |--------------------------------------------------------------------------
     | VALIDATION
@@ -1074,6 +1196,8 @@ class AnswerController extends Controller
 
                 'competitor_id' =>
                     $competitorId,
+
+                'respondent_competitor_id' => null,
             ];
 
         $answer = Answer::query()->updateOrCreate(
@@ -1099,68 +1223,15 @@ class AnswerController extends Controller
     private function goToNextForm(
         Form $form
     ): RedirectResponse {
-        $nextForm = Form::query()
-            ->where(
-                'group_id',
-                $form->group_id
-            )
-            ->where(
-                function ($query) use (
-                    $form
-                ): void {
-                    $query
-                        ->where(
-                            'no_urut',
-                            '>',
-                            $form->no_urut
-                        )
-                        ->orWhere(
-                            function (
-                                $query
-                            ) use (
-                                $form
-                            ): void {
-                                $query
-                                    ->where(
-                                        'no_urut',
-                                        $form->no_urut
-                                    )
-                                    ->where(
-                                        'id',
-                                        '>',
-                                        $form->id
-                                    );
-                            }
-                        );
-                }
-            )
-            ->orderBy('no_urut')
-            ->orderBy('id')
-            ->first();
+        $nextForm = app(\App\Services\SurveyBranchingService::class)
+            ->nextVisibleForm($form, (int) Auth::id());
 
         SurveySession::query()
-            ->where(
-                'user_id',
-                Auth::id()
-            )
-            ->update([
-                'current_form_id' =>
-                    $nextForm?->id,
-            ]);
+            ->where('user_id', Auth::id())
+            ->update(['current_form_id' => $nextForm?->id]);
 
-        if ($nextForm) {
-            return redirect()->route(
-                'survey.show',
-                [
-                    'form' =>
-                        $nextForm->id,
-                ]
-            );
-        }
-
-        return redirect()->route(
-            'survey.finish.page'
-        );
+        return $nextForm
+            ? redirect()->route('survey.show', ['form' => $nextForm->id])
+            : redirect()->route('survey.finish.page');
     }
-
 }

@@ -78,12 +78,14 @@ function initializeProfileUnitDropdown() {
 
     if (activitySelect) {
         activitySelect.addEventListener("change", function () {
+            updateLabelsFromActivity();
             filterGroupsByActivity();
             resetUnitSelect();
             unitSelect.disabled = true;
         });
 
         filterGroupsByActivity(true);
+        updateLabelsFromActivity();
     }
 
     groupSelect.addEventListener(
@@ -234,6 +236,18 @@ function initializeProfileUnitDropdown() {
         }
     }
 
+    function updateLabelsFromActivity() {
+        if (!activitySelect) {
+            return;
+        }
+
+        const selectedActivity = activitySelect.selectedOptions[0];
+
+        updateLabels({
+            group: selectedActivity?.dataset.groupLabel || "Bidang Kerja / Group",
+            unit: selectedActivity?.dataset.unitLabel || "Unit / Jabatan",
+        });
+    }
     function setLoading(isLoading) {
         if (isLoading) {
             resetUnitSelect("Memuat unit...");

@@ -1,4 +1,4 @@
-@extends('admin.layouts.app')
+@extends('admin.layouts.app-modern')
 
 @section('title', 'Detail Responden dan Jawaban')
 
@@ -18,3 +18,4 @@
         'backLabel' => 'Kembali ke Dashboard',
     ])
 @endsection
+

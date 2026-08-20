@@ -120,7 +120,7 @@
                                         title="{{ $surveySession->reopened_at->format('d-m-Y H:i') }}"
                                     >
                                         <i class="fa-solid fa-lock-open"></i>
-                                        Akun dibuka kembali
+                                        Akun Dibuka Kembali
                                     </span>
 
                                 @else

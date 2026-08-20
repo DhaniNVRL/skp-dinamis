@@ -314,6 +314,42 @@ class SurveyorAccountAccessTest extends TestCase
         ]);
     }
 
+    public function test_complete_profile_labels_follow_the_selected_activity(): void
+    {
+        DB::table('complete_profiles')->insert([
+            [
+                'activity_id' => 10,
+                'group_question' => 'Bidang Kerja Activity Surveyor',
+                'unit_question' => 'Jabatan Activity Surveyor',
+            ],
+            [
+                'activity_id' => 20,
+                'group_question' => 'Bidang Kerja Activity Lain',
+                'unit_question' => 'Jabatan Activity Lain',
+            ],
+        ]);
+
+        $surveyor = User::query()->findOrFail(2);
+
+        $edit = $this->actingAs($surveyor)->get(route('profile.edit'));
+        $edit->assertOk();
+        $edit->assertSee('data-group-label="Bidang Kerja Activity Lain"', false);
+        $edit->assertSee('data-unit-label="Jabatan Activity Lain"', false);
+
+        $units = $this->actingAs($surveyor)->getJson(route('profile.units', 200));
+        $units->assertOk()->assertJsonPath(
+            'data.labels.group',
+            'Bidang Kerja Activity Lain'
+        )->assertJsonPath(
+            'data.labels.unit',
+            'Jabatan Activity Lain'
+        );
+
+        $dashboard = $this->actingAs($surveyor)->get(route('user.dashboard'));
+        $dashboard->assertOk();
+        $dashboard->assertSee('Bidang Kerja Activity Surveyor');
+        $dashboard->assertSee('Jabatan Activity Surveyor');
+    }
     public function test_surveyor_can_choose_another_activity_and_old_demo_data_is_cleared(): void
     {
         $surveyor = User::query()->findOrFail(2);
@@ -488,5 +524,25 @@ class SurveyorAccountAccessTest extends TestCase
         $dashboardAfterLogin->assertOk();
         $dashboardAfterLogin->assertSee('Pengisian survei telah selesai dan dikunci.');
         $dashboardAfterLogin->assertDontSee(route('survey.index'), false);
+
+        DB::table('users')->insert([
+            'id' => 12,
+            'username' => 'admin-pdf',
+            'password' => Hash::make('Admin!12345'),
+            'role_id' => 1,
+        ]);
+
+        $pdf = $this->actingAs(User::query()->findOrFail(12))
+            ->get(route('admin.datauser.answers.pdf', 9));
+        $pdf->assertOk();
+        $pdf->assertHeader('content-type', 'application/pdf');
+        $this->assertStringContainsString(
+            'attachment; filename=review-jawaban-user-selesai.pdf',
+            (string) $pdf->headers->get('content-disposition')
+        );
+
+        $this->actingAs(User::query()->findOrFail(12))
+            ->get(route('admin.datauser.answers.pdf', 2))
+            ->assertStatus(422);
     }
 }
