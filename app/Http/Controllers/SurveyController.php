@@ -10,6 +10,7 @@ use App\Models\SubUnit;
 use App\Models\SubUnitQuestion;
 use App\Models\SurveySession;
 use App\Models\UserProfile;
+use App\Services\UnitCompetitorVisibilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -136,9 +137,12 @@ class SurveyController extends Controller
         }
 
         $questions = $form->questions;
-        $competitors = Competitor::where('group_id', $profile->group_id)
-            ->orderBy('name')
-            ->get();
+        $competitors = app(UnitCompetitorVisibilityService::class)->filterForUnit(
+            Competitor::where('group_id', $profile->group_id)
+                ->orderBy('name')
+                ->get(),
+            $profile->unit_id ? (int) $profile->unit_id : null
+        );
         // Database lama dapat belum memiliki tabel untuk form pembanding
         // dinamis. Jangan biarkan seluruh halaman survei berakhir 500.
         $respondentCompetitors = Schema::hasTable('respondent_competitors')
@@ -368,8 +372,13 @@ class SurveyController extends Controller
             ->get(['form_id', 'question_id', 'subunit_id'])
             ->groupBy('form_id');
 
-        $competitorIds = Competitor::query()
-            ->where('group_id', $profile->group_id)
+        $competitorIds = app(UnitCompetitorVisibilityService::class)
+            ->filterForUnit(
+                Competitor::query()
+                    ->where('group_id', $profile->group_id)
+                    ->get(),
+                $profile->unit_id ? (int) $profile->unit_id : null
+            )
             ->pluck('id')
             ->map(fn ($id) => (int) $id);
 

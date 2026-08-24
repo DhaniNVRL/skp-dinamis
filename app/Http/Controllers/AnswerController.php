@@ -11,6 +11,7 @@ use App\Models\SubUnit;
 use App\Models\SubUnitQuestion;
 use App\Models\SurveySession;
 use App\Models\UserProfile;
+use App\Services\UnitCompetitorVisibilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -206,10 +207,12 @@ class AnswerController extends Controller
                 true
             )
         ) {
-            $competitorIds = Competitor::query()
-                ->where(
-                    'group_id',
-                    $profile->group_id
+            $competitorIds = app(UnitCompetitorVisibilityService::class)
+                ->filterForUnit(
+                    Competitor::query()
+                        ->where('group_id', $profile->group_id)
+                        ->get(),
+                    $profile->unit_id ? (int) $profile->unit_id : null
                 )
                 ->pluck('id')
                 ->map(fn ($id) => (int) $id);

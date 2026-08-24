@@ -163,6 +163,9 @@
                 class="subunit-tab-content hidden"
             >
                 @include('admin.subunit.pages.hide-show')
+                <div class="mt-6">
+                    @include('admin.subunit.pages.competitor-visibility')
+                </div>
             </div>
 
             {{-- TAMPILAN PERTANYAAN --}}

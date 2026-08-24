@@ -467,6 +467,9 @@ Route::delete('/groups/{group}/branch-rules/{rule}', [SurveyBranchRuleController
                     'bulkDelete'
                 )->name('subunits.bulk-delete');
 
+                Route::post('/subunits/{id}/competitor-visibility', 'updateCompetitorVisibility')
+                    ->name('subunits.competitor-visibility.update');
+
                 Route::put('/subunits/{id}', 'update')
                     ->name('subunits.update');
 

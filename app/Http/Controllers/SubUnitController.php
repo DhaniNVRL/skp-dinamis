@@ -12,6 +12,8 @@ use App\Models\QuestionType;
 use App\Models\Question;
 use App\Models\SubUnit;
 use App\Models\Competitor;
+use App\Models\UnitCompetitorVisibility;
+use App\Services\UnitCompetitorVisibilityService;
 use App\Models\SubUnitQuestion;
 use App\Models\Answer;
 use Illuminate\Http\Request;
@@ -99,10 +101,22 @@ class SubUnitController extends Controller
             })
             ->all();
 
-        $competitors = Competitor::query()
+        $allCompetitors = Competitor::query()
             ->where('group_id', $unit->group_id)
             ->orderBy('name')
             ->get();
+
+        $competitorVisibilityService = app(UnitCompetitorVisibilityService::class);
+        $competitorVisibilityConfigured = $competitorVisibilityService->isConfigured((int) $unit->id);
+        $selectedCompetitorIds = $competitorVisibilityConfigured
+            ? UnitCompetitorVisibility::query()
+                ->where('unit_id', $unit->id)
+                ->where('is_visible', true)
+                ->pluck('competitor_id')
+                ->map(fn ($competitorId) => (int) $competitorId)
+                ->all()
+            : $allCompetitors->pluck('id')->map(fn ($competitorId) => (int) $competitorId)->all();
+        $competitors = $competitorVisibilityService->filterForUnit($allCompetitors, (int) $unit->id);
 
         $allowedTabs = [
             'subunit',
@@ -111,6 +125,10 @@ class SubUnitController extends Controller
         ];
 
         $activeTab = $request->query('tab', 'subunit');
+
+        if ($activeTab === 'competitor-visibility') {
+            $activeTab = 'hide-show';
+        }
 
         if (!in_array($activeTab, $allowedTabs, true)) {
             $activeTab = 'subunit';
@@ -124,6 +142,9 @@ class SubUnitController extends Controller
             'allSubunits' => $allSubunits,
             'forms' => $forms,
             'competitors' => $competitors,
+            'allCompetitors' => $allCompetitors,
+            'selectedCompetitorIds' => $selectedCompetitorIds,
+            'competitorVisibilityConfigured' => $competitorVisibilityConfigured,
             'activeMapSubUnit' => $activeMapSubUnit,
             'activeTab' => $activeTab,
         ]);
@@ -682,6 +703,45 @@ class SubUnitController extends Controller
         }
     }
 
+    public function updateCompetitorVisibility(Request $request, string $id)
+    {
+        $unit = Unit::with('group')->findOrFail($id);
+        $validCompetitorIds = Competitor::query()
+            ->where('group_id', $unit->group_id)
+            ->pluck('id')
+            ->map(fn ($competitorId) => (int) $competitorId);
+        $selectedIds = collect($request->input('competitor_ids', []))
+            ->map(fn ($competitorId) => (int) $competitorId)
+            ->unique()
+            ->values();
+
+        if ($selectedIds->diff($validCompetitorIds)->isNotEmpty()) {
+            return back()->withErrors([
+                'competitor_ids' => 'Kompetitor yang dipilih tidak sesuai dengan group unit ini.',
+            ]);
+        }
+
+        DB::transaction(function () use ($unit, $validCompetitorIds, $selectedIds): void {
+            UnitCompetitorVisibility::query()->where('unit_id', $unit->id)->delete();
+            $now = now();
+            $rows = $validCompetitorIds->map(fn ($competitorId) => [
+                'unit_id' => $unit->id,
+                'competitor_id' => $competitorId,
+                'is_visible' => $selectedIds->contains($competitorId),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])->all();
+
+            if ($rows !== []) {
+                UnitCompetitorVisibility::query()->insert($rows);
+            }
+        });
+
+        return redirect()->route('admin.subunit', [
+            'id' => $unit->id,
+            'tab' => 'hide-show',
+        ])->with('success', 'Konfigurasi kompetitor untuk unit berhasil disimpan.');
+    }
     private function redirectToSubUnit(
         int $unitId,
         string $sessionKey,
