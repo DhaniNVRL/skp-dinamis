@@ -74,10 +74,11 @@
 
         {{-- ACTIVITY --}}
         <td class="activity-column border-r border-gray-200 p-3">
+            <span class="activity-not-applicable hidden block text-center text-xs font-medium text-gray-400">Tidak berlaku</span>
 
             <select
                 name="activity_id[]"
-                required
+                
                 class="activity-select w-full rounded-lg border border-gray-300 bg-white px-3 py-2
                        focus:outline-none focus:ring-2 focus:ring-green-500"
             >
@@ -98,6 +99,28 @@
 
         </td>
 
+
+        {{-- GROUP --}}
+        <td class="group-column border-r border-gray-200 p-3">
+            <span class="group-not-applicable hidden block text-center text-xs font-medium text-gray-400">Tidak berlaku</span>
+            <select name="group_id[]" aria-label="Group opsional" class="group-select w-full rounded-lg border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <option value="">Pilih Group</option>
+                @foreach($groups as $group)
+                    <option value="{{ $group->id }}" data-activity-id="{{ $group->activity_id }}" hidden disabled>{{ $group->name }}</option>
+                @endforeach
+            </select>
+        </td>
+
+        {{-- UNIT --}}
+        <td class="unit-column border-r border-gray-200 p-3">
+            <span class="unit-not-applicable hidden block text-center text-xs font-medium text-gray-400">Tidak berlaku</span>
+            <select name="unit_id[]" aria-label="Unit opsional" class="unit-select w-full rounded-lg border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <option value="">Pilih Unit</option>
+                @foreach($units as $unit)
+                    <option value="{{ $unit->id }}" data-group-id="{{ $unit->group_id }}" hidden disabled>{{ $unit->name }}</option>
+                @endforeach
+            </select>
+        </td>
 
         {{-- ACTION --}}
         <td class="p-3 text-center">

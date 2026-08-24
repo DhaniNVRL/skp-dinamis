@@ -62,6 +62,19 @@
     <a href="{{ route('admin.datauser.editpassword', $profileUser->id) }}" class="text-indigo-600 transition hover:text-indigo-800" title="Ubah Password">
         <i class="fa-solid fa-key"></i>
     </a>
+    @if ($profile->group_id || $profile->unit_id)
+        <button
+            type="button"
+            data-modal-open="clearProfileAssignmentModal"
+            data-name="{{ $profile->fullname ?: $profileUser->username }}"
+            data-action="{{ route('admin.datauser.clear-profile-assignment', $profileUser->id) }}"
+            class="text-fuchsia-600 transition hover:text-fuchsia-800"
+            title="Hapus Group dan Unit Profile"
+            aria-label="Hapus Group dan Unit Profile"
+        >
+            <i class="fa-solid fa-user-minus"></i>
+        </button>
+    @endif
 
     <button
         type="button"

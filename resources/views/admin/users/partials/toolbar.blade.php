@@ -17,12 +17,12 @@
 
             <form action="{{ route('admin.import.datauser') }}" method="POST" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
                 @csrf
-                <label for="userImportFile" class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50">
+                <label for="userImportFile" class="inline-flex max-w-64 cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50">
                     <i class="fa-solid fa-file-excel text-green-600"></i>
-                    Pilih File
+                    <span id="userImportFileLabel" class="truncate">Pilih File</span>
                 </label>
                 <input id="userImportFile" type="file" name="file" accept=".xlsx,.xls" required class="hidden">
-                <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700">
+                <button id="userImportSubmit" type="submit" disabled class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:hover:bg-gray-300">
                     <i class="fa-solid fa-file-import"></i>
                     Import
                 </button>

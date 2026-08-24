@@ -1,9 +1,9 @@
 <div
     id="createUserModal"
     data-modal
-    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-6"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-2 sm:p-4"
 >
-    <div class="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-xl bg-white shadow-xl">
+    <div class="max-h-[90vh] w-[calc(100vw-1rem)] max-w-[1800px] overflow-y-auto rounded-xl bg-white shadow-xl">
 
         {{-- Header --}}
         <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
@@ -38,15 +38,15 @@
 
 
             {{-- Body --}}
-            <div class="overflow-x-auto p-6">
+            <div class="max-w-full p-6">
 
-                <div class="overflow-hidden rounded-lg border border-gray-200">
+                <div class="max-w-full overflow-x-scroll rounded-lg border border-gray-200 pb-2">
 
                     <table
                         id="userCreateTable"
                         data-dynamic-table
                         data-template="createUserRowTemplate"
-                        class="w-full border-collapse"
+                        class="min-w-[1500px] w-full border-collapse"
                     >
 
                         <thead class="bg-gray-100">
@@ -60,27 +60,34 @@
                                 </th>
 
                                 <th
-                                    class="border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600"
+                                    class="min-w-64 border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600"
                                 >
                                     Username
                                 </th>
 
                                 <th
-                                    class="border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600"
+                                    class="min-w-64 border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600"
                                 >
                                     Password
                                 </th>
 
                                 <th
-                                    class="w-52 border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600"
+                                    class="min-w-52 border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600"
                                 >
                                     Role
                                 </th>
 
                                 <th
-                                    class="w-64 border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600"
+                                    class="min-w-64 border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600"
                                 >
                                     Activity
+                                </th>
+                                <th class="min-w-64 border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                                    Group <span class="normal-case text-gray-400">(opsional)</span>
+                                </th>
+
+                                <th class="min-w-64 border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                                    Unit <span class="normal-case text-gray-400">(opsional)</span>
                                 </th>
 
                                 <th

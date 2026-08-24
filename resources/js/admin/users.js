@@ -53,94 +53,79 @@ document.addEventListener(
 
 
 /* =========================
-   ROLE CHANGE
+   ROLE & PROFILE CASCADE
 ========================= */
-document.addEventListener(
-    "change",
-    (e)=>{
+function filterProfileOptions(row, resetGroup = false, resetUnit = false) {
+    const activity = row.querySelector('.activity-select');
+    const activityNotApplicable = row.querySelector('.activity-not-applicable');
+    const group = row.querySelector('.group-select');
+    const unit = row.querySelector('.unit-select');
+    if (!activity || !group || !unit) return;
 
+    if (resetGroup) group.value = '';
+    [...group.options].forEach((option, index) => {
+        if (index === 0) return;
+        const visible = String(option.dataset.activityId) === String(activity.value);
+        option.hidden = !visible;
+        option.disabled = !visible;
+    });
+    if (group.selectedOptions[0]?.disabled) group.value = '';
 
-        if(
-            !e.target.classList.contains(
-                "role-select"
-            )
-        ){
-            return;
+    if (resetUnit) unit.value = '';
+    [...unit.options].forEach((option, index) => {
+        if (index === 0) return;
+        const visible = String(option.dataset.groupId) === String(group.value);
+        option.hidden = !visible;
+        option.disabled = !visible;
+    });
+    if (unit.selectedOptions[0]?.disabled) unit.value = '';
+}
+
+function syncUserRow(row, reset = false) {
+    const role = row.querySelector('.role-select');
+    const activityColumn = row.querySelector('.activity-column');
+    const groupColumn = row.querySelector('.group-column');
+    const unitColumn = row.querySelector('.unit-column');
+    const activity = row.querySelector('.activity-select');
+    const activityNotApplicable = row.querySelector('.activity-not-applicable');
+    const group = row.querySelector('.group-select');
+    const unit = row.querySelector('.unit-select');
+    const groupNotApplicable = row.querySelector('.group-not-applicable');
+    const unitNotApplicable = row.querySelector('.unit-not-applicable');
+    if (!role || !activity || !group || !unit) return;
+
+    const roleId = Number(role.value);
+    const profileRole = roleId === 2 || roleId === 4;
+    const showProfileFields = !roleId || profileRole;
+    const activityRequired = roleId === 3 || roleId === 4;
+    activityColumn?.classList.remove('hidden');
+    activity.classList.toggle('hidden', roleId === 1);
+    activityNotApplicable?.classList.toggle('hidden', roleId !== 1);
+    groupColumn?.classList.remove('hidden');
+    unitColumn?.classList.remove('hidden');
+    group.classList.toggle('hidden', !showProfileFields);
+    unit.classList.toggle('hidden', !showProfileFields);
+    groupNotApplicable?.classList.toggle('hidden', showProfileFields);
+    unitNotApplicable?.classList.toggle('hidden', showProfileFields);
+    activity.required = activityRequired;
+
+    if (reset) {
+        if (roleId === 1) activity.value = '';
+        if (!profileRole) {
+            group.value = '';
+            unit.value = '';
         }
-
-
-        const row =
-            e.target.closest("tr") ||
-            e.target.closest("form");
-
-
-        const activityColumn =
-            row.querySelector(
-                ".activity-column"
-            );
-
-
-        const activitySelect =
-            row.querySelector(
-                ".activity-select"
-            );
-
-
-        const roleName =
-            e.target
-                .options[
-                    e.target.selectedIndex
-                ]
-                .text
-                .toLowerCase();
-
-
-
-        if(
-            roleName === "admin" ||
-            roleName === "surveyor"
-        ){
-
-
-            activityColumn.classList.add(
-                "hidden"
-            );
-
-
-            activitySelect.value = "";
-
-
-            activitySelect.removeAttribute(
-                "required"
-            );
-
-
-            clearError(
-                activitySelect
-            );
-
-
-        }else{
-
-
-            activityColumn.classList.remove(
-                "hidden"
-            );
-
-
-            activitySelect.setAttribute(
-                "required",
-                true
-            );
-
-
-        }
-
-
     }
-);
+    filterProfileOptions(row, reset, reset);
+}
 
-
+document.addEventListener('change', (event) => {
+    const row = event.target.closest('tr') || event.target.closest('form');
+    if (!row) return;
+    if (event.target.classList.contains('role-select')) syncUserRow(row, true);
+    if (event.target.classList.contains('activity-select')) filterProfileOptions(row, true, true);
+    if (event.target.classList.contains('group-select')) filterProfileOptions(row, false, true);
+});
 /* =========================
    VALIDATION INPUT
 ========================= */
@@ -455,6 +440,22 @@ document.addEventListener("modal:opened", (event) => {
 });
 
 document.addEventListener("modal:opened", (event) => {
+    if (event.detail.id !== "clearProfileAssignmentModal" || !activeModalButton) {
+        return;
+    }
+
+    const form = document.getElementById("clearProfileAssignmentForm");
+    const name = document.getElementById("clearProfileAssignmentName");
+
+    if (form) {
+        form.action = activeModalButton.dataset.action || "#";
+    }
+
+    if (name) {
+        name.textContent = activeModalButton.dataset.name || "user ini";
+    }
+});
+document.addEventListener("modal:opened", (event) => {
     if (event.detail.id !== "resetProfileModal" || !activeModalButton) {
         return;
     }
@@ -494,8 +495,31 @@ document.addEventListener("modal:opened", (event) => {
 const UserPage = {
 
     init() {
+        this.initImportFile();
         this.initBulkSelect();
         this.bindEvents();
+    },
+
+    initImportFile() {
+        const input = document.getElementById("userImportFile");
+        const label = document.getElementById("userImportFileLabel");
+        const submit = document.getElementById("userImportSubmit");
+
+        if (!input || !label || !submit) return;
+
+        const syncImportState = () => {
+            const file = input.files?.[0] ?? null;
+            label.textContent = file?.name || "Pilih File";
+            label.title = file?.name || "";
+            submit.disabled = !file;
+        };
+
+        input.addEventListener("change", syncImportState);
+        input.form?.addEventListener("reset", () => {
+            window.setTimeout(syncImportState, 0);
+        });
+
+        syncImportState();
     },
 
     bindEvents() {

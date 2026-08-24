@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard')</title>
-    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}?v=20260820">
-    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=20260820">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-sucofindo.png') }}?v=20260820-sucofindo-2">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
@@ -76,7 +75,7 @@
             <button type="button" class="text-xl text-slate-600 lg:hidden" @click="sidebarOpen=true"><i class="fa-solid fa-bars"></i></button>
             <div class="ml-auto flex items-center gap-3">
                 <div class="hidden items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 sm:flex"><i class="fa-regular fa-calendar text-blue-600"></i>{{ now()->translatedFormat('d M Y') }}</div>
-                <button class="relative flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"><i class="fa-regular fa-bell"></i><span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span></button>
+                
                 <div class="relative" @click.outside="profileOpen=false">
                     <button type="button" @click="profileOpen=!profileOpen" class="flex items-center gap-3 rounded-xl p-1.5 hover:bg-slate-50">
                         <span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">{{ strtoupper(substr(auth()->user()->username ?? 'A',0,1)) }}</span>

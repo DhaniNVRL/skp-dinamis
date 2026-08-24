@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', '')</title>
-    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}?v=20260820">
-    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=20260820">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-sucofindo.png') }}?v=20260820-sucofindo-2">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
@@ -71,7 +70,7 @@
             <button type="button" class="text-xl text-slate-600 lg:hidden" @click="sidebarOpen=true"><i class="fa-solid fa-bars"></i></button>
             <div class="ml-auto flex items-center gap-3">
                 <div class="hidden items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 sm:flex"><i class="fa-regular fa-calendar text-blue-600"></i>{{ now()->translatedFormat('d M Y') }}</div>
-                <button class="relative flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"><i class="fa-regular fa-bell"></i><span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span></button>
+                
                 <div class="relative" @click.outside="profileOpen=false">
                     <button @click="profileOpen=!profileOpen" class="flex items-center gap-3 rounded-xl p-1.5 hover:bg-slate-50"><span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">{{ strtoupper(substr($layoutUser->username ?? 'U',0,1)) }}</span><span class="hidden text-left md:block"><span class="block max-w-44 truncate text-sm font-bold">{{ $layoutUser->username ?? 'User' }}</span><span class="block text-xs text-slate-500">{{ $roleTitle }}</span></span><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></button>
                     <div x-cloak x-show="profileOpen" x-transition class="absolute right-0 mt-2 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-xl"><form method="POST" action="{{ route('logout') }}">@csrf<button class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"><i class="fa-solid fa-right-from-bracket"></i>Keluar</button></form></div>

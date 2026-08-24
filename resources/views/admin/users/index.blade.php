@@ -65,6 +65,7 @@
 @include('admin.users.modals.edit')
 @include('admin.users.modals.reset-password')
 @include('admin.users.modals.reset-profile')
+@include('admin.users.modals.clear-profile-assignment')
 @include('admin.users.modals.delete-answers')
 @include('admin.users.modals.reopen-survey')
 @endsection

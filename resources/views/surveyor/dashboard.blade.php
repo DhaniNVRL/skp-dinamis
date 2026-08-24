@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Dashboard Surveyor</title>
-    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}?v=20260820">
-    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=20260820">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-sucofindo.png') }}?v=20260820-sucofindo-2">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
 <body class="bg-light">

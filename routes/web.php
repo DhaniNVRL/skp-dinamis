@@ -147,6 +147,10 @@ Route::get(
                 '/datauser/{id}/resetprofile',
                 'resetAccount'
             )->name('admin.datauser.resetaccount');
+            Route::post(
+                '/datauser/{id}/clear-profile-assignment',
+                'clearProfileAssignment'
+            )->name('admin.datauser.clear-profile-assignment');
             Route::delete(
                 '/datauser/{id}/answers',
                 'deleteAnswers'

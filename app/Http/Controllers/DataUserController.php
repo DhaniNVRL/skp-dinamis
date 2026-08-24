@@ -25,6 +25,9 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\DefinedName;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class DataUserController extends Controller
 {
@@ -98,6 +101,8 @@ class DataUserController extends Controller
         $sheet->setCellValue('B1','password');
         $sheet->setCellValue('C1','id_role');
         $sheet->setCellValue('D1','id_activity');
+        $sheet->setCellValue('E1','id_group (opsional)');
+        $sheet->setCellValue('F1','id_unit (opsional)');
         $master = $spreadsheet->createSheet();
         $master->setTitle('Master Data');
         $master->setCellValue('A1','ROLE');
@@ -109,7 +114,7 @@ class DataUserController extends Controller
 
             $master->setCellValue(
                 'A'.$row,
-                $role->id
+                $role->id.' | Role: '. $role->name
             );
             $master->setCellValue(
                 'B'.$row,
@@ -118,6 +123,11 @@ class DataUserController extends Controller
             $row++;
         }
         $lastRole = $row - 1;
+        $spreadsheet->addDefinedName(DefinedName::createInstance(
+            'ROLE_LIST',
+            $master,
+            "'Master Data'!\$A\$3:\$A\$".max(3, $lastRole)
+        ));
         $master->setCellValue('D1','ACTIVITY');
         $master->setCellValue('D2','ID');
         $master->setCellValue('E2','Nama Activity');
@@ -135,32 +145,149 @@ class DataUserController extends Controller
             $row++;
         }
         $lastActivity = $row - 1;
-        for ($i = 2; $i <= 1000; $i++) {
-            $validation = $sheet
-                ->getCell('C'.$i)
-                ->getDataValidation();
-            $validation->setType(DataValidation::TYPE_LIST);
-            $validation->setErrorStyle(DataValidation::STYLE_STOP);
-            $validation->setAllowBlank(true);
-            $validation->setShowDropDown(true);
-            $validation->setShowErrorMessage(true);
-            $validation->setFormula1(
-                "'Master Data'!\$A\$3:\$A\$$lastRole"
+
+        $master->setCellValue('G1','GROUP');
+        $master->setCellValue('G2','ID');
+        $master->setCellValue('H2','Nama Group');
+        $master->setCellValue('I2','ID Activity');
+        $master->setCellValue('J2','Nama Activity');
+        $groups = Group::query()->with('activity')->orderBy('activity_id')->orderBy('id')->get();
+        $row = 3;
+        foreach ($groups as $group) {
+            $master->setCellValue('G'.$row, $group->id);
+            $master->setCellValue('H'.$row, $group->name);
+            $master->setCellValue('I'.$row, $group->activity_id);
+            $master->setCellValue('J'.$row, $group->activity?->name);
+            $row++;
+        }
+        $lastGroup = $row - 1;
+
+        $master->setCellValue('L1','UNIT');
+        $master->setCellValue('L2','ID');
+        $master->setCellValue('M2','Nama Unit');
+        $master->setCellValue('N2','ID Group');
+        $master->setCellValue('O2','Nama Group');
+        $master->setCellValue('P2','ID Activity');
+        $master->setCellValue('Q2','Nama Activity');
+        $units = Unit::query()->with('group.activity')->orderBy('group_id')->orderBy('id')->get();
+        $row = 3;
+        foreach ($units as $unit) {
+            $master->setCellValue('L'.$row, $unit->id);
+            $master->setCellValue('M'.$row, $unit->name);
+            $master->setCellValue('N'.$row, $unit->group_id);
+            $master->setCellValue('O'.$row, $unit->group?->name);
+            $master->setCellValue('P'.$row, $unit->group?->activity_id);
+            $master->setCellValue('Q'.$row, $unit->group?->activity?->name);
+            $row++;
+        }
+        $lastUnit = $row - 1;
+
+        // Named ranges power the Activity -> Group -> Unit dependent dropdowns.
+        $dropdown = $spreadsheet->createSheet();
+        $dropdown->setTitle('Dropdown Data');
+        $dropdown->setCellValue('A1', '');
+        $spreadsheet->addDefinedName(DefinedName::createInstance(
+            'EMPTY_LIST', $dropdown, "'Dropdown Data'!\$A\$1:\$A\$1"
+        ));
+        foreach ($activities->values() as $index => $activity) {
+            $dropdown->setCellValue(
+                'A'.($index + 2),
+                $activity->id.' | Activity: '.$activity->name
             );
         }
-        for ($i = 2; $i <= 1000; $i++) {
-            $validation = $sheet
-                ->getCell('D'.$i)
-                ->getDataValidation();
-            $validation->setType(DataValidation::TYPE_LIST);
-            $validation->setErrorStyle(DataValidation::STYLE_STOP);
-            $validation->setAllowBlank(true);
-            $validation->setShowDropDown(true);
-            $validation->setShowErrorMessage(true);
-            $validation->setFormula1(
-                "'Master Data'!\$D\$3:\$D\$$lastActivity"
-            );
+        $spreadsheet->addDefinedName(DefinedName::createInstance(
+            'ACTIVITY_LIST',
+            $dropdown,
+            "'Dropdown Data'!\$A\$2:\$A\$".max(2, $activities->count() + 1)
+        ));
+
+        $helperColumn = 2;
+        foreach ($activities as $activity) {
+            $column = Coordinate::stringFromColumnIndex($helperColumn++);
+            $activityGroups = $groups->where('activity_id', $activity->id)->values();
+            $dropdown->setCellValue($column.'1', 'Group untuk '.$activity->name);
+            foreach ($activityGroups as $index => $group) {
+                $dropdown->setCellValue(
+                    $column.($index + 2),
+                    $group->id.' | Group: '. $group->name
+                );
+            }
+            $lastDropdownRow = max(2, $activityGroups->count() + 1);
+            $spreadsheet->addDefinedName(DefinedName::createInstance(
+                'ACT_'.$activity->id,
+                $dropdown,
+                "'Dropdown Data'!\$".$column.'$2:$'.$column.'$'.$lastDropdownRow
+            ));
         }
+
+        foreach ($groups as $group) {
+            $column = Coordinate::stringFromColumnIndex($helperColumn++);
+            $groupUnits = $units->where('group_id', $group->id)->values();
+            $dropdown->setCellValue($column.'1', 'Unit untuk '.$group->name);
+            foreach ($groupUnits as $index => $unit) {
+                $dropdown->setCellValue(
+                    $column.($index + 2),
+                    $unit->id.' | Unit: '. $unit->name
+                );
+            }
+            $lastDropdownRow = max(2, $groupUnits->count() + 1);
+            $spreadsheet->addDefinedName(DefinedName::createInstance(
+                'GRP_'.$group->id,
+                $dropdown,
+                "'Dropdown Data'!\$".$column.'$2:$'.$column.'$'.$lastDropdownRow
+            ));
+        }
+        $dropdown->setSheetState(Worksheet::SHEETSTATE_VERYHIDDEN);
+        $roleValidation = $sheet->getCell('C2')->getDataValidation();
+        $roleValidation->setType(DataValidation::TYPE_LIST);
+        $roleValidation->setErrorStyle(DataValidation::STYLE_STOP);
+        $roleValidation->setAllowBlank(true);
+        $roleValidation->setShowDropDown(true);
+        $roleValidation->setShowErrorMessage(true);
+        $roleValidation->setFormula1('ROLE_LIST');
+        $roleValidation->setSqref('C2:C1000');
+
+        $activityValidation = $sheet->getCell('D2')->getDataValidation();
+        $activityValidation->setType(DataValidation::TYPE_LIST);
+        $activityValidation->setErrorStyle(DataValidation::STYLE_STOP);
+        $activityValidation->setAllowBlank(true);
+        $activityValidation->setShowDropDown(true);
+        $activityValidation->setShowErrorMessage(true);
+        $activityValidation->setFormula1('ACTIVITY_LIST');
+        $activityValidation->setSqref('D2:D1000');
+
+        $groupValidation = $sheet->getCell('E2')->getDataValidation();
+        $groupValidation->setType(DataValidation::TYPE_LIST);
+        $groupValidation->setErrorStyle(DataValidation::STYLE_STOP);
+        $groupValidation->setAllowBlank(true);
+        $groupValidation->setShowDropDown(true);
+        $groupValidation->setShowErrorMessage(true);
+        $groupValidation->setErrorTitle('Group tidak sesuai');
+        $groupValidation->setError('Pilih Group yang tersedia untuk Activity pada baris ini.');
+        $groupValidation->setFormula1(
+            'INDIRECT(IF($D2="","EMPTY_LIST","ACT_"&IFERROR(LEFT($D2,FIND(" |",$D2)-1),$D2)))'
+        );
+        $groupValidation->setSqref('E2:E1000');
+
+        $unitValidation = $sheet->getCell('F2')->getDataValidation();
+        $unitValidation->setType(DataValidation::TYPE_LIST);
+        $unitValidation->setErrorStyle(DataValidation::STYLE_STOP);
+        $unitValidation->setAllowBlank(true);
+        $unitValidation->setShowDropDown(true);
+        $unitValidation->setShowErrorMessage(true);
+        $unitValidation->setErrorTitle('Unit tidak sesuai');
+        $unitValidation->setError('Pilih Unit yang tersedia untuk Group pada baris ini.');
+        $unitValidation->setFormula1(
+            'INDIRECT(IF($E2="","EMPTY_LIST","GRP_"&IFERROR(LEFT($E2,FIND(" |",$E2)-1),$E2)))'
+        );
+        $unitValidation->setSqref('F2:F1000');
+        foreach (range('A', 'F') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+        foreach (['A','B','D','E','G','H','I','J','L','M','N','O','P','Q'] as $column) {
+            $master->getColumnDimension($column)->setAutoSize(true);
+        }
+
         $writer = new Xlsx($spreadsheet);
         $filename = 'template_import_user.xlsx';
         return response()->streamDownload(function () use ($writer) {
@@ -170,32 +297,26 @@ class DataUserController extends Controller
 
     public function import(Request $request)
     {
-        $request->validate([
-            'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:10240'],
-        ]);
-        $file = $request->file('file');
+        $request->validate(['file' => ['required', 'file', 'mimes:xlsx,xls', 'max:10240']]);
 
         try {
-            $spreadsheet = IOFactory::load($file->getRealPath());
-            $sheet = $spreadsheet->getSheet(0);
-            $rows = $sheet->toArray();
+            $spreadsheet = IOFactory::load($request->file('file')->getRealPath());
+            $rows = $spreadsheet->getSheet(0)->toArray();
             $data = [];
             $seenUsernames = [];
 
             foreach ($rows as $index => $row) {
-                if ($index == 0) {
-                    continue;
-                }
-
-                if (empty(array_filter($row))) {
+                if ($index === 0 || empty(array_filter($row, fn ($value) => $value !== null && $value !== ''))) {
                     continue;
                 }
 
                 $item = [
                     'username' => trim((string) ($row[0] ?? '')),
                     'password' => (string) ($row[1] ?? ''),
-                    'role_id' => $row[2] ?? null,
-                    'activity_id' => $row[3] ?? null,
+                    'role_id' => $this->templateReferenceId($row[2] ?? null),
+                    'activity_id' => $this->templateReferenceId($row[3] ?? null),
+                    'group_id' => $this->templateReferenceId($row[4] ?? null),
+                    'unit_id' => $this->templateReferenceId($row[5] ?? null),
                 ];
 
                 $validator = Validator::make($item, [
@@ -203,24 +324,35 @@ class DataUserController extends Controller
                     'password' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
                     'role_id' => ['required', 'integer', 'exists:roles,id'],
                     'activity_id' => ['nullable', 'integer', 'exists:activities,id'],
+                    'group_id' => ['nullable', 'integer', 'exists:groups,id'],
+                    'unit_id' => ['nullable', 'integer', 'exists:units,id'],
                 ]);
 
+                $roleId = (int) $item['role_id'];
                 $normalizedUsername = strtolower($item['username']);
+                $invalid = $validator->fails()
+                    || (! in_array($roleId, [1, 2], true) && empty($item['activity_id']))
+                    || isset($seenUsernames[$normalizedUsername]);
 
-                $activityIsOptional = in_array((int) $item['role_id'], [1, 2], true);
-
-                if (
-                    $validator->fails() ||
-                    (! $activityIsOptional && empty($item['activity_id'])) ||
-                    isset($seenUsernames[$normalizedUsername])
-                ) {
-                    throw ValidationException::withMessages([
-                        'file' => 'Data user pada baris '.($index + 1).' tidak valid atau duplikat.',
-                    ]);
+                if (! in_array($roleId, [2, 4], true)) {
+                    $item['group_id'] = null;
+                    $item['unit_id'] = null;
+                }
+                if ($roleId === 1) {
+                    $item['activity_id'] = null;
                 }
 
-                if ($activityIsOptional) {
-                    $item['activity_id'] = null;
+                if ($item['group_id'] && (! $item['activity_id'] || ! Group::query()->whereKey($item['group_id'])->where('activity_id', $item['activity_id'])->exists())) {
+                    $invalid = true;
+                }
+                if ($item['unit_id'] && (! $item['group_id'] || ! Unit::query()->whereKey($item['unit_id'])->where('group_id', $item['group_id'])->exists())) {
+                    $invalid = true;
+                }
+
+                if ($invalid) {
+                    throw ValidationException::withMessages([
+                        'file' => 'Data user pada baris '.($index + 1).' tidak valid. Pastikan Activity, Group, dan Unit saling sesuai.',
+                    ]);
                 }
 
                 $seenUsernames[$normalizedUsername] = true;
@@ -228,9 +360,7 @@ class DataUserController extends Controller
             }
 
             if ($data === []) {
-                throw ValidationException::withMessages([
-                    'file' => 'Tidak ada data user yang dapat diimport.',
-                ]);
+                throw ValidationException::withMessages(['file' => 'Tidak ada data user yang dapat diimport.']);
             }
 
             DB::transaction(function () use ($data): void {
@@ -240,11 +370,10 @@ class DataUserController extends Controller
                         'password' => Hash::make($item['password']),
                         'role_id' => $item['role_id'],
                     ]);
-
                     UserProfile::create([
                         'user_id' => $user->id,
-                        'group_id' => null,
-                        'unit_id' => null,
+                        'group_id' => $item['group_id'],
+                        'unit_id' => $item['unit_id'],
                         'fullname' => null,
                         'no_handphone' => null,
                         'email' => 'pending-user-'.$user->id.'@invalid.local',
@@ -254,84 +383,76 @@ class DataUserController extends Controller
             });
 
             $spreadsheet->disconnectWorksheets();
-
-            return redirect()
-                ->back()
-                ->with('success', count($data).' user berhasil diimport.');
+            return redirect()->back()->with('success', count($data).' user berhasil diimport.');
         } catch (ValidationException $error) {
             throw $error;
         } catch (\Throwable $error) {
             report($error);
-
-            return redirect()
-                ->back()
-                ->with('error', 'Import user gagal. Periksa kembali format file.');
+            return redirect()->back()->with('error', 'Import user gagal. Periksa kembali format file.');
         }
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'username' => 'required|array|min:1',
+            'username' => ['required', 'array', 'min:1'],
             'username.*' => ['required', 'string', 'max:191', 'distinct', 'unique:users,username'],
-            'password' => 'required|array|min:1',
+            'password' => ['required', 'array', 'min:1'],
             'password.*' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
-            'activity_id' => 'nullable|array',
-            'activity_id.*' => 'nullable|exists:activities,id',
-            'role_id' => 'required|array|min:1',
-            'role_id.*' => 'required|exists:roles,id',
+            'role_id' => ['required', 'array', 'min:1'],
+            'role_id.*' => ['required', 'exists:roles,id'],
+            'activity_id' => ['nullable', 'array'],
+            'activity_id.*' => ['nullable', 'exists:activities,id'],
+            'group_id' => ['nullable', 'array'],
+            'group_id.*' => ['nullable', 'exists:groups,id'],
+            'unit_id' => ['nullable', 'array'],
+            'unit_id.*' => ['nullable', 'exists:units,id'],
         ]);
 
         $rowCount = count($request->username);
-        if (count($request->password) !== $rowCount
-            || count($request->role_id) !== $rowCount) {
-            throw ValidationException::withMessages([
-                'username' => 'Jumlah username, password, dan role harus sama.',
-            ]);
+        if (count($request->password) !== $rowCount || count($request->role_id) !== $rowCount) {
+            throw ValidationException::withMessages(['username' => 'Jumlah username, password, dan role harus sama.']);
         }
 
-        $usernameList = $request->username;
-        $passwordList = $request->password;
-        $activityList = array_pad(
-            $request->input('activity_id', []),
-            $rowCount,
-            null
-        );
-        $roleList = $request->role_id;
+        $activities = array_pad($request->input('activity_id', []), $rowCount, null);
+        $groups = array_pad($request->input('group_id', []), $rowCount, null);
+        $units = array_pad($request->input('unit_id', []), $rowCount, null);
 
-        foreach ($roleList as $index => $roleId) {
-            if (
-                ! in_array((int) $roleId, [1, 2], true) &&
-                empty($activityList[$index])
-            ) {
-                throw ValidationException::withMessages([
-                    "activity_id.$index" => 'Activity wajib dipilih untuk role ini.',
-                ]);
+        foreach ($request->role_id as $index => $roleId) {
+            $roleId = (int) $roleId;
+            if (! in_array($roleId, [1, 2], true) && empty($activities[$index])) {
+                throw ValidationException::withMessages(["activity_id.$index" => 'Activity wajib dipilih untuk role ini.']);
+            }
+            if (! in_array($roleId, [2, 4], true)) {
+                $groups[$index] = null;
+                $units[$index] = null;
+            }
+            if ($roleId === 1) {
+                $activities[$index] = null;
+            }
+            if ($groups[$index] && (! $activities[$index] || ! Group::query()->whereKey($groups[$index])->where('activity_id', $activities[$index])->exists())) {
+                throw ValidationException::withMessages(["group_id.$index" => 'Group tidak sesuai dengan Activity yang dipilih.']);
+            }
+            if ($units[$index] && (! $groups[$index] || ! Unit::query()->whereKey($units[$index])->where('group_id', $groups[$index])->exists())) {
+                throw ValidationException::withMessages(["unit_id.$index" => 'Unit tidak sesuai dengan Group yang dipilih.']);
             }
         }
-        DB::transaction(function () use (
-            $usernameList,
-            $passwordList,
-            $activityList,
-            $roleList
-        ) {
-            for ($i = 0; $i < count($usernameList); $i++) {
+
+        DB::transaction(function () use ($request, $activities, $groups, $units, $rowCount): void {
+            for ($index = 0; $index < $rowCount; $index++) {
                 $user = User::create([
-                    'username' => $usernameList[$i],
-                    // 'email' => $emailList[$i], // kalau memang ada di tabel users
-                    'password' => Hash::make($passwordList[$i]),
-                    'role_id' => $roleList[$i],
+                    'username' => $request->username[$index],
+                    'password' => Hash::make($request->password[$index]),
+                    'role_id' => $request->role_id[$index],
                 ]);
                 UserProfile::create([
                     'user_id' => $user->id,
-                    'activity_id' => in_array((int) $roleList[$i], [1, 2], true)
-                        ? null
-                        : $activityList[$i],
-                    'group_id' => null,
-                    'unit_id' => null,
+                    'activity_id' => $activities[$index],
+                    'group_id' => $groups[$index],
+                    'unit_id' => $units[$index],
                     'fullname' => null,
                     'no_handphone' => null,
-                    'email' => 'pending-user-' . $user->id . '@invalid.local',
+                    'email' => 'pending-user-'.$user->id.'@invalid.local',
                 ]);
             }
         });
@@ -639,6 +760,30 @@ class DataUserController extends Controller
             'Akses survey '.$result[0].' berhasil dibuka kembali. Jawaban yang sudah ada tetap dipertahankan.'
         );
     }
+    public function clearProfileAssignment(string $id)
+    {
+        $user = User::query()
+            ->with('profile')
+            ->findOrFail($id);
+
+        if (! $user->profile) {
+            throw ValidationException::withMessages([
+                'profile' => 'Profile user tidak ditemukan.',
+            ]);
+        }
+
+        $user->profile->update([
+            'group_id' => null,
+            'unit_id' => null,
+        ]);
+
+        return redirect()
+            ->route('admin.datauser')
+            ->with(
+                'successdelete',
+                'Group dan Unit profile '.$user->username.' berhasil dikosongkan. Jawaban, Activity, progres survey, dan akun tetap dipertahankan.'
+            );
+    }
     public function resetAccount($id)
     {
         $result = DB::transaction(function () use ($id): array {
@@ -769,5 +914,17 @@ class DataUserController extends Controller
             'successdelete',
             $result[0].' akun beserta '.$result[1].' data jawaban berhasil dihapus.'
         );
+    }
+    private function templateReferenceId(mixed $value): ?int
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+
+        $text = trim((string) $value);
+
+        return preg_match('/^(\d+)(?:\s*\||\s*$)/', $text, $matches) === 1
+            ? (int) $matches[1]
+            : null;
     }
 }
