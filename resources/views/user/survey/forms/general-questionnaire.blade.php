@@ -1,6 +1,29 @@
 @php
     /*
     |--------------------------------------------------------------------------
+    | Meaningful Answer Validation
+    |--------------------------------------------------------------------------
+    |
+    | Validasi khusus jawaban bermakna hanya berlaku untuk role_id 2 dan 4.
+    |
+    | Pada Kuesioner Umum aturan ini HANYA berlaku untuk CHILD ANSWER.
+    |
+    | Tidak berlaku untuk:
+    | - Type 1 Short Text
+    | - Type 2 Textarea biasa
+    | - Number
+    | - Date
+    | - Email
+    |
+    */
+    $useMeaningfulValidation = in_array(
+        (int) auth()->user()?->role_id,
+        [2, 4],
+        true
+    );
+
+    /*
+    |--------------------------------------------------------------------------
     | Urutkan pertanyaan secara natural
     |--------------------------------------------------------------------------
     |
@@ -19,6 +42,7 @@
     | E3.11
     |
     | Nomor kembar tetap diperbolehkan.
+    |
     */
     $sortedQuestions = $questions
         ->sort(function ($a, $b) {
@@ -76,31 +100,82 @@
         })
         ->values();
 
-    $conditionalByQuestion = collect($conditionalBranches ?? [])
+    /*
+    |--------------------------------------------------------------------------
+    | Conditional Branch
+    |--------------------------------------------------------------------------
+    */
+    $conditionalByQuestion = collect(
+        $conditionalBranches ?? []
+    )
         ->flatMap(function (array $branch) {
+
             $trigger = [
-                'parent_id' => (int) $branch['parent_id'],
-                'option_ids' => array_map('intval', $branch['affirmative_option_ids']),
+                'parent_id' =>
+                    (int) $branch['parent_id'],
+
+                'option_ids' =>
+                    array_map(
+                        'intval',
+                        $branch['affirmative_option_ids']
+                    ),
             ];
 
-            $shown = collect($branch['dependent_question_ids'] ?? [])->map(fn ($questionId) => [
-                'question_id' => (int) $questionId,
-                'mode' => 'show',
-                'trigger' => $trigger,
-            ]);
-            $skipped = collect($branch['skipped_question_ids'] ?? [])->map(fn ($questionId) => [
-                'question_id' => (int) $questionId,
-                'mode' => 'hide',
-                'trigger' => $trigger,
-            ]);
+            $shown = collect(
+                $branch['dependent_question_ids'] ?? []
+            )->map(
+                fn ($questionId) => [
+                    'question_id' =>
+                        (int) $questionId,
 
-            return $shown->concat($skipped);
+                    'mode' =>
+                        'show',
+
+                    'trigger' =>
+                        $trigger,
+                ]
+            );
+
+            $skipped = collect(
+                $branch['skipped_question_ids'] ?? []
+            )->map(
+                fn ($questionId) => [
+                    'question_id' =>
+                        (int) $questionId,
+
+                    'mode' =>
+                        'hide',
+
+                    'trigger' =>
+                        $trigger,
+                ]
+            );
+
+            return $shown->concat(
+                $skipped
+            );
         })
-        ->groupBy('question_id')
-        ->map(fn ($rules) => [
-            'show_rules' => $rules->where('mode', 'show')->pluck('trigger')->values()->all(),
-            'hide_rules' => $rules->where('mode', 'hide')->pluck('trigger')->values()->all(),
-        ]);@endphp
+        ->groupBy(
+            'question_id'
+        )
+        ->map(
+            fn ($rules) => [
+                'show_rules' =>
+                    $rules
+                        ->where('mode', 'show')
+                        ->pluck('trigger')
+                        ->values()
+                        ->all(),
+
+                'hide_rules' =>
+                    $rules
+                        ->where('mode', 'hide')
+                        ->pluck('trigger')
+                        ->values()
+                        ->all(),
+            ]
+        );
+@endphp
 
 
 <div class="space-y-5">
@@ -162,13 +237,6 @@
             |--------------------------------------------------------------------------
             | Nomor pertanyaan
             |--------------------------------------------------------------------------
-            |
-            | Contoh:
-            |
-            | no_header = E
-            | no        = 3.10
-            |
-            | hasil = E3.10
             */
             $questionNumber = trim(
                 (string) ($question->no_header ?? '')
@@ -176,16 +244,58 @@
                 (string) ($question->no ?? '')
             );
 
-            $conditionalRule = $conditionalByQuestion->get((int) $question->id);
-            $matchesConditionalTrigger = function (array $trigger) use ($answerMap): bool {
-                $selected = data_get($answerMap, $trigger['parent_id'].'.0.0.value');
-                return in_array((int) $selected, array_map('intval', $trigger['option_ids']), true);
-            };
-            $showRules = collect($conditionalRule['show_rules'] ?? []);
-            $hideRules = collect($conditionalRule['hide_rules'] ?? []);
-            $conditionalVisible = ! $conditionalRule
-                || (($showRules->isEmpty() || $showRules->contains($matchesConditionalTrigger))
-                    && ! $hideRules->contains($matchesConditionalTrigger));
+            /*
+            |--------------------------------------------------------------------------
+            | Conditional Rule
+            |--------------------------------------------------------------------------
+            */
+            $conditionalRule =
+                $conditionalByQuestion->get(
+                    (int) $question->id
+                );
+
+            $matchesConditionalTrigger =
+                function (array $trigger) use ($answerMap): bool {
+
+                    $selected = data_get(
+                        $answerMap,
+                        $trigger['parent_id'] . '.0.0.value'
+                    );
+
+                    return in_array(
+                        (int) $selected,
+                        array_map(
+                            'intval',
+                            $trigger['option_ids']
+                        ),
+                        true
+                    );
+                };
+
+            $showRules = collect(
+                $conditionalRule['show_rules'] ?? []
+            );
+
+            $hideRules = collect(
+                $conditionalRule['hide_rules'] ?? []
+            );
+
+            $conditionalVisible =
+                ! $conditionalRule
+                ||
+                (
+                    (
+                        $showRules->isEmpty()
+                        ||
+                        $showRules->contains(
+                            $matchesConditionalTrigger
+                        )
+                    )
+                    &&
+                    ! $hideRules->contains(
+                        $matchesConditionalTrigger
+                    )
+                );
         @endphp
 
 
@@ -199,11 +309,16 @@
                 data-question-container
                 data-question-title
                 data-question-id="{{ $question->id }}"
+
                 @if ($conditionalRule)
                     data-conditional-question
                     data-conditional-rules='@json($conditionalRule)'
-                    @unless ($conditionalVisible) hidden @endunless
+
+                    @unless ($conditionalVisible)
+                        hidden
+                    @endunless
                 @endif
+
                 class="overflow-hidden rounded-xl
                        border border-blue-200
                        bg-gradient-to-r
@@ -231,15 +346,21 @@
                 data-question-container
                 data-question-id="{{ $question->id }}"
                 data-question-type="{{ $questionTypeId }}"
+
                 @if ($conditionalRule)
                     data-conditional-question
                     data-conditional-rules='@json($conditionalRule)'
-                    @unless ($conditionalVisible) hidden @endunless
+
+                    @unless ($conditionalVisible)
+                        hidden
+                    @endunless
                 @endif
+
                 class="rounded-xl border
                        border-gray-200
                        bg-white p-5
-                       shadow-sm {{ $conditionalVisible ? '' : 'hidden' }}"
+                       shadow-sm
+                       {{ $conditionalVisible ? '' : 'hidden' }}"
             >
 
                 {{-- ======================================================== --}}
@@ -398,7 +519,7 @@
 
 
                 {{-- ======================================================== --}}
-                {{-- TYPE 2: TEXTAREA --}}
+                {{-- TYPE 2: TEXTAREA BIASA --}}
                 {{-- ======================================================== --}}
 
                 @elseif ($questionTypeId === 2)
@@ -460,6 +581,14 @@
                                     $option->id,
                                     ''
                                 );
+
+                                $childErrorKey =
+                                    "answers.{$question->id}.child.{$option->id}";
+
+                                $hasChildError =
+                                    $errors->has(
+                                        $childErrorKey
+                                    );
                             @endphp
 
 
@@ -554,19 +683,52 @@
 
                                             data-child-input
 
+                                            @if ($useMeaningfulValidation)
+                                                data-meaningful-answer
+                                                data-answer-type="child"
+                                                data-answer-label="Jawaban tambahan"
+                                            @endif
+
                                             @required($isChecked)
+
+                                            @disabled(!$isChecked)
+
+                                            maxlength="5000"
 
                                             placeholder="{{ $option->answer_text2 ?: 'Tulis jawaban tambahan...' }}"
 
                                             class="w-full rounded-lg
-                                                   border border-gray-300
+                                                   border
+                                                   bg-white
                                                    px-4 py-3
                                                    text-sm outline-none
                                                    transition
                                                    focus:border-indigo-500
                                                    focus:ring-2
-                                                   focus:ring-indigo-100"
+                                                   focus:ring-indigo-100
+                                                   {{ $hasChildError
+                                                        ? 'border-red-500 ring-2 ring-red-100'
+                                                        : 'border-gray-300'
+                                                   }}"
                                         >{{ $childValue }}</textarea>
+
+
+                                        @error($childErrorKey)
+                                            <p
+                                                class="mt-2 text-sm
+                                                       font-medium
+                                                       text-red-600"
+                                                data-meaningful-error
+                                            >
+                                                <i
+                                                    class="fa-solid
+                                                           fa-circle-exclamation
+                                                           mr-1"
+                                                ></i>
+
+                                                {{ $message }}
+                                            </p>
+                                        @enderror
 
                                     </div>
 
@@ -639,6 +801,14 @@
                                     $option->id,
                                     ''
                                 );
+
+                                $childErrorKey =
+                                    "answers.{$question->id}.child.{$option->id}";
+
+                                $hasChildError =
+                                    $errors->has(
+                                        $childErrorKey
+                                    );
                             @endphp
 
 
@@ -732,19 +902,52 @@
 
                                             data-child-input
 
+                                            @if ($useMeaningfulValidation)
+                                                data-meaningful-answer
+                                                data-answer-type="child"
+                                                data-answer-label="Jawaban tambahan"
+                                            @endif
+
                                             @required($isChecked)
+
+                                            @disabled(!$isChecked)
+
+                                            maxlength="5000"
 
                                             placeholder="{{ $option->answer_text2 ?: 'Tulis jawaban tambahan...' }}"
 
                                             class="w-full rounded-lg
-                                                   border border-gray-300
+                                                   border
+                                                   bg-white
                                                    px-4 py-3
                                                    text-sm outline-none
                                                    transition
                                                    focus:border-indigo-500
                                                    focus:ring-2
-                                                   focus:ring-indigo-100"
+                                                   focus:ring-indigo-100
+                                                   {{ $hasChildError
+                                                        ? 'border-red-500 ring-2 ring-red-100'
+                                                        : 'border-gray-300'
+                                                   }}"
                                         >{{ $childValue }}</textarea>
+
+
+                                        @error($childErrorKey)
+                                            <p
+                                                class="mt-2 text-sm
+                                                       font-medium
+                                                       text-red-600"
+                                                data-meaningful-error
+                                            >
+                                                <i
+                                                    class="fa-solid
+                                                           fa-circle-exclamation
+                                                           mr-1"
+                                                ></i>
+
+                                                {{ $message }}
+                                            </p>
+                                        @enderror
 
                                     </div>
 

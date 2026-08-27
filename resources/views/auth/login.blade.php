@@ -89,7 +89,7 @@
                 <div data-alert class="text-center mb-4 text-red-600">
                     <ul class="list-disc pl-5">
                         @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
+                            {{ $error }}
                         @endforeach
                     </ul>
                 </div>

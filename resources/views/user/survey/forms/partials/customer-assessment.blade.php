@@ -11,40 +11,34 @@
 
     /*
     |--------------------------------------------------------------------------
-    | Sort Questions
+    | Meaningful Answer Validation
     |--------------------------------------------------------------------------
     |
-    | Karena kolom "no" bertipe VARCHAR, jangan gunakan:
+    | Validasi jawaban bermakna hanya berlaku untuk role_id 2 dan 4.
     |
-    | ->sortBy('no')
-    | atau
-    | (int) $question->no
+    | Pada file ini aturan digunakan untuk:
     |
-    | Natural sort akan menghasilkan urutan:
+    | - Question Type 3: textarea alasan penilaian Kinerja
+    | - Question Type 4: child answer dari pilihan alasan
     |
-    | 0
-    | 1
-    | 2
-    | 3
-    | 3.1
-    | 3.2
-    | 3.3
-    | ...
-    | 3.9
-    | 3.10
-    | 3.11
+    | Tidak diterapkan pada:
     |
-    | Nomor kembar tetap diperbolehkan.
-    | Jika no_header + no sama, ID menjadi tie breaker.
+    | - Question Type 6: textarea jawaban penilaian
+    |
+    */
+    $useMeaningfulValidation = in_array(
+        (int) auth()->user()?->role_id,
+        [2, 4],
+        true
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sort Questions
+    |--------------------------------------------------------------------------
     */
     $sortedQuestions = $questions
         ->sort(function ($a, $b) {
-
-            /*
-            |--------------------------------------------------------------------------
-            | 1. Sort no_header
-            |--------------------------------------------------------------------------
-            */
             $headerA = trim(
                 (string) ($a->no_header ?? '')
             );
@@ -62,11 +56,6 @@
                 return $headerCompare;
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | 2. Sort no
-            |--------------------------------------------------------------------------
-            */
             $noA = trim(
                 (string) ($a->no ?? '0')
             );
@@ -84,20 +73,10 @@
                 return $noCompare;
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | 3. Jika nomor sama, urutkan berdasarkan ID
-            |--------------------------------------------------------------------------
-            */
             return (int) $a->id <=> (int) $b->id;
         })
         ->values();
 
-    /*
-    |--------------------------------------------------------------------------
-    | Group setelah proses sorting
-    |--------------------------------------------------------------------------
-    */
     $groupedQuestions = $sortedQuestions
         ->groupBy('no_header');
 @endphp
@@ -648,27 +627,36 @@
 
                                 @if ($questionTypeId === 3)
 
+                                    @php
+                                        $reasonErrorKey =
+                                            "answers.{$question->id}.{$subunitId}.reason";
+
+                                        $hasReasonError =
+                                            $errors->has(
+                                                $reasonErrorKey
+                                            );
+                                    @endphp
+
                                     <div
                                         data-performance-reason
                                         class="{{ $showReason ? '' : 'hidden' }}
-                                               rounded-xl border
-                                               border-amber-200
-                                               bg-amber-50 p-5"
+                                            rounded-xl border
+                                            border-amber-200
+                                            bg-amber-50 p-5"
                                     >
 
                                         <div class="mb-4">
 
                                             <h4
                                                 class="font-semibold
-                                                       text-gray-900"
+                                                    text-gray-900"
                                             >
                                                 Alasan Penilaian Kinerja
                                             </h4>
 
-
                                             <p
                                                 class="mt-1 text-sm
-                                                       text-gray-500"
+                                                    text-gray-500"
                                             >
                                                 Wajib diisi jika nilai
                                                 Kinerja 1–{{ $reasonMaximum }}.
@@ -676,26 +664,61 @@
 
                                         </div>
 
-
                                         <textarea
                                             name="answers[{{ $question->id }}][{{ $subunitId }}][reason]"
+
                                             rows="4"
 
                                             data-performance-reason-input
 
+                                            @if ($useMeaningfulValidation)
+                                                data-meaningful-answer
+                                                data-answer-type="reason"
+                                                data-answer-label="Alasan Penilaian Kinerja"
+                                            @endif
+
                                             @required($showReason)
+
                                             @disabled(!$showReason)
+
+                                            maxlength="5000"
 
                                             placeholder="Tuliskan alasan penilaian Kinerja..."
 
                                             class="w-full rounded-lg
-                                                   border border-gray-300
-                                                   px-4 py-3 text-sm
-                                                   outline-none
-                                                   focus:border-amber-500
-                                                   focus:ring-2
-                                                   focus:ring-amber-100"
+                                                border px-4 py-3
+                                                text-sm outline-none
+                                                transition
+                                                focus:border-amber-500
+                                                focus:ring-2
+                                                focus:ring-amber-100
+
+                                                {{ $hasReasonError
+                                                        ? 'border-red-500 ring-2 ring-red-100'
+                                                        : 'border-gray-300'
+                                                }}"
                                         >{{ $storedReason }}</textarea>
+
+                                        @error($reasonErrorKey)
+
+                                            <p
+                                                class="mt-2 text-sm
+                                                    font-medium
+                                                    text-red-600"
+                                                data-meaningful-error
+                                            >
+
+                                                <i
+                                                    class="fa-solid
+                                                        fa-circle-exclamation
+                                                        mr-1"
+                                                ></i>
+
+                                                {{ $message }}
+
+                                            </p>
+
+                                        @enderror
 
                                     </div>
 
@@ -745,6 +768,12 @@
                                                         $option->id,
                                                         ''
                                                     );
+
+                                                    $childErrorKey =
+                                                        "answers.{$question->id}.{$subunitId}.children.{$option->id}";
+
+                                                    $hasChildError =
+                                                        $errors->has($childErrorKey);
                                                 @endphp
 
 
@@ -810,6 +839,7 @@
                                                             @if (filled($option->answer_text2))
 
                                                                 <label
+                                                                    for="customer-child-input-{{ $question->id }}-{{ $subunitId }}-{{ $option->id }}"
                                                                     class="mb-2 block
                                                                            text-sm
                                                                            font-medium
@@ -822,11 +852,19 @@
 
 
                                                             <textarea
+                                                                id="customer-child-input-{{ $question->id }}-{{ $subunitId }}-{{ $option->id }}"
+
                                                                 name="answers[{{ $question->id }}][{{ $subunitId }}][children][{{ $option->id }}]"
 
                                                                 rows="3"
 
                                                                 data-child-input
+
+                                                                @if ($useMeaningfulValidation)
+                                                                    data-meaningful-answer
+                                                                    data-answer-type="child"
+                                                                    data-answer-label="Jawaban tambahan"
+                                                                @endif
 
                                                                 @required(
                                                                     $showReason
@@ -840,19 +878,44 @@
                                                                     !$optionChecked
                                                                 )
 
+                                                                maxlength="5000"
+
                                                                 placeholder="{{ $option->answer_text2 ?: 'Tulis jawaban tambahan...' }}"
 
                                                                 class="w-full
                                                                        rounded-lg
                                                                        border
-                                                                       border-gray-300
+                                                                       bg-white
                                                                        px-4 py-3
                                                                        text-sm
                                                                        outline-none
+                                                                       transition
                                                                        focus:border-indigo-500
                                                                        focus:ring-2
-                                                                       focus:ring-indigo-100"
+                                                                       focus:ring-indigo-100
+                                                                       {{ $hasChildError
+                                                                            ? 'border-red-500 ring-2 ring-red-100'
+                                                                            : 'border-gray-300'
+                                                                       }}"
                                                             >{{ $childValue }}</textarea>
+
+
+                                                            @error($childErrorKey)
+                                                                <p
+                                                                    class="mt-2 text-sm
+                                                                           font-medium
+                                                                           text-red-600"
+                                                                    data-meaningful-error
+                                                                >
+                                                                    <i
+                                                                        class="fa-solid
+                                                                               fa-circle-exclamation
+                                                                               mr-1"
+                                                                    ></i>
+
+                                                                    {{ $message }}
+                                                                </p>
+                                                            @enderror
 
                                                         </div>
 

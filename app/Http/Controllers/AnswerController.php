@@ -22,11 +22,6 @@ use Illuminate\Validation\ValidationException;
 
 class AnswerController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Form per Sub Unit
-    |--------------------------------------------------------------------------
-    */
     private const PER_SUBUNIT_TYPES = [
         2,
         3,
@@ -51,6 +46,64 @@ class AnswerController extends Controller
         3,
     ];
 
+    private const MEANINGFUL_ANSWER_ROLE_IDS = [
+        2,
+        4,
+    ];
+
+    private const MEANINGLESS_ANSWERS = [
+        'tidak ada',
+        'tidak ada saran',
+        'tidak ada keluhan',
+        'tidak ada keunggulan',
+        'tidak ada masukan',
+        'tidak ada komentar',
+        'tidak ada jawaban',
+
+        'ga ada',
+        'gak ada',
+        'nggak ada',
+        'ngga ada',
+        'enggak ada',
+        'g ada',
+        'gada',
+
+        'belum ada',
+        'nihil',
+        'kosong',
+
+        'tidak tahu',
+        'ga tahu',
+        'gak tahu',
+        'nggak tahu',
+        'ngga tahu',
+        'enggak tahu',
+        'g tahu',
+        'kurang tahu',
+        'entah',
+
+        'terserah',
+        'skip',
+        'lewati',
+        'pass',
+
+        'none',
+        'nothing',
+        'nil',
+
+        'n a',
+        'na',
+
+        'no comment',
+        'no comments',
+        'no suggestion',
+        'no suggestions',
+        'no complaint',
+        'no complaints',
+        'no idea',
+        'nothing to say',
+    ];
+
     public function store(
         Request $request,
         Form $form
@@ -71,11 +124,6 @@ class AnswerController extends Controller
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SAVE ANSWERS
-    |--------------------------------------------------------------------------
-    */
     private function saveAnswers(
         Request $request,
         Form $form
@@ -87,12 +135,9 @@ class AnswerController extends Controller
             )
             ->firstOrFail();
 
-        /*
-         * Responden hanya boleh mengisi form
-         * yang berasal dari group miliknya.
-         */
         abort_unless(
-            (int) $form->group_id ===
+            (int) $form->group_id
+                ===
             (int) $profile->group_id,
             403,
             'Form tidak tersedia untuk responden ini.'
@@ -112,8 +157,13 @@ class AnswerController extends Controller
         );
 
         abort_unless(
-            (int) $session->group_id === (int) $profile->group_id
-                && (int) $session->unit_id === (int) $profile->unit_id,
+            (int) $session->group_id
+                ===
+            (int) $profile->group_id
+            &&
+            (int) $session->unit_id
+                ===
+            (int) $profile->unit_id,
             409,
             'Profil responden berubah. Mulai ulang sesi survei sebelum menyimpan jawaban.'
         );
@@ -124,38 +174,26 @@ class AnswerController extends Controller
             'Survei sudah selesai dan akun harus direset oleh Admin sebelum jawaban dapat diubah.'
         );
 
-        /*
-         * Form Description tidak mempunyai jawaban.
-         */
         if (
-            (int) $form->formtype_id === 12
+            (int) $form->formtype_id
+            === 12
         ) {
             return $this->goToNextForm(
                 $form
             );
         }
 
-        /*
-         * Load questions dan options.
-         *
-         * Jangan gunakan:
-         * where('questiontype_id', '!=', 1)
-         *
-         * Karena pada Kuesioner Umum,
-         * questiontype_id 1 adalah jawaban singkat.
-         */
         $form->load([
             'questions',
 
-            'questions.options' => function (
-                $query
-            ) {
-                $query
-                    ->orderByRaw(
-                        'CAST(no AS UNSIGNED) ASC'
-                    )
-                    ->orderBy('id');
-            },
+            'questions.options' =>
+                function ($query) {
+                    $query
+                        ->orderByRaw(
+                            'CAST(no AS UNSIGNED) ASC'
+                        )
+                        ->orderBy('id');
+                },
 
             'questions.questiontype',
         ]);
@@ -166,39 +204,43 @@ class AnswerController extends Controller
                 $profile->unit_id
             )
             ->pluck('id')
-            ->map(fn ($id) => (int) $id);
+            ->map(
+                fn ($id) =>
+                    (int) $id
+            );
 
-        /*
-         * Ambil konfigurasi Hide and Show.
-         */
-        $activeRows = SubUnitQuestion::query()
-            ->where(
-                'form_id',
-                $form->id
-            )
-            ->whereIn(
-                'subunit_id',
-                $subunitIds
-            )
-            ->get();
+        $activeRows =
+            SubUnitQuestion::query()
+                ->where(
+                    'form_id',
+                    $form->id
+                )
+                ->whereIn(
+                    'subunit_id',
+                    $subunitIds
+                )
+                ->get();
 
-        $activeQuestionIds = $activeRows
-            ->pluck('question_id')
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values();
+        $activeQuestionIds =
+            $activeRows
+                ->pluck('question_id')
+                ->map(
+                    fn ($id) =>
+                        (int) $id
+                )
+                ->unique()
+                ->values();
 
-        /*
-         * Hanya pertanyaan aktif yang diproses.
-         */
-        $questions = $form->questions
-            ->whereIn(
-                'id',
-                $activeQuestionIds
-            )
-            ->values();
+        $questions =
+            $form->questions
+                ->whereIn(
+                    'id',
+                    $activeQuestionIds
+                )
+                ->values();
 
-        $competitorIds = collect();
+        $competitorIds =
+            collect();
 
         if (
             in_array(
@@ -207,55 +249,89 @@ class AnswerController extends Controller
                 true
             )
         ) {
-            $competitorIds = app(UnitCompetitorVisibilityService::class)
-                ->filterForUnit(
-                    Competitor::query()
-                        ->where('group_id', $profile->group_id)
-                        ->get(),
-                    $profile->unit_id ? (int) $profile->unit_id : null
+            $competitorIds =
+                app(
+                    UnitCompetitorVisibilityService::class
                 )
-                ->pluck('id')
-                ->map(fn ($id) => (int) $id);
+                    ->filterForUnit(
+                        Competitor::query()
+                            ->where(
+                                'group_id',
+                                $profile->group_id
+                            )
+                            ->get(),
+
+                        $profile->unit_id
+                            ? (int) $profile->unit_id
+                            : null
+                    )
+                    ->pluck('id')
+                    ->map(
+                        fn ($id) =>
+                            (int) $id
+                    );
         }
 
-        $answers = (array) $request->input(
-            'answers',
-            []
-        );
-
-        $branching = app(\App\Services\SurveyBranchingService::class);
-        $hiddenConditionalQuestionIds = $branching->hiddenQuestionIds($form, $answers);
-        $questions = $questions
-            ->reject(fn ($question) => $hiddenConditionalQuestionIds->contains((int) $question->id))
-            ->values();
-
-        if ((int) $form->formtype_id === 14) {
-            return $this->saveRespondentCompetitorAnswers(
-                $request, $form, $profile, $questions, $answers
+        $answers =
+            (array) $request->input(
+                'answers',
+                []
             );
-        }
 
-        /*
-         * Server-side validation.
-         */
-        $errors = $this->validateAnswers(
-            $form,
-            $questions,
-            $activeRows,
-            $competitorIds,
-            $answers
-        );
-
-        if (!empty($errors)) {
-            throw ValidationException::withMessages(
-                $errors
+        $branching =
+            app(
+                \App\Services\SurveyBranchingService::class
             );
+
+        $hiddenConditionalQuestionIds =
+            $branching->hiddenQuestionIds(
+                $form,
+                $answers
+            );
+
+        $questions =
+            $questions
+                ->reject(
+                    fn ($question) =>
+                        $hiddenConditionalQuestionIds
+                            ->contains(
+                                (int) $question->id
+                            )
+                )
+                ->values();
+
+        if (
+            (int) $form->formtype_id
+            === 14
+        ) {
+            return $this
+                ->saveRespondentCompetitorAnswers(
+                    $request,
+                    $form,
+                    $profile,
+                    $questions,
+                    $answers
+                );
         }
 
-        /*
-         * Simpan jawaban hanya berdasarkan
-         * question dan target yang valid.
-         */
+        $errors =
+            $this->validateAnswers(
+                $form,
+                $questions,
+                $activeRows,
+                $competitorIds,
+                $answers
+            );
+
+        if (
+            !empty($errors)
+        ) {
+            throw ValidationException
+                ::withMessages(
+                    $errors
+                );
+        }
+
         DB::transaction(
             function () use (
                 $form,
@@ -265,22 +341,29 @@ class AnswerController extends Controller
                 $answers,
                 $hiddenConditionalQuestionIds
             ): void {
-                if ($hiddenConditionalQuestionIds->isNotEmpty()) {
+                if (
+                    $hiddenConditionalQuestionIds
+                        ->isNotEmpty()
+                ) {
                     Answer::query()
-                        ->where('user_id', Auth::id())
-                        ->where('form_id', $form->id)
-                        ->whereIn('question_id', $hiddenConditionalQuestionIds)
+                        ->where(
+                            'user_id',
+                            Auth::id()
+                        )
+                        ->where(
+                            'form_id',
+                            $form->id
+                        )
+                        ->whereIn(
+                            'question_id',
+                            $hiddenConditionalQuestionIds
+                        )
                         ->delete();
                 }
 
                 foreach (
                     $questions as $question
                 ) {
-                    /*
-                     * Question type 1 merupakan
-                     * judul pada semua form selain
-                     * Kuesioner Umum.
-                     */
                     if (
                         $this->isTitleQuestion(
                             $form,
@@ -290,15 +373,13 @@ class AnswerController extends Controller
                         continue;
                     }
 
-                    $questionPayload = Arr::get(
-                        $answers,
-                        (string) $question->id,
-                        []
-                    );
+                    $questionPayload =
+                        Arr::get(
+                            $answers,
+                            (string) $question->id,
+                            []
+                        );
 
-                    /*
-                     * Per Sub Unit.
-                     */
                     if (
                         in_array(
                             (int) $form->formtype_id,
@@ -306,25 +387,31 @@ class AnswerController extends Controller
                             true
                         )
                     ) {
-                        $targetIds = $activeRows
-                            ->where(
-                                'question_id',
-                                $question->id
-                            )
-                            ->pluck('subunit_id')
-                            ->map(
-                                fn ($id) => (int) $id
-                            )
-                            ->unique();
+                        $targetIds =
+                            $activeRows
+                                ->where(
+                                    'question_id',
+                                    $question->id
+                                )
+                                ->pluck(
+                                    'subunit_id'
+                                )
+                                ->map(
+                                    fn ($id) =>
+                                        (int) $id
+                                )
+                                ->unique();
 
                         foreach (
-                            $targetIds as $subunitId
+                            $targetIds
+                            as $subunitId
                         ) {
-                            $value = Arr::get(
-                                $questionPayload,
-                                (string) $subunitId,
-                                []
-                            );
+                            $value =
+                                Arr::get(
+                                    $questionPayload,
+                                    (string) $subunitId,
+                                    []
+                                );
 
                             $this->saveAnswer(
                                 $form,
@@ -338,9 +425,6 @@ class AnswerController extends Controller
                         continue;
                     }
 
-                    /*
-                     * Per Competitor.
-                     */
                     if (
                         in_array(
                             (int) $form->formtype_id,
@@ -349,13 +433,15 @@ class AnswerController extends Controller
                         )
                     ) {
                         foreach (
-                            $competitorIds as $competitorId
+                            $competitorIds
+                            as $competitorId
                         ) {
-                            $value = Arr::get(
-                                $questionPayload,
-                                (string) $competitorId,
-                                []
-                            );
+                            $value =
+                                Arr::get(
+                                    $questionPayload,
+                                    (string) $competitorId,
+                                    []
+                                );
 
                             $this->saveAnswer(
                                 $form,
@@ -369,9 +455,6 @@ class AnswerController extends Controller
                         continue;
                     }
 
-                    /*
-                     * Global.
-                     */
                     $this->saveAnswer(
                         $form,
                         $question->id,
@@ -388,6 +471,52 @@ class AnswerController extends Controller
         );
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | FEEDBACK FIELDS
+    |--------------------------------------------------------------------------
+    */
+    private function feedbackFieldsForForm(
+        Form $form
+    ): array {
+        return match (
+            (int) $form->formtype_id
+        ) {
+            8 => [
+                'strength' =>
+                    'Keunggulan',
+
+                'complaint' =>
+                    'Keluhan',
+
+                'suggestion' =>
+                    'Saran',
+            ],
+
+            9 => [
+                'complaint' =>
+                    'Keluhan',
+
+                'suggestion' =>
+                    'Saran',
+            ],
+
+            10 => [
+                'suggestion' =>
+                    'Saran',
+            ],
+
+            default => [],
+        };
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE FEEDBACK
+    |--------------------------------------------------------------------------
+    */
     private function validateFeedbackAnswer(
         Form $form,
         Question $question,
@@ -395,477 +524,580 @@ class AnswerController extends Controller
         array $payload,
         array &$errors
     ): void {
-        $requiredFields = match (
-            (int) $form->formtype_id
-        ) {
-            /*
-            * Keunggulan, Keluhan, dan Saran.
-            */
-            8 => [
-                'strength' => 'Keunggulan',
-                'complaint' => 'Keluhan',
-                'suggestion' => 'Saran',
-            ],
-
-            /*
-            * Keluhan dan Saran.
-            */
-            9 => [
-                'complaint' => 'Keluhan',
-                'suggestion' => 'Saran',
-            ],
-
-            /*
-            * Saran.
-            */
-            10 => [
-                'suggestion' => 'Saran',
-            ],
-
-            default => [],
-        };
+        $requiredFields =
+            $this->feedbackFieldsForForm(
+                $form
+            );
 
         foreach (
-            $requiredFields as $field => $label
+            $requiredFields
+            as $field => $label
         ) {
-            $value = Arr::get(
-                $payload,
-                $field
-            );
+            $value =
+                Arr::get(
+                    $payload,
+                    $field
+                );
+
+            $errorKey =
+                "answers.{$question->id}.{$subunitId}.{$field}";
 
             if (!filled($value)) {
                 $errors[
-                    "answers.{$question->id}.{$subunitId}.{$field}"
-                ] = "{$label} untuk pertanyaan {$question->name} wajib diisi.";
+                    $errorKey
+                ] =
+                    "{$label} untuk pertanyaan {$question->name} wajib diisi.";
+
+                continue;
+            }
+
+            if (
+                $this->shouldValidateMeaningfulAnswers()
+                &&
+                $this->isMeaninglessAnswer(
+                    $value
+                )
+            ) {
+                $errors[
+                    $errorKey
+                ] =
+                    'Berikan pendapat agar masukan Anda dapat dianalisa.';
             }
         }
     }
 
-    private function saveRespondentCompetitorAnswers(
-        Request $request,
-        Form $form,
-        UserProfile $profile,
-        Collection $questions,
-        array $answers
-    ): RedirectResponse {
-        $rows = collect((array) $request->input('respondent_competitors', []));
-        $errors = [];
 
-        if ($rows->isEmpty() || $rows->count() > 10) {
-            $errors['respondent_competitors'] = 'Jumlah kompetitor harus antara 1 sampai 10.';
-        }
-
-        $names = [];
-        foreach ($rows as $index => $row) {
-            $name = trim((string) Arr::get((array) $row, 'name'));
-            if ($name === '') {
-                $errors["respondent_competitors.{$index}.name"] = 'Nama kompetitor wajib diisi.';
-            } elseif (in_array(mb_strtolower($name), $names, true)) {
-                $errors["respondent_competitors.{$index}.name"] = 'Nama kompetitor tidak boleh sama.';
-            }
-            $names[] = mb_strtolower($name);
-
-            foreach ($questions as $question) {
-                if ($this->isTitleQuestion($form, $question)) {
-                    continue;
-                }
-                $value = Arr::get($answers, "{$question->id}.{$index}.value");
-                if (! in_array((string) $value, ['0','1','2','3','4','5','6','7'], true)) {
-                    $errors["answers.{$question->id}.{$index}.value"] = "Penilaian {$question->name} untuk {$name} wajib dipilih.";
-                }
-            }
-        }
-
-        if ($errors !== []) {
-            throw ValidationException::withMessages($errors);
-        }
-
-        DB::transaction(function () use ($rows, $form, $profile, $questions, $answers): void {
-            $existing = RespondentCompetitor::query()
-                ->where('user_id', Auth::id())
-                ->where('form_id', $form->id)
-                ->get()->keyBy('id');
-            $submittedIds = $rows
-                ->pluck('id')
-                ->map(fn ($id) => (int) $id)
-                ->filter(fn (int $id) => $existing->has($id))
-                ->values();
-
-            // Hapus baris yang dibuang lebih dahulu agar pergeseran posisi tidak
-            // berbenturan dengan unique(user_id, form_id, position).
-            RespondentCompetitor::query()
-                ->where('user_id', Auth::id())
-                ->where('form_id', $form->id)
-                ->whereNotIn('id', $submittedIds)
-                ->delete();
-            $existing = $existing->only($submittedIds->all());
-            $kept = [];
-
-            foreach ($rows->values() as $position => $row) {
-                $row = (array) $row;
-                $requestedId = (int) ($row['id'] ?? 0);
-                $competitor = $requestedId && $existing->has($requestedId)
-                    ? $existing->get($requestedId)
-                    : new RespondentCompetitor();
-                $competitor->fill([
-                    'user_id' => Auth::id(),
-                    'activity_id' => $profile->activity_id,
-                    'form_id' => $form->id,
-                    'position' => $position + 1,
-                    'name' => trim((string) $row['name']),
-                ])->save();
-                $kept[] = $competitor->id;
-
-                foreach ($questions as $question) {
-                    if ($this->isTitleQuestion($form, $question)) {
-                        continue;
-                    }
-                    $value = Arr::get($answers, "{$question->id}.{$rows->keys()->get($position)}.value");
-                    Answer::query()->updateOrCreate([
-                        'user_id' => Auth::id(),
-                        'form_id' => $form->id,
-                        'question_id' => $question->id,
-                        'subunit_id' => null,
-                        'competitor_id' => null,
-                        'respondent_competitor_id' => $competitor->id,
-                    ], ['answer' => ['value' => $value]]);
-                }
-            }
-
-            RespondentCompetitor::query()
-                ->where('user_id', Auth::id())
-                ->where('form_id', $form->id)
-                ->whereNotIn('id', $kept)
-                ->delete();
-        });
-
-        return $this->goToNextForm($form);
-    }
     /*
     |--------------------------------------------------------------------------
-    | VALIDATION
+    | DUPLICATE FEEDBACK
     |--------------------------------------------------------------------------
+    |
+    | Contoh:
+    |
+    | Question D1
+    |
+    | Sub Unit A:
+    | Keluhan = "Sudah baik"
+    |
+    | Sub Unit B:
+    | Keluhan = "Sudah baik"
+    |
+    | Maka keduanya dianggap duplicate.
+    |
     */
-    private function validateAnswers(
-            Form $form,
-            Collection $questions,
-            Collection $activeRows,
-            Collection $competitorIds,
-            array $answers
-        ): array {
-            $errors = [];
+    private function validateDuplicateFeedbackAnswers(
+        Form $form,
+        Question $question,
+        Collection $targetIds,
+        array $questionPayload,
+        array &$errors
+    ): void {
+        if (
+            !$this
+                ->shouldValidateMeaningfulAnswers()
+        ) {
+            return;
+        }
 
-            foreach ($questions as $question) {
-                /*
-                * Lewati questiontype_id 1
-                * karena merupakan judul untuk
-                * semua form selain Kuesioner Umum.
-                */
+        $feedbackFields =
+            $this->feedbackFieldsForForm(
+                $form
+            );
+
+        foreach (
+            $feedbackFields
+            as $field => $label
+        ) {
+            $groupedValues = [];
+
+            foreach (
+                $targetIds
+                as $subunitId
+            ) {
+                $value =
+                    Arr::get(
+                        $questionPayload,
+                        "{$subunitId}.{$field}"
+                    );
+
+                if (!filled($value)) {
+                    continue;
+                }
+
                 if (
-                    $this->isTitleQuestion(
-                        $form,
-                        $question
+                    $this->isMeaninglessAnswer(
+                        $value
                     )
                 ) {
                     continue;
                 }
 
-                $questionPayload = Arr::get(
+                $normalized =
+                    $this->normalizeAnswer(
+                        $value
+                    );
+
+                if ($normalized === '') {
+                    continue;
+                }
+
+                if (
+                    !array_key_exists(
+                        $normalized,
+                        $groupedValues
+                    )
+                ) {
+                    $groupedValues[
+                        $normalized
+                    ] = [];
+                }
+
+                $groupedValues[
+                    $normalized
+                ][] =
+                    (int) $subunitId;
+            }
+
+            foreach (
+                $groupedValues
+                as $subunitIds
+            ) {
+                if (
+                    count($subunitIds)
+                    <= 1
+                ) {
+                    continue;
+                }
+
+                foreach (
+                    $subunitIds
+                    as $subunitId
+                ) {
+                    $errorKey =
+                        "answers.{$question->id}.{$subunitId}.{$field}";
+
+                    $errors[
+                        $errorKey
+                    ] =
+                        'Berikan pendapat yang berbeda untuk setiap Sub Unit agar masukan Anda dapat dianalisa.';
+                }
+            }
+        }
+    }
+
+
+    private function validateAnswers(
+        Form $form,
+        Collection $questions,
+        Collection $activeRows,
+        Collection $competitorIds,
+        array $answers
+    ): array {
+        $errors = [];
+
+        foreach (
+            $questions
+            as $question
+        ) {
+            if (
+                $this->isTitleQuestion(
+                    $form,
+                    $question
+                )
+            ) {
+                continue;
+            }
+
+            $questionPayload =
+                Arr::get(
                     $answers,
                     (string) $question->id,
                     []
                 );
 
-                /*
-                |--------------------------------------------------------------------------
-                | CUSTOMER ASSESSMENT
-                |--------------------------------------------------------------------------
-                | Form Type 2 dan 3.
-                */
-                if (
-                    in_array(
-                        (int) $form->formtype_id,
-                        self::CUSTOMER_TYPES,
-                        true
-                    )
-                ) {
-                    $targetIds = $activeRows
+            /*
+            |--------------------------------------------------------------------------
+            | CUSTOMER
+            |--------------------------------------------------------------------------
+            */
+            if (
+                in_array(
+                    (int) $form->formtype_id,
+                    self::CUSTOMER_TYPES,
+                    true
+                )
+            ) {
+                $targetIds =
+                    $activeRows
                         ->where(
                             'question_id',
                             $question->id
                         )
-                        ->pluck('subunit_id')
+                        ->pluck(
+                            'subunit_id'
+                        )
                         ->map(
-                            fn ($id) => (int) $id
+                            fn ($id) =>
+                                (int) $id
                         )
                         ->unique();
 
-                    foreach (
-                        $targetIds as $subunitId
-                    ) {
-                        $payload = Arr::get(
+                foreach (
+                    $targetIds
+                    as $subunitId
+                ) {
+                    $payload =
+                        Arr::get(
                             $questionPayload,
                             (string) $subunitId,
                             []
                         );
 
-                        $this->validateCustomerAnswer(
+                    $this
+                        ->validateCustomerAnswer(
                             $form,
                             $question,
                             $subunitId,
                             (array) $payload,
                             $errors
                         );
-                    }
-
-                    continue;
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | FEEDBACK FORM
-                |--------------------------------------------------------------------------
-                | Form Type:
-                | 8  = Keunggulan, Keluhan, Saran
-                | 9  = Keluhan, Saran
-                | 10 = Saran
-                |
-                | WAJIB berada sebelum validasi PER_SUBUNIT_TYPES.
-                */
-                if (
-                    in_array(
-                        (int) $form->formtype_id,
-                        self::FEEDBACK_TYPES,
-                        true
-                    )
-                ) {
-                    $targetIds = $activeRows
+                continue;
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | FEEDBACK
+            |--------------------------------------------------------------------------
+            */
+            if (
+                in_array(
+                    (int) $form->formtype_id,
+                    self::FEEDBACK_TYPES,
+                    true
+                )
+            ) {
+                $targetIds =
+                    $activeRows
                         ->where(
                             'question_id',
                             $question->id
                         )
-                        ->pluck('subunit_id')
+                        ->pluck(
+                            'subunit_id'
+                        )
                         ->map(
-                            fn ($id) => (int) $id
+                            fn ($id) =>
+                                (int) $id
                         )
                         ->unique();
 
-                    foreach (
-                        $targetIds as $subunitId
-                    ) {
-                        $payload = Arr::get(
+                foreach (
+                    $targetIds
+                    as $subunitId
+                ) {
+                    $payload =
+                        Arr::get(
                             $questionPayload,
                             (string) $subunitId,
                             []
                         );
 
-                        $this->validateFeedbackAnswer(
+                    $this
+                        ->validateFeedbackAnswer(
                             $form,
                             $question,
                             $subunitId,
                             (array) $payload,
                             $errors
                         );
-                    }
-
-                    continue;
                 }
 
                 /*
-                |--------------------------------------------------------------------------
-                | RANKING
-                |--------------------------------------------------------------------------
-                */
-                if (
-                    in_array(
-                        (int) $form->formtype_id,
-                        [6, 7],
-                        true
-                    )
-                ) {
-                    $this->validateRankingAnswer(
+                 * Cek duplicate setelah seluruh
+                 * Sub Unit divalidasi.
+                 */
+                $this
+                    ->validateDuplicateFeedbackAnswers(
+                        $form,
+                        $question,
+                        $targetIds,
+                        (array) $questionPayload,
+                        $errors
+                    );
+
+                continue;
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | RANKING
+            |--------------------------------------------------------------------------
+            */
+            if (
+                in_array(
+                    (int) $form->formtype_id,
+                    [6, 7],
+                    true
+                )
+            ) {
+                $this
+                    ->validateRankingAnswer(
                         $form,
                         $question,
                         (array) $questionPayload,
                         $errors
                     );
 
-                    continue;
-                }
+                continue;
+            }
 
-                /*
-                |--------------------------------------------------------------------------
-                | PER SUB UNIT GENERIC
-                |--------------------------------------------------------------------------
-                | Digunakan jika nanti terdapat form
-                | per Sub Unit lain dengan struktur [value].
-                */
-                if (
-                    in_array(
-                        (int) $form->formtype_id,
-                        self::PER_SUBUNIT_TYPES,
-                        true
-                    )
-                ) {
-                    $targetIds = $activeRows
+
+            /*
+            |--------------------------------------------------------------------------
+            | PER SUB UNIT
+            |--------------------------------------------------------------------------
+            */
+            if (
+                in_array(
+                    (int) $form->formtype_id,
+                    self::PER_SUBUNIT_TYPES,
+                    true
+                )
+            ) {
+                $targetIds =
+                    $activeRows
                         ->where(
                             'question_id',
                             $question->id
                         )
-                        ->pluck('subunit_id')
+                        ->pluck(
+                            'subunit_id'
+                        )
                         ->map(
-                            fn ($id) => (int) $id
+                            fn ($id) =>
+                                (int) $id
                         )
                         ->unique();
 
-                    foreach (
-                        $targetIds as $subunitId
-                    ) {
-                        $payload = Arr::get(
+                foreach (
+                    $targetIds
+                    as $subunitId
+                ) {
+                    $payload =
+                        Arr::get(
                             $questionPayload,
                             (string) $subunitId,
                             []
                         );
 
-                        if (
-                            !filled(
-                                Arr::get(
-                                    $payload,
-                                    'value'
-                                )
+                    if (
+                        !filled(
+                            Arr::get(
+                                $payload,
+                                'value'
                             )
-                        ) {
-                            $errors[
-                                "answers.{$question->id}.{$subunitId}.value"
-                            ] = "Pertanyaan {$question->name} wajib diisi untuk setiap Sub Unit.";
-                        }
+                        )
+                    ) {
+                        $errors[
+                            "answers.{$question->id}.{$subunitId}.value"
+                        ] =
+                            "Pertanyaan {$question->name} wajib diisi untuk setiap Sub Unit.";
                     }
-
-                    continue;
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | COMPETITOR
-                |--------------------------------------------------------------------------
-                */
-                if (
-                    in_array(
-                        (int) $form->formtype_id,
-                        self::COMPETITOR_TYPES,
-                        true
-                    )
+                continue;
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | COMPETITOR
+            |--------------------------------------------------------------------------
+            */
+            if (
+                in_array(
+                    (int) $form->formtype_id,
+                    self::COMPETITOR_TYPES,
+                    true
+                )
+            ) {
+                foreach (
+                    $competitorIds
+                    as $competitorId
                 ) {
-                    foreach (
-                        $competitorIds as $competitorId
-                    ) {
-                        $payload = Arr::get(
+                    $payload =
+                        Arr::get(
                             $questionPayload,
                             (string) $competitorId,
                             []
                         );
 
-                        if (
-                            !filled(
-                                Arr::get(
-                                    $payload,
-                                    'value'
-                                )
+                    if (
+                        !filled(
+                            Arr::get(
+                                $payload,
+                                'value'
                             )
-                        ) {
-                            $errors[
-                                "answers.{$question->id}.{$competitorId}.value"
-                            ] = "Pertanyaan {$question->name} wajib diisi untuk setiap kompetitor.";
-                        }
+                        )
+                    ) {
+                        $errors[
+                            "answers.{$question->id}.{$competitorId}.value"
+                        ] =
+                            "Pertanyaan {$question->name} wajib diisi untuk setiap kompetitor.";
                     }
-
-                    continue;
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | GLOBAL FORM
-                |--------------------------------------------------------------------------
-                */
-                $this->validateGlobalAnswer(
+                continue;
+            }
+
+            $this
+                ->validateGlobalAnswer(
                     $question,
                     (array) $questionPayload,
                     $errors
                 );
-            }
-
-            return $errors;
         }
 
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDATE RANKING
-    |--------------------------------------------------------------------------
-    */
+        return $errors;
+    }
+
+
     private function validateRankingAnswer(
         Form $form,
         Question $question,
         array $payload,
         array &$errors
     ): void {
-        $maximumRank = (int) $form->formtype_id === 6
-            ? 3
-            : 5;
+        $maximumRank =
+            (int) $form->formtype_id
+                === 6
+                ? 3
+                : 5;
 
-        $rankings = Arr::get($payload, 'value', []);
-        $rankings = is_array($rankings)
-            ? $rankings
-            : [];
-
-        $selectedOptionIds = [];
-
-        for ($rank = 1; $rank <= $maximumRank; $rank++) {
-            $ranking = (array) Arr::get(
-                $rankings,
-                (string) $rank,
+        $rankings =
+            Arr::get(
+                $payload,
+                'value',
                 []
             );
 
-            $optionId = Arr::get($ranking, 'option_id');
-            $errorKey = "answers.{$question->id}.value.{$rank}.option_id";
+        $rankings =
+            is_array(
+                $rankings
+            )
+                ? $rankings
+                : [];
+
+        $selectedOptionIds = [];
+
+        for (
+            $rank = 1;
+            $rank <= $maximumRank;
+            $rank++
+        ) {
+            $ranking =
+                (array) Arr::get(
+                    $rankings,
+                    (string) $rank,
+                    []
+                );
+
+            $optionId =
+                Arr::get(
+                    $ranking,
+                    'option_id'
+                );
+
+            $errorKey =
+                "answers.{$question->id}.value.{$rank}.option_id";
 
             if (!filled($optionId)) {
-                $errors[$errorKey] = "Ranking {$rank} untuk pertanyaan {$question->name} wajib dipilih.";
+                $errors[
+                    $errorKey
+                ] =
+                    "Ranking {$rank} untuk pertanyaan {$question->name} wajib dipilih.";
+
                 continue;
             }
 
-            $option = $question->options->firstWhere(
-                'id',
-                (int) $optionId
-            );
+            $option =
+                $question
+                    ->options
+                    ->firstWhere(
+                        'id',
+                        (int) $optionId
+                    );
 
             if (!$option) {
-                $errors[$errorKey] = "Pilihan Ranking {$rank} untuk pertanyaan {$question->name} tidak valid.";
+                $errors[
+                    $errorKey
+                ] =
+                    "Pilihan Ranking {$rank} untuk pertanyaan {$question->name} tidak valid.";
+
                 continue;
             }
-
-            if (in_array((int) $option->id, $selectedOptionIds, true)) {
-                $errors[$errorKey] = "Pilihan pada setiap urutan Ranking untuk pertanyaan {$question->name} tidak boleh sama.";
-                continue;
-            }
-
-            $selectedOptionIds[] = (int) $option->id;
 
             if (
-                (int) $option->has_child === 1
-                && !filled(Arr::get($ranking, 'child'))
+                in_array(
+                    (int) $option->id,
+                    $selectedOptionIds,
+                    true
+                )
             ) {
                 $errors[
-                    "answers.{$question->id}.value.{$rank}.child"
-                ] = "Jawaban tambahan untuk {$option->answer_text} wajib diisi.";
+                    $errorKey
+                ] =
+                    "Pilihan pada setiap urutan Ranking untuk pertanyaan {$question->name} tidak boleh sama.";
+
+                continue;
+            }
+
+            $selectedOptionIds[] =
+                (int) $option->id;
+
+            if (
+                (int) $option->has_child
+                === 1
+            ) {
+                $childValue =
+                    Arr::get(
+                        $ranking,
+                        'child'
+                    );
+
+                $childErrorKey =
+                    "answers.{$question->id}.value.{$rank}.child";
+
+                if (!filled($childValue)) {
+                    $errors[
+                        $childErrorKey
+                    ] =
+                        "Jawaban tambahan untuk {$option->answer_text} wajib diisi.";
+
+                    continue;
+                }
+
+                if (
+                    $this->shouldValidateMeaningfulAnswers()
+                    &&
+                    $this->isMeaninglessAnswer(
+                        $childValue
+                    )
+                ) {
+                    $errors[
+                        $childErrorKey
+                    ] =
+                        'Berikan pendapat agar masukan Anda dapat dianalisa.';
+                }
             }
         }
     }
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDATE CUSTOMER ASSESSMENT
-    |--------------------------------------------------------------------------
-    */
+
+
     private function validateCustomerAnswer(
         Form $form,
         Question $question,
@@ -874,12 +1106,9 @@ class AnswerController extends Controller
         array &$errors
     ): void {
         $questionTypeId =
-            (int) $question->questiontype_id;
+            (int) $question
+                ->questiontype_id;
 
-        /*
-         * Type 2, 3, dan 4:
-         * Kepentingan dan Kinerja.
-         */
         if (
             in_array(
                 $questionTypeId,
@@ -887,28 +1116,36 @@ class AnswerController extends Controller
                 true
             )
         ) {
-            $importance = Arr::get(
-                $payload,
-                'importance'
-            );
+            $importance =
+                Arr::get(
+                    $payload,
+                    'importance'
+                );
 
-            $performance = Arr::get(
-                $payload,
-                'performance'
-            );
+            $performance =
+                Arr::get(
+                    $payload,
+                    'performance'
+                );
 
             $maximumScale =
-                (int) $form->formtype_id === 2
+                (int) $form->formtype_id
+                    === 2
                     ? 5
                     : 7;
 
-            $allowedValues = array_merge(
-                range(1, $maximumScale),
-                [0]
-            );
+            $allowedValues =
+                array_merge(
+                    range(
+                        1,
+                        $maximumScale
+                    ),
+                    [0]
+                );
 
             if (
-                !filled($importance) ||
+                !filled($importance)
+                ||
                 !in_array(
                     (int) $importance,
                     $allowedValues,
@@ -917,11 +1154,13 @@ class AnswerController extends Controller
             ) {
                 $errors[
                     "answers.{$question->id}.{$subunitId}.importance"
-                ] = "Nilai Kepentingan {$question->name} wajib dipilih.";
+                ] =
+                    "Nilai Kepentingan {$question->name} wajib dipilih.";
             }
 
             if (
-                !filled($performance) ||
+                !filled($performance)
+                ||
                 !in_array(
                     (int) $performance,
                     $allowedValues,
@@ -930,27 +1169,30 @@ class AnswerController extends Controller
             ) {
                 $errors[
                     "answers.{$question->id}.{$subunitId}.performance"
-                ] = "Nilai Kinerja {$question->name} wajib dipilih.";
+                ] =
+                    "Nilai Kinerja {$question->name} wajib dipilih.";
             }
 
             $reasonMaximum =
-                (int) $form->formtype_id === 2
+                (int) $form->formtype_id
+                    === 2
                     ? 3
                     : 4;
 
             $needsReason =
-                filled($performance) &&
-                (int) $performance !== 0 &&
-                (int) $performance <=
+                filled($performance)
+                &&
+                (int) $performance !== 0
+                &&
+                (int) $performance
+                    <=
                     $reasonMaximum;
 
-            /*
-             * Type 3:
-             * alasan berupa textarea.
-             */
             if (
-                $questionTypeId === 3 &&
-                $needsReason &&
+                $questionTypeId === 3
+                &&
+                $needsReason
+                &&
                 !filled(
                     Arr::get(
                         $payload,
@@ -960,73 +1202,107 @@ class AnswerController extends Controller
             ) {
                 $errors[
                     "answers.{$question->id}.{$subunitId}.reason"
-                ] = "Alasan penilaian Kinerja {$question->name} wajib diisi.";
+                ] =
+                    "Alasan penilaian Kinerja {$question->name} wajib diisi.";
             }
 
-            /*
-             * Type 4:
-             * alasan berupa checkbox options.
-             */
             if (
-                $questionTypeId === 4 &&
+                $questionTypeId === 4
+                &&
                 $needsReason
             ) {
-                $selectedReasonIds = collect(
-                    Arr::get(
-                        $payload,
-                        'reasons',
-                        []
+                $selectedReasonIds =
+                    collect(
+                        Arr::get(
+                            $payload,
+                            'reasons',
+                            []
+                        )
                     )
-                )
-                    ->map(fn ($id) => (int) $id)
-                    ->unique()
-                    ->values();
+                        ->map(
+                            fn ($id) =>
+                                (int) $id
+                        )
+                        ->unique()
+                        ->values();
 
                 if (
-                    $selectedReasonIds->isEmpty()
+                    $selectedReasonIds
+                        ->isEmpty()
                 ) {
                     $errors[
                         "answers.{$question->id}.{$subunitId}.reasons"
-                    ] = "Pilih minimal satu alasan penilaian Kinerja {$question->name}.";
+                    ] =
+                        "Pilih minimal satu alasan penilaian Kinerja {$question->name}.";
                 } else {
-                    $validOptions = $question
-                        ->options
-                        ->whereIn(
-                            'id',
-                            $selectedReasonIds
-                        );
+                    $validOptions =
+                        $question
+                            ->options
+                            ->whereIn(
+                                'id',
+                                $selectedReasonIds
+                            );
 
-                    /*
-                     * Mencegah option dari pertanyaan
-                     * lain dikirimkan.
-                     */
                     if (
-                        $validOptions->count() !==
-                        $selectedReasonIds->count()
+                        $validOptions
+                            ->count()
+                        !==
+                        $selectedReasonIds
+                            ->count()
                     ) {
                         $errors[
                             "answers.{$question->id}.{$subunitId}.reasons"
-                        ] = "Pilihan alasan tidak valid.";
+                        ] =
+                            'Pilihan alasan tidak valid.';
                     }
 
                     foreach (
-                        $validOptions as $option
+                        $validOptions
+                        as $option
                     ) {
                         if (
-                            (int) $option->has_child !== 1
+                            (int) $option
+                                ->has_child
+                            !== 1
                         ) {
                             continue;
                         }
 
-                        $childValue = Arr::get(
-                            $payload,
-                            "children.{$option->id}"
-                        );
+                        $childValue =
+                            Arr::get(
+                                $payload,
+                                "children.{$option->id}"
+                            );
 
-                        if (!filled($childValue)) {
+                        $childErrorKey =
+                            "answers.{$question->id}.{$subunitId}.children.{$option->id}";
+
+                        if (
+                            !filled(
+                                $childValue
+                            )
+                        ) {
                             $errors[
-                                "answers.{$question->id}.{$subunitId}.children.{$option->id}"
-                            ] = "Jawaban tambahan untuk alasan {$option->answer_text} wajib diisi.";
+                                $childErrorKey
+                            ] =
+                                "Jawaban tambahan untuk alasan {$option->answer_text} wajib diisi.";
+
+                            continue;
+                        }
+
+                        if (
+                            $this
+                                ->shouldValidateMeaningfulAnswers()
+                            &&
+                            $this
+                                ->isMeaninglessAnswer(
+                                    $childValue
+                                )
+                        ) {
+                            $errors[
+                                $childErrorKey
+                            ] =
+                                'Berikan pendapat agar masukan Anda dapat dianalisa.';
                         }
                     }
                 }
@@ -1035,16 +1311,13 @@ class AnswerController extends Controller
             return;
         }
 
-        /*
-         * Type 5: satu indikator.
-         * Type 6: textarea.
-         */
         if (
             in_array(
                 $questionTypeId,
                 [5, 6],
                 true
-            ) &&
+            )
+            &&
             !filled(
                 Arr::get(
                     $payload,
@@ -1054,40 +1327,36 @@ class AnswerController extends Controller
         ) {
             $errors[
                 "answers.{$question->id}.{$subunitId}.value"
-            ] = "Pertanyaan {$question->name} wajib diisi.";
+            ] =
+                "Pertanyaan {$question->name} wajib diisi.";
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDATE GLOBAL FORM
-    |--------------------------------------------------------------------------
-    */
+
     private function validateGlobalAnswer(
         Question $question,
         array $payload,
         array &$errors
     ): void {
         $questionTypeId =
-            (int) $question->questiontype_id;
+            (int) $question
+                ->questiontype_id;
 
-        $value = Arr::get(
-            $payload,
-            'value'
-        );
+        $value =
+            Arr::get(
+                $payload,
+                'value'
+            );
 
         if (!filled($value)) {
             $errors[
                 "answers.{$question->id}.value"
-            ] = "Pertanyaan {$question->name} wajib diisi.";
+            ] =
+                "Pertanyaan {$question->name} wajib diisi.";
 
             return;
         }
 
-        /*
-         * Kuesioner Umum:
-         * Type 3 radio dan Type 4 checkbox.
-         */
         if (
             in_array(
                 $questionTypeId,
@@ -1095,88 +1364,213 @@ class AnswerController extends Controller
                 true
             )
         ) {
-            $selectedOptionIds = is_array(
-                $value
-            )
-                ? $value
-                : [$value];
+            $selectedOptionIds =
+                is_array(
+                    $value
+                )
+                    ? $value
+                    : [$value];
 
-            $selectedOptionIds = collect(
-                $selectedOptionIds
-            )
-                ->map(fn ($id) => (int) $id)
-                ->unique()
-                ->values();
-
-            $validOptions = $question
-                ->options
-                ->whereIn(
-                    'id',
+            $selectedOptionIds =
+                collect(
                     $selectedOptionIds
-                );
+                )
+                    ->map(
+                        fn ($id) =>
+                            (int) $id
+                    )
+                    ->unique()
+                    ->values();
+
+            $validOptions =
+                $question
+                    ->options
+                    ->whereIn(
+                        'id',
+                        $selectedOptionIds
+                    );
 
             if (
-                $validOptions->count() !==
-                $selectedOptionIds->count()
+                $validOptions
+                    ->count()
+                !==
+                $selectedOptionIds
+                    ->count()
             ) {
                 $errors[
                     "answers.{$question->id}.value"
-                ] = "Pilihan jawaban {$question->name} tidak valid.";
+                ] =
+                    "Pilihan jawaban {$question->name} tidak valid.";
 
                 return;
             }
 
             foreach (
-                $validOptions as $option
+                $validOptions
+                as $option
             ) {
                 if (
-                    (int) $option->has_child !== 1
+                    (int) $option
+                        ->has_child
+                    !== 1
                 ) {
                     continue;
                 }
 
-                $childValue = Arr::get(
-                    $payload,
-                    "child.{$option->id}"
-                );
+                $childValue =
+                    Arr::get(
+                        $payload,
+                        "child.{$option->id}"
+                    );
 
-                if (!filled($childValue)) {
+                $childErrorKey =
+                    "answers.{$question->id}.child.{$option->id}";
+
+                if (
+                    !filled(
+                        $childValue
+                    )
+                ) {
                     $errors[
-                        "answers.{$question->id}.child.{$option->id}"
-                    ] = "Jawaban tambahan untuk {$option->answer_text} wajib diisi.";
+                        $childErrorKey
+                    ] =
+                        "Jawaban tambahan untuk {$option->answer_text} wajib diisi.";
+
+                    continue;
+                }
+
+                if (
+                    $this
+                        ->shouldValidateMeaningfulAnswers()
+                    &&
+                    $this
+                        ->isMeaninglessAnswer(
+                            $childValue
+                        )
+                ) {
+                    $errors[
+                        $childErrorKey
+                    ] =
+                        'Berikan pendapat agar masukan Anda dapat dianalisa.';
                 }
             }
         }
     }
 
+
+    private function shouldValidateMeaningfulAnswers(): bool
+    {
+        return in_array(
+            (int) Auth::user()
+                ?->role_id,
+            self::MEANINGFUL_ANSWER_ROLE_IDS,
+            true
+        );
+    }
+
+
     /*
     |--------------------------------------------------------------------------
-    | CHECK TITLE
+    | NORMALIZE
     |--------------------------------------------------------------------------
     */
+    private function normalizeAnswer(
+        mixed $value
+    ): string {
+        if (!is_scalar($value)) {
+            return '';
+        }
+
+        $normalized =
+            mb_strtolower(
+                trim(
+                    (string) $value
+                ),
+                'UTF-8'
+            );
+
+        $normalized =
+            preg_replace(
+                '/[^\p{L}\p{N}]+/u',
+                ' ',
+                $normalized
+            );
+
+        $normalized =
+            preg_replace(
+                '/\s+/u',
+                ' ',
+                (string) $normalized
+            );
+
+        return trim(
+            (string) $normalized
+        );
+    }
+
+
+    private function isMeaninglessAnswer(
+        mixed $value
+    ): bool {
+        if (!is_scalar($value)) {
+            return false;
+        }
+
+        $value =
+            trim(
+                (string) $value
+            );
+
+        if ($value === '') {
+            return true;
+        }
+
+        if (
+            preg_match(
+                '/^[\p{P}\p{S}\s]+$/u',
+                $value
+            ) === 1
+        ) {
+            return true;
+        }
+
+        $normalized =
+            $this->normalizeAnswer(
+                $value
+            );
+
+        if ($normalized === '') {
+            return true;
+        }
+
+        return in_array(
+            $normalized,
+            self::MEANINGLESS_ANSWERS,
+            true
+        );
+    }
+
+
     private function isTitleQuestion(
         Form $form,
         Question $question
     ): bool {
-        /*
-         * Form Type 1:
-         * questiontype_id 1 adalah jawaban singkat.
-         *
-         * Form lainnya:
-         * questiontype_id 1 adalah judul.
-         */
-        return $question->questiontype?->isTitleOnly()
-            || (
-                (int) $form->formtype_id !== 1
-                && (int) $question->questiontype_id === 1
+        return $question
+            ->questiontype
+            ?->isTitleOnly()
+            ||
+            (
+                (int) $form
+                    ->formtype_id
+                !== 1
+                &&
+                (int) $question
+                    ->questiontype_id
+                === 1
             );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SAVE ONE ANSWER
-    |--------------------------------------------------------------------------
-    */
+
     private function saveAnswer(
         Form $form,
         int $questionId,
@@ -1185,56 +1579,389 @@ class AnswerController extends Controller
         ?int $competitorId
     ): void {
         $attributes = [
-                'user_id' =>
-                    Auth::id(),
+            'user_id' =>
+                Auth::id(),
 
-                'form_id' =>
-                    $form->id,
+            'form_id' =>
+                $form->id,
 
-                'question_id' =>
-                    $questionId,
+            'question_id' =>
+                $questionId,
 
-                'subunit_id' =>
-                    $subunitId,
+            'subunit_id' =>
+                $subunitId,
 
-                'competitor_id' =>
-                    $competitorId,
+            'competitor_id' =>
+                $competitorId,
 
-                'respondent_competitor_id' => null,
-            ];
+            'respondent_competitor_id' =>
+                null,
+        ];
 
-        $answer = Answer::query()->updateOrCreate(
-            $attributes,
-            [
-                'answer' => $value,
-            ]
-        );
+        $answer =
+            Answer::query()
+                ->updateOrCreate(
+                    $attributes,
+                    [
+                        'answer' =>
+                            $value,
+                    ]
+                );
 
-        // Bersihkan duplikasi legacy untuk konteks logis yang sama tanpa
-        // menyentuh jawaban lain milik responden.
         Answer::query()
-            ->where($attributes)
-            ->whereKeyNot($answer->getKey())
+            ->where(
+                $attributes
+            )
+            ->whereKeyNot(
+                $answer->getKey()
+            )
             ->delete();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | NEXT FORM
-    |--------------------------------------------------------------------------
-    */
+
+    private function saveRespondentCompetitorAnswers(
+        Request $request,
+        Form $form,
+        UserProfile $profile,
+        Collection $questions,
+        array $answers
+    ): RedirectResponse {
+        $rows =
+            collect(
+                (array) $request
+                    ->input(
+                        'respondent_competitors',
+                        []
+                    )
+            );
+
+        $errors = [];
+
+        if (
+            $rows->isEmpty()
+            ||
+            $rows->count() > 10
+        ) {
+            $errors[
+                'respondent_competitors'
+            ] =
+                'Jumlah kompetitor harus antara 1 sampai 10.';
+        }
+
+        $names = [];
+
+        foreach (
+            $rows
+            as $index => $row
+        ) {
+            $name =
+                trim(
+                    (string) Arr::get(
+                        (array) $row,
+                        'name'
+                    )
+                );
+
+            if ($name === '') {
+                $errors[
+                    "respondent_competitors.{$index}.name"
+                ] =
+                    'Nama kompetitor wajib diisi.';
+            } elseif (
+                in_array(
+                    mb_strtolower(
+                        $name
+                    ),
+                    $names,
+                    true
+                )
+            ) {
+                $errors[
+                    "respondent_competitors.{$index}.name"
+                ] =
+                    'Nama kompetitor tidak boleh sama.';
+            }
+
+            $names[] =
+                mb_strtolower(
+                    $name
+                );
+
+            foreach (
+                $questions
+                as $question
+            ) {
+                if (
+                    $this
+                        ->isTitleQuestion(
+                            $form,
+                            $question
+                        )
+                ) {
+                    continue;
+                }
+
+                $value =
+                    Arr::get(
+                        $answers,
+                        "{$question->id}.{$index}.value"
+                    );
+
+                if (
+                    !in_array(
+                        (string) $value,
+                        [
+                            '0',
+                            '1',
+                            '2',
+                            '3',
+                            '4',
+                            '5',
+                            '6',
+                            '7',
+                        ],
+                        true
+                    )
+                ) {
+                    $errors[
+                        "answers.{$question->id}.{$index}.value"
+                    ] =
+                        "Penilaian {$question->name} untuk {$name} wajib dipilih.";
+                }
+            }
+        }
+
+        if (
+            $errors !== []
+        ) {
+            throw ValidationException
+                ::withMessages(
+                    $errors
+                );
+        }
+
+        DB::transaction(
+            function () use (
+                $rows,
+                $form,
+                $profile,
+                $questions,
+                $answers
+            ): void {
+                $existing =
+                    RespondentCompetitor
+                        ::query()
+                        ->where(
+                            'user_id',
+                            Auth::id()
+                        )
+                        ->where(
+                            'form_id',
+                            $form->id
+                        )
+                        ->get()
+                        ->keyBy('id');
+
+                $submittedIds =
+                    $rows
+                        ->pluck('id')
+                        ->map(
+                            fn ($id) =>
+                                (int) $id
+                        )
+                        ->filter(
+                            fn (int $id) =>
+                                $existing
+                                    ->has($id)
+                        )
+                        ->values();
+
+                RespondentCompetitor
+                    ::query()
+                    ->where(
+                        'user_id',
+                        Auth::id()
+                    )
+                    ->where(
+                        'form_id',
+                        $form->id
+                    )
+                    ->whereNotIn(
+                        'id',
+                        $submittedIds
+                    )
+                    ->delete();
+
+                $existing =
+                    $existing
+                        ->only(
+                            $submittedIds
+                                ->all()
+                        );
+
+                $kept = [];
+
+                foreach (
+                    $rows->values()
+                    as $position => $row
+                ) {
+                    $row =
+                        (array) $row;
+
+                    $requestedId =
+                        (int) (
+                            $row['id']
+                            ?? 0
+                        );
+
+                    $competitor =
+                        $requestedId
+                        &&
+                        $existing
+                            ->has(
+                                $requestedId
+                            )
+                            ? $existing
+                                ->get(
+                                    $requestedId
+                                )
+                            : new RespondentCompetitor();
+
+                    $competitor
+                        ->fill([
+                            'user_id' =>
+                                Auth::id(),
+
+                            'activity_id' =>
+                                $profile
+                                    ->activity_id,
+
+                            'form_id' =>
+                                $form->id,
+
+                            'position' =>
+                                $position + 1,
+
+                            'name' =>
+                                trim(
+                                    (string) $row['name']
+                                ),
+                        ])
+                        ->save();
+
+                    $kept[] =
+                        $competitor->id;
+
+                    foreach (
+                        $questions
+                        as $question
+                    ) {
+                        if (
+                            $this
+                                ->isTitleQuestion(
+                                    $form,
+                                    $question
+                                )
+                        ) {
+                            continue;
+                        }
+
+                        $value =
+                            Arr::get(
+                                $answers,
+                                "{$question->id}.{$rows->keys()->get($position)}.value"
+                            );
+
+                        Answer::query()
+                            ->updateOrCreate(
+                                [
+                                    'user_id' =>
+                                        Auth::id(),
+
+                                    'form_id' =>
+                                        $form->id,
+
+                                    'question_id' =>
+                                        $question->id,
+
+                                    'subunit_id' =>
+                                        null,
+
+                                    'competitor_id' =>
+                                        null,
+
+                                    'respondent_competitor_id' =>
+                                        $competitor->id,
+                                ],
+                                [
+                                    'answer' => [
+                                        'value' =>
+                                            $value,
+                                    ],
+                                ]
+                            );
+                    }
+                }
+
+                RespondentCompetitor
+                    ::query()
+                    ->where(
+                        'user_id',
+                        Auth::id()
+                    )
+                    ->where(
+                        'form_id',
+                        $form->id
+                    )
+                    ->whereNotIn(
+                        'id',
+                        $kept
+                    )
+                    ->delete();
+            }
+        );
+
+        return $this
+            ->goToNextForm(
+                $form
+            );
+    }
+
+
     private function goToNextForm(
         Form $form
     ): RedirectResponse {
-        $nextForm = app(\App\Services\SurveyBranchingService::class)
-            ->nextVisibleForm($form, (int) Auth::id());
+        $nextForm =
+            app(
+                \App\Services\SurveyBranchingService::class
+            )
+                ->nextVisibleForm(
+                    $form,
+                    (int) Auth::id()
+                );
 
         SurveySession::query()
-            ->where('user_id', Auth::id())
-            ->update(['current_form_id' => $nextForm?->id]);
+            ->where(
+                'user_id',
+                Auth::id()
+            )
+            ->update([
+                'current_form_id' =>
+                    $nextForm?->id,
+            ]);
 
         return $nextForm
-            ? redirect()->route('survey.show', ['form' => $nextForm->id])
-            : redirect()->route('survey.finish.page');
+            ? redirect()
+                ->route(
+                    'survey.show',
+                    [
+                        'form' =>
+                            $nextForm->id,
+                    ]
+                )
+            : redirect()
+                ->route(
+                    'survey.finish.page'
+                );
     }
 }

@@ -383,14 +383,6 @@ class SubUnitController extends Controller
             );
         }
 
-        if (Answer::query()->whereIn('subunit_id', $subunitIds)->exists()) {
-            return $this->redirectToSubUnit(
-                $validated['unit_id'],
-                'error',
-                'Sebagian Sub Unit memiliki jawaban responden dan tidak dapat dihapus.'
-            );
-        }
-
         DB::transaction(function () use (
             $subunitIds,
             $subunits
