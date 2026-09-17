@@ -1031,26 +1031,23 @@
 
                 @elseif ($questionTypeId === 7)
 
-                    <input
-                        id="answer-{{ $question->id }}"
-
-                        type="date"
-
-                        name="answers[{{ $question->id }}][value]"
-
-                        value="{{ $storedValue }}"
-
-                        required
-
-                        class="w-full rounded-lg
-                               border border-gray-300
-                               px-4 py-3
-                               text-sm outline-none
-                               transition
-                               focus:border-indigo-500
-                               focus:ring-2
-                               focus:ring-indigo-100"
-                    >
+                    <div class="w-full sm:max-w-xs">
+                        <input
+                            id="answer-{{ $question->id }}"
+                            type="date"
+                            name="answers[{{ $question->id }}][value]"
+                            value="{{ $storedValue }}"
+                            required
+                            class="block w-full min-w-0 rounded-lg
+                                border border-gray-300
+                                bg-white px-4 py-3
+                                text-sm text-gray-800
+                                outline-none transition
+                                focus:border-indigo-500
+                                focus:ring-2
+                                focus:ring-indigo-100"
+                        >
+                    </div>
 
 
                 {{-- ======================================================== --}}

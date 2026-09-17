@@ -119,7 +119,7 @@ class QuestionController extends Controller
             'questions.*.questiontype_id' => [
                 'required',
                 'integer',
-                'exists:question_types,id',
+                // Validasi tipe dilakukan berdasarkan form melalui getQuestionTypesByForm().
             ],
         ]);
 
@@ -303,7 +303,7 @@ class QuestionController extends Controller
             'questiontype_id' => [
                 'required',
                 'integer',
-                'exists:question_types,id',
+                // Validasi tipe dilakukan berdasarkan form melalui getQuestionTypesByForm().
             ],
         ]);
 
@@ -736,6 +736,16 @@ class QuestionController extends Controller
                     'name' => 'Jawaban Textarea',
                     'description' => 'Pertanyaan dengan jawaban berbentuk textarea.',
                 ],
+                [
+                    'id' => 7,
+                    'name' => 'Penilaian dengan Alasan Kinerja',
+                    'description' => 'Alasan muncul hanya ketika Kinerja dipilih dan bernilai lebih dari 0.',
+                ],
+                [
+                    'id' => 8,
+                    'name' => 'Alasan Kinerja di Bawah Kepentingan',
+                    'description' => 'Alasan muncul hanya ketika kedua nilai dipilih, lebih dari 0, dan Kinerja lebih rendah dari Kepentingan.',
+                ],
             ]);
         }
 
@@ -775,6 +785,16 @@ class QuestionController extends Controller
                     'id' => 6,
                     'name' => 'Jawaban Textarea',
                     'description' => 'Pertanyaan dengan jawaban berbentuk textarea.',
+                ],
+                [
+                    'id' => 7,
+                    'name' => 'Penilaian dengan Alasan Kinerja',
+                    'description' => 'Alasan muncul hanya ketika Kinerja dipilih dan bernilai lebih dari 0.',
+                ],
+                [
+                    'id' => 8,
+                    'name' => 'Alasan Kinerja di Bawah Kepentingan',
+                    'description' => 'Alasan muncul hanya ketika kedua nilai dipilih, lebih dari 0, dan Kinerja lebih rendah dari Kepentingan.',
                 ],
             ]);
         }

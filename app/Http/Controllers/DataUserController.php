@@ -32,8 +32,15 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class DataUserController extends Controller
 {
 
+
     public function index(Request $request)
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Query User Profile
+        |--------------------------------------------------------------------------
+        */
+
         $query = UserProfile::query()
             ->whereHas('user')
             ->with([
@@ -44,17 +51,34 @@ class DataUserController extends Controller
                 'group',
                 'unit',
             ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Filter Pencarian
+        |--------------------------------------------------------------------------
+        */
+
         if ($request->filled('search')) {
             $search = $request->search;
+
             $query->where(function ($q) use ($search) {
                 $q->where('fullname', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%")
-                ->orWhereHas('user', function ($user) use ($search) {
-                        $user->where('username', 'like', "%{$search}%");
-
-                });
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($user) use ($search) {
+                        $user->where(
+                            'username',
+                            'like',
+                            "%{$search}%"
+                        );
+                    });
             });
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Filter Role
+        |--------------------------------------------------------------------------
+        */
 
         if ($request->filled('role')) {
             $query->whereHas('user.role', function ($role) use ($request) {
@@ -62,33 +86,174 @@ class DataUserController extends Controller
             });
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Filter Activity
+        |--------------------------------------------------------------------------
+        */
+
         if ($request->filled('activity')) {
-            $query->where('activity_id', $request->activity);
+            $query->where(
+                'activity_id',
+                $request->activity
+            );
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Filter Group
+        |--------------------------------------------------------------------------
+        */
 
         if ($request->filled('group')) {
-            $query->where('group_id', $request->group);
+            $query->where(
+                'group_id',
+                $request->group
+            );
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Filter Unit
+        |--------------------------------------------------------------------------
+        */
 
         if ($request->filled('unit')) {
-            $query->where('unit_id', $request->unit);
+            $query->where(
+                'unit_id',
+                $request->unit
+            );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Sorting ID User dan Username
+        |--------------------------------------------------------------------------
+        |
+        | sort_by:
+        | - id
+        | - username
+        |
+        | sort_direction:
+        | - asc  = terkecil ke terbesar / A-Z
+        | - desc = terbesar ke terkecil / Z-A
+        |
+        */
+
+        $sortBy = $request->input(
+            'sort_by',
+            'username'
+        );
+
+        $sortDirection = $request->input(
+            'sort_direction',
+            'asc'
+        );
+
+        // Batasi kolom sorting yang diperbolehkan.
+        $sortBy = in_array(
+            $sortBy,
+            ['id', 'username'],
+            true
+        ) ? $sortBy : 'username';
+
+        // Batasi arah sorting yang diperbolehkan.
+        $sortDirection = in_array(
+            $sortDirection,
+            ['asc', 'desc'],
+            true
+        ) ? $sortDirection : 'asc';
+
+        /*
+        |--------------------------------------------------------------------------
+        | Terapkan Sorting
+        |--------------------------------------------------------------------------
+        |
+        | Menggunakan subquery agar tidak perlu melakukan JOIN.
+        | Dengan demikian, relasi Eloquent dan kolom UserProfile
+        | tetap menggunakan struktur query aslinya.
+        |
+        */
+
+        if ($sortBy === 'id') {
+
+            $query->orderBy(
+                User::query()
+                    ->select('users.id')
+                    ->whereColumn(
+                        'users.id',
+                        'user_profiles.user_id'
+                    )
+                    ->limit(1),
+                $sortDirection
+            );
+
+        } else {
+
+            $query->orderBy(
+                User::query()
+                    ->select('users.username')
+                    ->whereColumn(
+                        'users.id',
+                        'user_profiles.user_id'
+                    )
+                    ->limit(1),
+                $sortDirection
+            );
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Urutan Tambahan
+        |--------------------------------------------------------------------------
+        |
+        | Menjaga urutan tetap konsisten ketika terdapat
+        | username yang sama atau nilai sorting setara.
+        |
+        */
+
+        $query->orderBy(
+            'user_profiles.id',
+            'asc'
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Data Master
+        |--------------------------------------------------------------------------
+        */
+
         $roles = Role::orderBy('name')->get();
+
         $activities = Activity::orderBy('name')->get();
+
         $groups = Group::orderBy('name')->get();
+
         $units = Unit::orderBy('name')->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
+
         $userProfiles = $query
-            ->latest()
             ->paginate(20)
             ->withQueryString();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Return View
+        |--------------------------------------------------------------------------
+        */
 
         return view('admin.users.index', compact(
             'userProfiles',
             'roles',
             'activities',
             'groups',
-            'units',
+            'units'
         ));
     }
 
@@ -587,6 +752,7 @@ class DataUserController extends Controller
             ->download($filename);
     }
 
+
     public function edit(string $id)
     {
         $user = User::query()
@@ -598,6 +764,8 @@ class DataUserController extends Controller
             'username' => $user->username,
             'role_id' => $user->role_id,
             'activity_id' => $user->profile?->activity_id,
+            'group_id' => $user->profile?->group_id,
+            'unit_id' => $user->profile?->unit_id,
         ]);
     }
 
@@ -633,63 +801,197 @@ class DataUserController extends Controller
 
 
 
+
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'username'      => [
+            'username' => [
                 'required',
                 'string',
                 'max:191',
                 Rule::unique('users', 'username')->ignore($id),
             ],
-            'password'      => ['nullable', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
-            'role_id'       => 'required|exists:roles,id',
-            'activity_id'   => 'nullable|exists:activities,id',
+
+            'password' => [
+                'nullable',
+                'string',
+                Password::min(10)->mixedCase()->numbers()->symbols(),
+            ],
+
+            'role_id' => [
+                'required',
+                'exists:roles,id',
+            ],
+
+            'activity_id' => [
+                'nullable',
+                'exists:activities,id',
+            ],
+
+            'group_id' => [
+                'nullable',
+                'exists:groups,id',
+            ],
+
+            'unit_id' => [
+                'nullable',
+                'exists:units,id',
+            ],
         ]);
-        $user = User::findOrFail($id);
 
-        $activityIsOptional = in_array((int) $validated['role_id'], [1, 2], true);
+        $user = User::query()
+            ->with('profile')
+            ->findOrFail($id);
 
-        if (! $activityIsOptional && empty($validated['activity_id'])) {
+        $roleId = (int) $validated['role_id'];
+
+        $activityId = $validated['activity_id'] ?? null;
+        $groupId = $validated['group_id'] ?? null;
+        $unitId = $validated['unit_id'] ?? null;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validasi Activity berdasarkan Role
+        |--------------------------------------------------------------------------
+        */
+
+        $activityIsOptional = in_array(
+            $roleId,
+            [1, 2],
+            true
+        );
+
+        if (
+            ! $activityIsOptional
+            && empty($activityId)
+        ) {
             throw ValidationException::withMessages([
                 'activity_id' => 'Activity wajib dipilih untuk role ini.',
             ]);
         }
 
-        if ((int) $user->id === (int) auth()->id()
-            && (int) $validated['role_id'] !== (int) $user->role_id) {
-            return back()->with('error', 'Role akun yang sedang digunakan tidak dapat diubah.');
+        /*
+        |--------------------------------------------------------------------------
+        | Aturan Role
+        |--------------------------------------------------------------------------
+        |
+        | Role 1: Activity, Group, Unit dikosongkan.
+        | Role 2: Activity opsional; Group dan Unit opsional.
+        | Role 4: Activity wajib; Group dan Unit opsional.
+        | Role lain: Group dan Unit dikosongkan.
+        |
+        */
+
+        if ($roleId === 1) {
+            $activityId = null;
         }
 
-        $data = [
-            'username' => $validated['username'],
-            'role_id'  => $validated['role_id'],
-        ];
-
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($validated['password']);
+        if (! in_array($roleId, [2, 4], true)) {
+            $groupId = null;
+            $unitId = null;
         }
 
-        $user->update($data);
+        /*
+        |--------------------------------------------------------------------------
+        | Validasi Relasi Activity -> Group -> Unit
+        |--------------------------------------------------------------------------
+        */
 
-        $user->profile()->updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'activity_id' => $activityIsOptional
-                    ? null
-                    : $validated['activity_id'],
-                'group_id' => $activityIsOptional
-                    ? null
-                    : $user->profile?->group_id,
-                'unit_id' => $activityIsOptional
-                    ? null
-                    : $user->profile?->unit_id,
-                'email' => $user->profile?->email
-                    ?? 'pending-user-' . $user->id . '@invalid.local',
-            ]
+        if (
+            $groupId
+            && (
+                ! $activityId
+                || ! Group::query()
+                    ->whereKey($groupId)
+                    ->where('activity_id', $activityId)
+                    ->exists()
+            )
+        ) {
+            throw ValidationException::withMessages([
+                'group_id' => 'Group tidak sesuai dengan Activity yang dipilih.',
+            ]);
+        }
+
+        if (
+            $unitId
+            && (
+                ! $groupId
+                || ! Unit::query()
+                    ->whereKey($unitId)
+                    ->where('group_id', $groupId)
+                    ->exists()
+            )
+        ) {
+            throw ValidationException::withMessages([
+                'unit_id' => 'Unit tidak sesuai dengan Group yang dipilih.',
+            ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cegah Perubahan Role Akun Sendiri
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            (int) $user->id === (int) auth()->id()
+            && $roleId !== (int) $user->role_id
+        ) {
+            return back()->with(
+                'error',
+                'Role akun yang sedang digunakan tidak dapat diubah.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Simpan User dan Profile
+        |--------------------------------------------------------------------------
+        */
+
+        DB::transaction(function () use (
+            $request,
+            $validated,
+            $user,
+            $roleId,
+            $activityId,
+            $groupId,
+            $unitId
+        ) {
+            $data = [
+                'username' => $validated['username'],
+                'role_id' => $roleId,
+            ];
+
+            if ($request->filled('password')) {
+                $data['password'] = Hash::make(
+                    $validated['password']
+                );
+            }
+
+            $user->update($data);
+
+            $user->profile()->updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                ],
+                [
+                    'activity_id' => $activityId,
+                    'group_id' => $groupId,
+                    'unit_id' => $unitId,
+
+                    'email' => $user->profile?->email
+                        ?? 'pending-user-'
+                        . $user->id
+                        . '@invalid.local',
+                ]
+            );
+        });
+
+        return back()->with(
+            'success',
+            'User berhasil diperbarui.'
         );
-
-        return back()->with('success', 'User berhasil diperbarui.');
     }
 
     public function deleteAnswers(string $id)

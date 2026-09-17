@@ -36,7 +36,7 @@
     @foreach ($group->where('id_questiontypes', 1)->sortBy('no') as $question)
         <div class="mb-6 p-4 border rounded-lg shadow-sm bg-blue-100">
             <div class="flex items-center justify-between">
-                
+
                 <!-- Judul -->
                 <div class="flex-1">
                     <h4 class="font-bold text-lg text-center text-gray-800">
@@ -171,7 +171,6 @@
                         name="alasan_{{ $question->id }}"
                         rows="4"
                         class="w-full border rounded-lg p-3"
-                        placeholder="Tuliskan alasan penilaian Anda..."
                     ></textarea>
 
                 </div>
@@ -499,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
     });
-    
+
     function initHasChildSelect(context = document) {
         context.querySelectorAll('.has-child-select').forEach(select => {
             const wrapper = select.closest('.question-item');

@@ -18,7 +18,7 @@
     |
     | Pada file ini aturan digunakan untuk:
     |
-    | - Question Type 3: textarea alasan penilaian Kinerja
+    | - Question Type 3, 7, 8: textarea alasan penilaian Kinerja
     | - Question Type 4: child answer dari pilihan alasan
     |
     | Tidak diterapkan pada:
@@ -238,6 +238,14 @@
 
                                     Jawaban penilaian
 
+                                @elseif ($questionTypeId === 7)
+
+                                    Penilaian dengan alasan Kinerja
+
+                                @elseif ($questionTypeId === 8)
+
+                                    Alasan jika Kinerja di bawah Kepentingan
+
                                 @endif
 
                             </p>
@@ -363,12 +371,19 @@
                             | Tampilkan alasan?
                             |--------------------------------------------------------------------------
                             */
-                            $showReason =
-                                filled($storedPerformance)
-                                &&
-                                (int) $storedPerformance !== 0
-                                &&
-                                (int) $storedPerformance <= $reasonMaximum;
+                            $hasPositivePerformance = filled($storedPerformance)
+                                && (int) $storedPerformance > 0;
+
+                            $showReason = match ($questionTypeId) {
+                                3, 4 => $hasPositivePerformance
+                                    && (int) $storedPerformance <= $reasonMaximum,
+                                7 => $hasPositivePerformance,
+                                8 => $hasPositivePerformance
+                                    && filled($storedImportance)
+                                    && (int) $storedImportance > 0
+                                    && (int) $storedPerformance < (int) $storedImportance,
+                                default => false,
+                            };
                         @endphp
 
 
@@ -439,7 +454,7 @@
                                 @if (
                                     in_array(
                                         $questionTypeId,
-                                        [2, 3, 4],
+                                        [2, 3, 4, 7, 8],
                                         true
                                     )
                                 )
@@ -494,6 +509,8 @@
                                                             type="radio"
                                                             name="answers[{{ $question->id }}][{{ $subunitId }}][importance]"
                                                             value="{{ $value }}"
+
+                                                            data-importance-input
 
                                                             @checked(
                                                                 (string) $storedImportance ===
@@ -622,10 +639,10 @@
 
 
                                 {{-- ================================================= --}}
-                                {{-- TYPE 3: TEXTAREA REASON --}}
+                                {{-- TYPE 3, 7, 8: TEXTAREA REASON --}}
                                 {{-- ================================================= --}}
 
-                                @if ($questionTypeId === 3)
+                                @if (in_array($questionTypeId, [3, 7, 8], true))
 
                                     @php
                                         $reasonErrorKey =
@@ -651,16 +668,8 @@
                                                 class="font-semibold
                                                     text-gray-900"
                                             >
-                                                Alasan Penilaian Kinerja
+                                                komen/saran untuk perbaikan
                                             </h4>
-
-                                            <p
-                                                class="mt-1 text-sm
-                                                    text-gray-500"
-                                            >
-                                                Wajib diisi jika nilai
-                                                Kinerja 1–{{ $reasonMaximum }}.
-                                            </p>
 
                                         </div>
 
@@ -683,7 +692,6 @@
 
                                             maxlength="5000"
 
-                                            placeholder="Tuliskan alasan penilaian Kinerja..."
 
                                             class="w-full rounded-lg
                                                 border px-4 py-3
@@ -725,12 +733,7 @@
                                 @endif
 
 
-                                {{-- ================================================= --}}
-                                {{-- TYPE 4: CHECKBOX REASONS --}}
-                                {{-- ================================================= --}}
-
                                 @if ($questionTypeId === 4)
-
                                     <div
                                         data-performance-reason
                                         class="{{ $showReason ? '' : 'hidden' }}
@@ -1077,3 +1080,59 @@
     @endforelse
 
 </div>
+
+{{-- Perbarui textarea Type 8 secara langsung saat nilai radio berubah. --}}
+@once
+<script>
+(() => {
+    function refreshTypeEight(container) {
+        if (!container || container.dataset.questionType !== '8') return;
+
+        const reasonBox = container.querySelector('[data-performance-reason]');
+        if (!reasonBox) return;
+
+        const importance = container.querySelector('[data-importance-input]:checked');
+        const performance = container.querySelector('[data-performance-input]:checked');
+        const importanceValue = importance ? Number(importance.value) : null;
+        const performanceValue = performance ? Number(performance.value) : null;
+
+        const shouldShow = importanceValue !== null
+            && performanceValue !== null
+            && Number.isFinite(importanceValue)
+            && Number.isFinite(performanceValue)
+            && importanceValue > 0
+            && performanceValue > 0
+            && performanceValue < importanceValue;
+
+        reasonBox.classList.toggle('hidden', !shouldShow);
+
+        const textarea = reasonBox.querySelector('[data-performance-reason-input]');
+        if (textarea) {
+            textarea.disabled = !shouldShow;
+            textarea.required = shouldShow;
+            // Pertahankan isi jika pengguna mengubah angka lalu memilihnya kembali.
+        }
+    }
+
+    function refreshAllTypeEight() {
+        document.querySelectorAll('[data-customer-assessment][data-question-type="8"]')
+            .forEach(refreshTypeEight);
+    }
+
+    // Capture agar perubahan radio langsung ditangani, termasuk bila JS lain
+    // juga memasang listener pada form survei.
+    document.addEventListener('change', (event) => {
+        const input = event.target;
+        if (!(input instanceof HTMLInputElement)) return;
+        if (!input.matches('[data-importance-input], [data-performance-input]')) return;
+        refreshTypeEight(input.closest('[data-customer-assessment][data-question-type="8"]'));
+    }, true);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', refreshAllTypeEight, { once: true });
+    } else {
+        refreshAllTypeEight();
+    }
+})();
+</script>
+@endonce

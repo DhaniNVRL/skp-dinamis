@@ -268,6 +268,45 @@
                 </div>
             </div>
 
+
+        {{-- TYPE 7: DATE --}}
+        @elseif ($questionTypeId === 7)
+            <div
+                id="{{ $questionContainerId }}"
+                data-general-question
+                data-general-question-type="date"
+                class="rounded-xl border border-gray-200 bg-white p-5"
+            >
+                <div class="mb-4 flex items-start gap-3">
+                    @include(
+                        'admin.subunit.show-question.forms.partials.question-number',
+                        [
+                            'question' => $question,
+                        ]
+                    )
+
+                    <h3 class="font-semibold text-gray-800">
+                        {{ $question->name }}
+                    </h3>
+                </div>
+
+                <div class="max-w-md">
+                    <label
+                        for="general_date_{{ $question->id }}_{{ $scopeId }}"
+                        class="mb-2 block text-sm font-medium text-gray-700"
+                    >
+                        Pilih Tanggal
+                    </label>
+
+                    <input
+                        id="general_date_{{ $question->id }}_{{ $scopeId }}"
+                        type="date"
+                        name="general_answers[{{ $question->id }}][{{ $scopeId }}]"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                    >
+                </div>
+            </div>
+
         {{-- TYPE LAIN --}}
         @else
             <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4">

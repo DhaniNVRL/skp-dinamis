@@ -316,63 +316,108 @@ document.addEventListener("click", function (e) {
 
     if (!button) return;
 
-
     const id = button.dataset.id;
     const username = button.dataset.username;
     const role = button.dataset.role;
     const activity = button.dataset.activity;
+    const group = button.dataset.group;
+    const unit = button.dataset.unit;
     const action = button.dataset.action;
 
+    const form = document.getElementById("editUserForm");
 
-    const idInput =
-        document.getElementById("edit_user_id");
+    const idInput = document.getElementById("edit_user_id");
+    const usernameInput = document.getElementById("edit_username");
+    const passwordInput = document.getElementById("edit_password");
 
-    const usernameInput =
-        document.getElementById("edit_username");
-
-    const roleInput =
-        document.getElementById("edit_role");
-
-    const activityInput =
-        document.getElementById("edit_activity");
-
-    const passwordInput =
-        document.getElementById("edit_password");
-
-    const form =
-        document.getElementById("editUserForm");
-
+    const roleInput = document.getElementById("edit_role");
+    const activityInput = document.getElementById("edit_activity");
+    const groupInput = document.getElementById("edit_group");
+    const unitInput = document.getElementById("edit_unit");
 
     if (
+        !form ||
         !idInput ||
         !usernameInput ||
         !roleInput ||
         !activityInput ||
-        !form
+        !groupInput ||
+        !unitInput
     ) {
         console.error(
-            "Element modal edit user tidak ditemukan."
+            "Element modal edit user tidak lengkap."
         );
 
         return;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Isi data dasar user
+    |--------------------------------------------------------------------------
+    */
 
     idInput.value = id ?? "";
     usernameInput.value = username ?? "";
+
     roleInput.value = String(role ?? "");
     activityInput.value = String(activity ?? "");
 
-    roleInput.dispatchEvent(new Event("change", { bubbles: true }));
+    form.action = action ?? "";
 
-
-    // Password selalu dikosongkan saat modal edit dibuka
+    // Password tidak boleh menampilkan nilai sebelumnya.
     if (passwordInput) {
         passwordInput.value = "";
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Sinkronisasi tampilan berdasarkan Role
+    |--------------------------------------------------------------------------
+    |
+    | Jangan dispatch event change di sini karena
+    | listener change menggunakan reset = true.
+    | Akibatnya, Group dan Unit lama bisa terhapus.
+    |
+    */
 
-    form.action = action ?? "";
+    syncUserRow(form, false);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Isi Group
+    |--------------------------------------------------------------------------
+    */
+
+    groupInput.value = String(group ?? "");
+
+    // Filter Group berdasarkan Activity yang dipilih.
+    filterProfileOptions(form, false, false);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Isi Unit
+    |--------------------------------------------------------------------------
+    */
+
+    unitInput.value = String(unit ?? "");
+
+    // Filter Unit berdasarkan Group yang dipilih.
+    filterProfileOptions(form, false, false);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bersihkan tampilan error sebelumnya
+    |--------------------------------------------------------------------------
+    */
+
+    form.querySelectorAll(
+        ".border-red-500"
+    ).forEach(function (field) {
+
+        clearError(field);
+
+    });
 
 });
 

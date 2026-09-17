@@ -3,19 +3,149 @@
         <table id="userTable" class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-100">
                 <tr>
-                    <th class="w-12 px-4 py-3 text-center"><input type="checkbox" class="bulk-select-all rounded border-gray-300 text-blue-600 focus:ring-blue-500"></th>
-                    <th class="w-16 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">No</th>
-                    <th class="w-24 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">ID User</th>
-                    <th class="min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Username</th>
-                    <th class="min-w-[200px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Full Name</th>
-                    <th class="min-w-[120px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Role</th>
-                    <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Activity</th>
-                    <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Group</th>
-                    <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Unit</th>
-                    <th class="min-w-[140px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Status Survey</th>
-                    <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Keterangan</th>
-                    <th class="w-28 px-4 py-3 text-center text-xs font-semibold uppercase text-gray-600">Jawaban</th>
-                    <th class="w-36 px-4 py-3 text-center text-xs font-semibold uppercase text-gray-600">Aksi</th>
+                    {{-- CHECKBOX --}}
+                    <th class="w-12 px-4 py-3 text-center">
+                        <input
+                            type="checkbox"
+                            class="bulk-select-all rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        >
+                    </th>
+
+                    {{-- NO --}}
+                    <th class="w-16 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                        No
+                    </th>
+
+                    {{-- ID USER --}}
+                    <th class="w-24 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                        <div class="flex items-center gap-2">
+                            <span>ID User</span>
+
+                            <div class="flex flex-col items-center leading-none">
+
+                                {{-- Panah atas: ID terbesar --}}
+                                <a
+                                    href="{{ request()->fullUrlWithQuery([
+                                        'sort_by' => 'id',
+                                        'sort_direction' => 'desc',
+                                        'page' => 1,
+                                    ]) }}"
+                                    title="ID terbesar ke terkecil"
+                                    aria-label="Urutkan ID terbesar ke terkecil"
+                                    class="transition {{ request('sort_by', 'username') === 'id' && request('sort_direction', 'asc') === 'desc'
+                                        ? 'text-blue-600'
+                                        : 'text-gray-400 hover:text-blue-600' }}"
+                                >
+                                    <i class="fa-solid fa-caret-up"></i>
+                                </a>
+
+                                {{-- Panah bawah: ID terkecil --}}
+                                <a
+                                    href="{{ request()->fullUrlWithQuery([
+                                        'sort_by' => 'id',
+                                        'sort_direction' => 'asc',
+                                        'page' => 1,
+                                    ]) }}"
+                                    title="ID terkecil ke terbesar"
+                                    aria-label="Urutkan ID terkecil ke terbesar"
+                                    class="transition {{ request('sort_by', 'username') === 'id' && request('sort_direction', 'asc') === 'asc'
+                                        ? 'text-blue-600'
+                                        : 'text-gray-400 hover:text-blue-600' }}"
+                                >
+                                    <i class="fa-solid fa-caret-down"></i>
+                                </a>
+
+                            </div>
+                        </div>
+                    </th>
+
+                    {{-- USERNAME --}}
+                    <th class="min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                        <div class="flex items-center gap-2">
+                            <span>Username</span>
+
+                            <div class="flex flex-col items-center leading-none">
+
+                                {{-- Panah atas: Z ke A --}}
+                                <a
+                                    href="{{ request()->fullUrlWithQuery([
+                                        'sort_by' => 'username',
+                                        'sort_direction' => 'desc',
+                                        'page' => 1,
+                                    ]) }}"
+                                    title="Username Z ke A"
+                                    aria-label="Urutkan Username Z ke A"
+                                    class="transition {{ request('sort_by', 'username') === 'username' && request('sort_direction', 'asc') === 'desc'
+                                        ? 'text-blue-600'
+                                        : 'text-gray-400 hover:text-blue-600' }}"
+                                >
+                                    <i class="fa-solid fa-caret-up"></i>
+                                </a>
+
+                                {{-- Panah bawah: A ke Z --}}
+                                <a
+                                    href="{{ request()->fullUrlWithQuery([
+                                        'sort_by' => 'username',
+                                        'sort_direction' => 'asc',
+                                        'page' => 1,
+                                    ]) }}"
+                                    title="Username A ke Z"
+                                    aria-label="Urutkan Username A ke Z"
+                                    class="transition {{ request('sort_by', 'username') === 'username' && request('sort_direction', 'asc') === 'asc'
+                                        ? 'text-blue-600'
+                                        : 'text-gray-400 hover:text-blue-600' }}"
+                                >
+                                    <i class="fa-solid fa-caret-down"></i>
+                                </a>
+
+                            </div>
+                        </div>
+                    </th>
+
+                    {{-- FULL NAME --}}
+                    <th class="min-w-[200px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                        Full Name
+                    </th>
+
+                    {{-- ROLE --}}
+                    <th class="min-w-[120px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                        Role
+                    </th>
+
+                    {{-- ACTIVITY --}}
+                    <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                        Activity
+                    </th>
+
+                    {{-- GROUP --}}
+                    <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                        Group
+                    </th>
+
+                    {{-- UNIT --}}
+                    <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                        Unit
+                    </th>
+
+                    {{-- STATUS SURVEY --}}
+                    <th class="min-w-[140px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                        Status Survey
+                    </th>
+
+                    {{-- KETERANGAN --}}
+                    <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                        Keterangan
+                    </th>
+
+                    {{-- JAWABAN --}}
+                    <th class="w-28 px-4 py-3 text-center text-xs font-semibold uppercase text-gray-600">
+                        Jawaban
+                    </th>
+
+                    {{-- AKSI --}}
+                    <th class="w-36 px-4 py-3 text-center text-xs font-semibold uppercase text-gray-600">
+                        Aksi
+                    </th>
                 </tr>
             </thead>
 

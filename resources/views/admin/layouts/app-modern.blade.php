@@ -75,7 +75,7 @@
             <button type="button" class="text-xl text-slate-600 lg:hidden" @click="sidebarOpen=true"><i class="fa-solid fa-bars"></i></button>
             <div class="ml-auto flex items-center gap-3">
                 <div class="hidden items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 sm:flex"><i class="fa-regular fa-calendar text-blue-600"></i>{{ now()->translatedFormat('d M Y') }}</div>
-                
+
                 <div class="relative" @click.outside="profileOpen=false">
                     <button type="button" @click="profileOpen=!profileOpen" class="flex items-center gap-3 rounded-xl p-1.5 hover:bg-slate-50">
                         <span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">{{ strtoupper(substr(auth()->user()->username ?? 'A',0,1)) }}</span>
@@ -101,7 +101,7 @@ document.addEventListener('keydown', function(e){ if((e.ctrlKey||e.metaKey)&&e.k
 @stack('templates')
 <script src="{{ asset('js/global-alerts.js') }}?v=20260806-4"></script>
 <script src="{{ asset('js/active-tab-persistence.js') }}?v=20260806-1"></script>
-<script src="{{ asset('js/dashboard-monitoring.js') }}"></script>
+<script src="{{ asset('js/dashboard-monitoring.js') }}?v={{ filemtime(public_path('js/dashboard-monitoring.js')) }}"></script>
 @stack('scripts')
 </body>
 </html>

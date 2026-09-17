@@ -34,7 +34,7 @@
     @foreach ($group->where('id_questiontypes', 1)->sortBy('no') as $question)
         <div class="mb-6 p-4 border rounded-lg shadow-sm bg-blue-100">
             <div class="flex items-center justify-between">
-                
+
                 <!-- Judul -->
                 <div class="flex-1">
                     <h4 class="font-bold text-lg text-center text-gray-800">
@@ -154,25 +154,6 @@
                     </div>
 
                 </div>
-
-                {{-- <!-- TEXTAREA ALASAN -->
-                <div x-show="kinerja != '' && kinerja <= 4 && kinerja != 0"
-                    x-transition
-                    class="mt-6">
-
-                    <label class="block font-semibold mb-2 text-red-600">
-                        Alasan penilaian kinerja
-                        (jika menilai kinerja ≤ 3, mohon jelaskan alasannya)
-                    </label>
-
-                    <textarea
-                        name="alasan_{{ $question->id }}"
-                        rows="4"
-                        class="w-full border rounded-lg p-3"
-                        placeholder="Tuliskan alasan penilaian Anda..."
-                    ></textarea>
-
-                </div> --}}
             </div>
         </div>
     @endforeach
@@ -273,7 +254,6 @@
                         name="alasan_{{ $question->id }}"
                         rows="4"
                         class="w-full border rounded-lg p-3"
-                        placeholder="Tuliskan alasan penilaian Anda..."
                     ></textarea>
 
                 </div>
@@ -397,7 +377,7 @@
         </div>
     @endforeach
 
-   
+
 @endforeach
 
 <div class="mt-6">
@@ -602,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
     });
-    
+
     function initHasChildSelect(context = document) {
         context.querySelectorAll('.has-child-select').forEach(select => {
             const wrapper = select.closest('.question-item');

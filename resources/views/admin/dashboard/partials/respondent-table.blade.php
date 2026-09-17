@@ -2,14 +2,83 @@
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-100">
             <tr>
-                <th class="w-16 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">No</th>
-                <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Responden</th>
-                <th class="min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Activity</th>
-                <th class="min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Group</th>
-                <th class="min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Unit</th>
-                <th class="w-40 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Status</th>
-                <th class="w-32 px-4 py-3 text-center text-xs font-semibold uppercase text-gray-600">Jawaban</th>
-                <th class="w-28 px-4 py-3 text-center text-xs font-semibold uppercase text-gray-600">Aksi</th>
+                {{-- NO --}}
+                <th class="w-16 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                    No
+                </th>
+
+                {{-- RESPONDEN: SORT BERDASARKAN USERNAME --}}
+                <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                    <div class="flex items-center gap-2">
+                        <span>Responden</span>
+
+                        <div class="flex flex-col items-center leading-none">
+
+                            {{-- Panah atas: Z ke A --}}
+                            <a
+                                href="{{ request()->fullUrlWithQuery([
+                                    'sort_by' => 'username',
+                                    'sort_direction' => 'desc',
+                                    'page' => 1,
+                                ]) }}"
+                                title="Username Z ke A"
+                                aria-label="Urutkan username Z ke A"
+                                class="transition {{ request('sort_by', 'username') === 'username' && request('sort_direction', 'asc') === 'desc'
+                                    ? 'text-blue-600'
+                                    : 'text-gray-400 hover:text-blue-600' }}"
+                            >
+                                <i class="fa-solid fa-caret-up"></i>
+                            </a>
+
+                            {{-- Panah bawah: A ke Z --}}
+                            <a
+                                href="{{ request()->fullUrlWithQuery([
+                                    'sort_by' => 'username',
+                                    'sort_direction' => 'asc',
+                                    'page' => 1,
+                                ]) }}"
+                                title="Username A ke Z"
+                                aria-label="Urutkan username A ke Z"
+                                class="transition {{ request('sort_by', 'username') === 'username' && request('sort_direction', 'asc') === 'asc'
+                                    ? 'text-blue-600'
+                                    : 'text-gray-400 hover:text-blue-600' }}"
+                            >
+                                <i class="fa-solid fa-caret-down"></i>
+                            </a>
+
+                        </div>
+                    </div>
+                </th>
+
+                {{-- ACTIVITY --}}
+                <th class="min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                    Activity
+                </th>
+
+                {{-- GROUP --}}
+                <th class="min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                    Group
+                </th>
+
+                {{-- UNIT --}}
+                <th class="min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                    Unit
+                </th>
+
+                {{-- STATUS --}}
+                <th class="w-40 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                    Status
+                </th>
+
+                {{-- JAWABAN --}}
+                <th class="w-32 px-4 py-3 text-center text-xs font-semibold uppercase text-gray-600">
+                    Jawaban
+                </th>
+
+                {{-- AKSI --}}
+                <th class="w-28 px-4 py-3 text-center text-xs font-semibold uppercase text-gray-600">
+                    Aksi
+                </th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 bg-white">

@@ -15,14 +15,28 @@ class MonitoringDashboardController extends Controller
     public function index(Request $request)
     {
         $filters = $request->validate([
-            'username'    => ['nullable', 'string', 'max:255'],
-            'activity_id' => ['nullable', 'integer', 'exists:activities,id'],
-            'group_id'    => ['nullable', 'integer', 'exists:groups,id'],
-            'unit_id'     => ['nullable', 'integer', 'exists:units,id'],
-            'status'      => ['nullable', 'in:completed,in_progress,not_started'],
+            'username'       => ['nullable', 'string', 'max:255'],
+            'activity_id'    => ['nullable', 'integer', 'exists:activities,id'],
+            'group_id'       => ['nullable', 'integer', 'exists:groups,id'],
+            'unit_id'        => ['nullable', 'integer', 'exists:units,id'],
+            'status'         => ['nullable', 'in:completed,in_progress,not_started'],
+            'sort_by'        => ['nullable', 'in:username'],
+            'sort_direction' => ['nullable', 'in:asc,desc'],
         ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Query Dasar Responden
+        |--------------------------------------------------------------------------
+        */
+
         $baseQuery = $this->respondentQuery($filters);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ringkasan Status Responden
+        |--------------------------------------------------------------------------
+        */
 
         $totalRespondents = (clone $baseQuery)->count();
 
@@ -53,6 +67,12 @@ class MonitoringDashboardController extends Controller
             0,
             $totalRespondents - $completedCount - $inProgressCount
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Query Tabel Responden
+        |--------------------------------------------------------------------------
+        */
 
         $respondentsQuery = (clone $baseQuery)
             ->with([
@@ -99,20 +119,76 @@ class MonitoringDashboardController extends Controller
                 },
             ]);
 
-        $this->applyStatusFilter($respondentsQuery, $filters['status'] ?? null);
+        /*
+        |--------------------------------------------------------------------------
+        | Filter Status Tabel
+        |--------------------------------------------------------------------------
+        */
+
+        $this->applyStatusFilter(
+            $respondentsQuery,
+            $filters['status'] ?? null
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Sorting Username
+        |--------------------------------------------------------------------------
+        |
+        | Panah atas  : desc = Z ke A
+        | Panah bawah : asc  = A ke Z
+        |
+        | Menggunakan subquery agar tidak mengubah struktur query
+        | UserProfile maupun relasi yang sudah digunakan dashboard.
+        |
+        */
+
+        $sortDirection = $filters['sort_direction'] ?? 'asc';
+
+        $respondentsQuery
+            ->orderBy(
+                \App\Models\User::query()
+                    ->select('users.username')
+                    ->whereColumn(
+                        'users.id',
+                        'user_profiles.user_id'
+                    )
+                    ->limit(1),
+                $sortDirection
+            )
+            ->orderBy('user_profiles.id', 'asc');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
 
         $respondents = $respondentsQuery
-            ->latest('id')
             ->paginate(20)
             ->withQueryString();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Tentukan Status Setiap Responden
+        |--------------------------------------------------------------------------
+        */
+
         $respondents->getCollection()->transform(function (UserProfile $profile) {
             $session = $profile->user?->surveySession;
-            $answersCount = (int) ($profile->user?->answers_count ?? 0);
 
-            $status = $this->resolveStatus($session?->status, $session?->started_at, $answersCount);
+            $answersCount = (int) (
+                $profile->user?->answers_count ?? 0
+            );
+
+            $status = $this->resolveStatus(
+                $session?->status,
+                $session?->started_at,
+                $answersCount
+            );
 
             $profile->monitoring_status = $status;
+
             $profile->monitoring_status_label = match ($status) {
                 'completed'   => 'Sudah Mengisi',
                 'in_progress' => 'Sedang Mengisi',
@@ -121,6 +197,12 @@ class MonitoringDashboardController extends Controller
 
             return $profile;
         });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Master Data Filter
+        |--------------------------------------------------------------------------
+        */
 
         $activities = Activity::query()
             ->select('id', 'name')
@@ -136,6 +218,12 @@ class MonitoringDashboardController extends Controller
             ->select('id', 'group_id', 'name')
             ->orderBy('name')
             ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Return View
+        |--------------------------------------------------------------------------
+        */
 
         return view('admin.dashboard.modern', compact(
             'respondents',

@@ -1,6 +1,7 @@
+
 <template id="customerAssessment17TypeOptions">
 
-     <option
+    <option
         value="1"
         data-description="Digunakan sebagai judul atau pemisah kelompok pertanyaan."
     >
@@ -9,7 +10,7 @@
 
     <option
         value="2"
-        data-description="Penilaian Kepentingan dan Kinerja skala 1 sampai 5."
+        data-description="Penilaian Kepentingan dan Kinerja skala 1 sampai 7."
     >
         Kepentingan & Kinerja
     </option>
@@ -29,8 +30,22 @@
     </option>
 
     <option
+        value="7"
+        data-description="Textarea alasan muncul jika Kinerja bernilai 1 sampai 7, termasuk ketika Kepentingan bernilai 0. Jika Kinerja 0 atau belum dipilih, textarea disembunyikan."
+    >
+        Kepentingan & Kinerja Penilaian dengan Alasan Kinerja Muncul
+    </option>
+
+    <option
+        value="8"
+        data-description="Textarea alasan muncul jika Kinerja lebih rendah dari Kepentingan dan kedua nilai bukan 0."
+    >
+       Kepentingan & Kinerja Alasan Kinerja di Bawah Kepentingan
+    </option>
+
+    <option
         value="5"
-        data-description="Penilaian menggunakan satu indikator skala 1 sampai 5."
+        data-description="Penilaian menggunakan satu indikator skala 1 sampai 7."
     >
         Satu Indikator
     </option>
