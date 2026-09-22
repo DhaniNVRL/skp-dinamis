@@ -1,5 +1,7 @@
+
 @switch((int) $question->questiontype_id)
 
+    {{-- Judul --}}
     @case(1)
         @include(
             'admin.units.question.partials.forms.customer-assessment-1-7.options.title',
@@ -47,22 +49,31 @@
         )
         @break
 
+    {{-- Tipe 7 --}}
+        @case(7)
+            @include(
+                'admin.units.question.partials.forms.customer-assessment-1-7.options.performance-reason',
+                compact('question')
+            )
+            @break
+
+        {{-- Tipe 8 --}}
+        @case(8)
+            @include(
+                'admin.units.question.partials.forms.customer-assessment-1-7.options.performance-below-importance-reason',
+                compact('question')
+            )
+            @break
+
     @default
-
-        <div
-            class="rounded-xl border border-amber-200
-                   bg-amber-50 px-4 py-3"
-        >
+        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
             <div class="flex items-center gap-2 text-sm text-amber-700">
-
                 <i class="fa-solid fa-triangle-exclamation"></i>
-
                 <span>
                     Tampilan untuk tipe pertanyaan
                     <strong>#{{ $question->questiontype_id }}</strong>
                     belum tersedia.
                 </span>
-
             </div>
         </div>
 

@@ -22,15 +22,13 @@
             </div>
         </div>
 
-        <div class="flex shrink-0 items-center gap-2">
-            @include(
-                'admin.units.question.partials.forms.question-action',
-                [
-                    'question' => $question,
-                    'form' => $form,
-                ]
-            )
-        </div>
+        @include(
+            'admin.units.question.partials.forms.question-action',
+            [
+                'question' => $question,
+                'form' => $form,
+            ]
+        )
 
     </div>
 

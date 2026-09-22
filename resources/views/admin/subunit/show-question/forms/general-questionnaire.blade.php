@@ -9,6 +9,7 @@
     class="space-y-5"
 >
     @forelse ($questions as $question)
+
         @php
             $questionTypeId = (int) (
                 $question->questiontype_id
@@ -21,6 +22,19 @@
                 . $question->id
                 . '_'
                 . $scopeId;
+
+            // Urutkan option secara numerik: 1, 2, 3, ..., 9, 10.
+            $sortedOptions = $question->options
+                ->sort(function ($a, $b) {
+                    $numberComparison = (int) $a->no <=> (int) $b->no;
+
+                    if ($numberComparison !== 0) {
+                        return $numberComparison;
+                    }
+
+                    return (int) $a->id <=> (int) $b->id;
+                })
+                ->values();
         @endphp
 
         {{-- TYPE 10: TITLE TANPA JAWABAN --}}
@@ -98,7 +112,7 @@
                 </div>
 
                 <div class="space-y-3">
-                    @forelse ($question->options as $option)
+                    @forelse ($sortedOptions as $option)
                         @php
                             $hasChild =
                                 (int) $option->has_child === 1;
@@ -197,7 +211,7 @@
                 </div>
 
                 <div class="space-y-3">
-                    @forelse ($question->options as $option)
+                    @forelse ($sortedOptions as $option)
                         @php
                             $hasChild =
                                 (int) $option->has_child === 1;

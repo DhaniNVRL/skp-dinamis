@@ -4,94 +4,139 @@
     $maximumScale = 7;
 @endphp
 
-<div
-    x-data="{
-        importance: '',
-        performance: '',
-        reason: '',
+<div class="mb-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
 
-        get showReason() {
-            return this.importance !== ''
-                && this.performance !== ''
-                && Number(this.importance) > 0
-                && Number(this.performance) > 0
-                && Number(this.performance) < Number(this.importance);
-        }
-    }"
-    class="space-y-5"
->
-    <div class="space-y-2">
-        <label
-            for="importance-{{ $questionId }}"
-            class="block text-sm font-semibold text-gray-700"
-        >
-            Kepentingan
-        </label>
+    {{-- Header pertanyaan --}}
+    <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
 
-        <select
-            id="importance-{{ $questionId }}"
-            name="answers[{{ $questionId }}][importance]"
-            x-model="importance"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2"
-        >
-            <option value="">Pilih nilai Kepentingan</option>
+        <div class="flex min-w-0 items-start gap-3">
+            <span
+                class="inline-flex min-w-10 shrink-0 items-center justify-center
+                       rounded-lg bg-blue-100 px-2.5 py-1
+                       text-sm font-semibold text-blue-700"
+            >
+                {{ $question->no_header }}{{ $question->no }}
+            </span>
 
-            @for ($value = 1; $value <= $maximumScale; $value++)
-                <option value="{{ $value }}">
-                    {{ $value }}
-                </option>
-            @endfor
+            <div>
+                <h4 class="font-semibold leading-6 text-gray-800">
+                    {{ $question->name }}
+                </h4>
 
-            <option value="0">0 — Tidak dinilai</option>
-        </select>
+                <p class="mt-1 text-xs text-gray-500">
+                    Alasan jika Kinerja di bawah Kepentingan
+                </p>
+            </div>
+        </div>
+
+        <div class="flex shrink-0 items-center gap-2">
+            @include(
+                'admin.units.question.partials.forms.question-action',
+                [
+                    'question' => $question,
+                    'form' => $form,
+                ]
+            )
+        </div>
+
     </div>
 
-    <div class="space-y-2">
-        <label
-            for="performance-{{ $questionId }}"
-            class="block text-sm font-semibold text-gray-700"
-        >
-            Kinerja
-        </label>
+    {{-- Preview pertanyaan --}}
+    <div class="p-5">
 
-        <select
-            id="performance-{{ $questionId }}"
-            name="answers[{{ $questionId }}][performance]"
-            x-model="performance"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2"
-        >
-            <option value="">Pilih nilai Kinerja</option>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
 
-            @for ($value = 1; $value <= $maximumScale; $value++)
-                <option value="{{ $value }}">
-                    {{ $value }}
-                </option>
-            @endfor
+            {{-- Kepentingan --}}
+            <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
 
-            <option value="0">0 — Tidak dinilai</option>
-        </select>
-    </div>
+                <h5 class="mb-4 text-center font-semibold text-blue-800">
+                    Kepentingan
+                </h5>
 
-    <div
-        x-show="showReason"
-        x-cloak
-        class="space-y-2"
-    >
-        <label
-            for="performance-below-reason-{{ $questionId }}"
-            class="block text-sm font-semibold text-gray-700"
-        >
-            Alasan Kinerja di Bawah Kepentingan
-        </label>
+                <div class="flex flex-wrap justify-center gap-3">
 
-        <textarea
-            id="performance-below-reason-{{ $questionId }}"
-            name="answers[{{ $questionId }}][reason]"
-            x-model="reason"
-            :disabled="!showReason"
-            rows="4"
-            placeholder="Jelaskan mengapa Kinerja lebih rendah daripada Kepentingan..."
-            class="w-full rounded-lg border border-gray-300 px-3 py-2"
-        ></textarea>
+                    @foreach (array_merge(range(1, $maximumScale), [0]) as $value)
+
+                        <label
+                            class="inline-flex h-10 w-10 items-center justify-center
+                                   rounded-full border border-blue-300 bg-white
+                                   text-sm font-semibold text-blue-700"
+                        >
+                            <input
+                                type="radio"
+                                name="preview_kepentingan_{{ $questionId }}"
+                                value="{{ $value }}"
+                                class="sr-only"
+                                disabled
+                            >
+
+                            {{ $value }}
+                        </label>
+
+                    @endforeach
+
+                </div>
+            </div>
+
+            {{-- Kinerja --}}
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+
+                <h5 class="mb-4 text-center font-semibold text-emerald-800">
+                    Kinerja
+                </h5>
+
+                <div class="flex flex-wrap justify-center gap-3">
+
+                    @foreach (array_merge(range(1, $maximumScale), [0]) as $value)
+
+                        <label
+                            class="inline-flex h-10 w-10 items-center justify-center
+                                   rounded-full border border-emerald-300 bg-white
+                                   text-sm font-semibold text-emerald-700"
+                        >
+                            <input
+                                type="radio"
+                                name="preview_kinerja_{{ $questionId }}"
+                                value="{{ $value }}"
+                                class="sr-only"
+                                disabled
+                            >
+
+                            {{ $value }}
+                        </label>
+
+                    @endforeach
+
+                </div>
+            </div>
+
+        </div>
+
+        {{-- Alasan bersyarat --}}
+        <div class="mt-5">
+
+            <label
+                for="preview_reason_{{ $questionId }}"
+                class="mb-2 block text-sm font-semibold text-gray-700"
+            >
+                Alasan Kinerja
+            </label>
+
+            <p class="mb-3 text-xs text-gray-500">
+                Ditampilkan kepada responden hanya jika nilai Kinerja
+                lebih rendah daripada Kepentingan dan kedua nilai lebih dari 0.
+            </p>
+
+            <textarea
+                id="preview_reason_{{ $questionId }}"
+                rows="4"
+                disabled
+                class="w-full resize-none rounded-lg border border-gray-300
+                       bg-gray-50 p-3 text-sm text-gray-700"
+                placeholder="Responden menuliskan alasan mengapa Kinerja lebih rendah..."
+            ></textarea>
+
+        </div>
+
     </div>
 </div>

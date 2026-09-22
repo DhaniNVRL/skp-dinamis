@@ -1,6 +1,32 @@
+
+@php
+    /*
+    |--------------------------------------------------------------------------
+    | Urutan Option
+    |--------------------------------------------------------------------------
+    | Mengurutkan berdasarkan nomor secara numerik agar:
+    | 1, 2, 3, ..., 9, 10
+    | bukan:
+    | 1, 10, 2, 3, ...
+    |
+    | ID digunakan sebagai urutan tambahan jika nomor sama.
+    */
+    $sortedOptions = $question->options
+        ->sort(function ($a, $b) {
+            $numberComparison = (int) $a->no <=> (int) $b->no;
+
+            if ($numberComparison !== 0) {
+                return $numberComparison;
+            }
+
+            return (int) $a->id <=> (int) $b->id;
+        })
+        ->values();
+@endphp
+
 <div class="space-y-3">
 
-    @forelse ($question->options as $option)
+    @forelse ($sortedOptions as $option)
 
         @include(
             'admin.units.question.partials.forms.general-questionnaire.options.option-item',
@@ -38,7 +64,6 @@
         </div>
 
     @endforelse
-
 
     <button
         type="button"
