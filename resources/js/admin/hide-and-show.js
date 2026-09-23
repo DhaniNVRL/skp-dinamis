@@ -17,12 +17,15 @@ function initializeHideAndShow() {
     const toggleUrl =
         page.dataset.toggleUrl;
 
+    const formToggleUrl =
+        page.dataset.formToggleUrl;
+
     const csrfToken =
         document.getElementById(
             "hideShowCsrfToken"
         )?.value;
 
-    if (!toggleUrl || !csrfToken) {
+    if (!toggleUrl || !formToggleUrl || !csrfToken) {
         console.error(
             "URL toggle atau CSRF token Hide and Show tidak ditemukan."
         );
@@ -390,6 +393,78 @@ document.addEventListener("click", function (event) {
     if (!event.target.closest("[data-hide-show-notification-close]")) {
         return;
     }
+
+    page.addEventListener(
+        "click",
+        async function (event) {
+            const button = event.target.closest(
+                "[data-form-visibility-toggle]"
+            );
+
+            if (!button) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (button.disabled) {
+                return;
+            }
+
+            const unitId = Number(button.dataset.unitId);
+            const formId = Number(button.dataset.formId);
+
+            if (!unitId || !formId) {
+                showHideShowNotification("Data Unit atau Form belum lengkap.", "error");
+                return;
+            }
+
+            const nextVisible = button.dataset.active !== "1";
+            setToggleLoading(button, true);
+
+            try {
+                const response = await fetch(formToggleUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    body: JSON.stringify({
+                        unit_id: unitId,
+                        form_id: formId,
+                        is_visible: nextVisible,
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(getResponseError(result));
+                }
+
+                const isVisible = Boolean(result.is_visible);
+                updateToggleState(button, isVisible);
+                button.closest("[data-form-visibility-card]")
+                    ?.setAttribute("data-form-visible", isVisible ? "1" : "0");
+
+                showHideShowNotification(
+                    result.message,
+                    isVisible ? "success" : "removed",
+                    isVisible ? "Form ditampilkan" : "Form disembunyikan"
+                );
+            } catch (error) {
+                console.error(error);
+                showHideShowNotification(
+                    error.message || "Status form gagal diperbarui.",
+                    "error"
+                );
+            } finally {
+                setToggleLoading(button, false);
+            }
+        }
+    );
 
     document
         .getElementById("hideShowNotification")

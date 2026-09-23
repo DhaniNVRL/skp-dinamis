@@ -152,7 +152,7 @@ class RawDataExportService
                 $code = $this->questionCode($form, $question, $firstGeneralFormId);
                 $type = (int) $form->formtype_id;
 
-                if (in_array($type, [2, 3], true)
+                if (in_array($type, [2, 3, 15, 16], true)
                     && ($numberCounts[$numberKey] ?? 0) > 1) {
                     preg_match('/^\s*([A-Z])\s*[\.\)]/iu', $question->name, $match);
                     $suffix = isset($match[1])
@@ -161,7 +161,7 @@ class RawDataExportService
                     $code .= '.'.$suffix;
                 }
 
-                if (in_array($type, [2, 3], true)) {
+                if (in_array($type, [2, 3, 15, 16], true)) {
                     foreach ($slots as $slot) {
                         foreach (['importance', 'performance', 'reason', 'children'] as $field) {
                             $descriptors[] = $this->answerDescriptor(
@@ -365,7 +365,7 @@ class RawDataExportService
         $header = trim((string) $question->no_header);
         $number = trim((string) $question->no);
 
-        if (in_array((int) $form->formtype_id, [2, 3], true)) {
+        if (in_array((int) $form->formtype_id, [2, 3, 15, 16], true)) {
             return 'B'.$header.$number;
         }
 

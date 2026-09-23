@@ -4,10 +4,12 @@
     | Scale Values
     |--------------------------------------------------------------------------
     */
-    $scaleValues = array_merge(
-        range(1, $maximumScale),
-        [0]
-    );
+    $includeZero = (bool) ($includeZero ?? true);
+    $scaleValues = range(1, $maximumScale);
+
+    if ($includeZero) {
+        $scaleValues[] = 0;
+    }
 
     /*
     |--------------------------------------------------------------------------

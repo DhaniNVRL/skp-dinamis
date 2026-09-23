@@ -39,7 +39,7 @@
         <div class="rounded-xl border border-violet-200 bg-violet-50/50 p-4">
             <div class="flex flex-wrap justify-center gap-3">
 
-                @foreach ([1, 2, 3, 4, 5, 0] as $value)
+                @foreach ($assessmentScaleValues as $value)
                     <label
                         class="inline-flex h-10 w-10 items-center justify-center
                                rounded-full border border-violet-300 bg-white

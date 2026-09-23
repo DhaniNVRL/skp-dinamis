@@ -13,7 +13,7 @@
                 [
                     'question' => $question,
                     'maximum' => $scaleMaximum,
-                    'includeZero' => true,
+                    'includeZero' => $includeZero ?? true,
                     'name' => "importance_{$question->id}_{$scopeId}",
                     'leftLabel' => null,
                     'rightLabel' => null,
@@ -37,7 +37,7 @@
                 [
                     'question' => $question,
                     'maximum' => $scaleMaximum,
-                    'includeZero' => true,
+                    'includeZero' => $includeZero ?? true,
                     'name' => "performance_{$question->id}_{$scopeId}",
                     'leftLabel' => null,
                     'rightLabel' => null,

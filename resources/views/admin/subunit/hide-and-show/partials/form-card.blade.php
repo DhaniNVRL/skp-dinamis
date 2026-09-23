@@ -2,6 +2,8 @@
     $perSubUnitFormTypes = [
         2,
         3,
+        15,
+        16,
         8,
         9,
         10,
@@ -151,7 +153,11 @@
 @endphp
 
 
-<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+<div
+    data-form-visibility-card
+    data-form-visible="{{ $isFormVisible ? '1' : '0' }}"
+    class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+>
 
     {{-- FORM HEADER --}}
     <div class="border-b border-gray-200 bg-gray-50 px-5 py-4">
@@ -171,26 +177,52 @@
             </div>
 
 
-            <span
-                class="inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold
-                    {{ $isPerSubUnit
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-purple-100 text-purple-700' }}"
-            >
+            <div class="flex flex-wrap items-center gap-4">
+                <span
+                    class="inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold
+                        {{ $isPerSubUnit
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-purple-100 text-purple-700' }}"
+                >
+                    @if ($isPerSubUnit)
+                        <i class="fa-solid fa-building mr-2"></i>
+                        Per Sub Unit
+                    @else
+                        <i class="fa-solid fa-layer-group mr-2"></i>
+                        Pertanyaan Global
+                    @endif
+                </span>
 
-                @if ($isPerSubUnit)
+                <div class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Tampilkan Form
+                        </div>
+                        <div
+                            data-toggle-status
+                            class="text-xs font-medium {{ $isFormVisible ? 'text-green-600' : 'text-red-500' }}"
+                        >
+                            {{ $isFormVisible ? 'Ditampilkan' : 'Disembunyikan' }}
+                        </div>
+                    </div>
 
-                    <i class="fa-solid fa-building mr-2"></i>
-                    Per Sub Unit
-
-                @else
-
-                    <i class="fa-solid fa-layer-group mr-2"></i>
-                    Pertanyaan Global
-
-                @endif
-
-            </span>
+                    <button
+                        type="button"
+                        data-form-visibility-toggle
+                        data-unit-id="{{ $unitId }}"
+                        data-form-id="{{ $form->id }}"
+                        data-active="{{ $isFormVisible ? '1' : '0' }}"
+                        aria-pressed="{{ $isFormVisible ? 'true' : 'false' }}"
+                        class="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition {{ $isFormVisible ? 'bg-green-500' : 'bg-gray-300' }}"
+                    >
+                        <span
+                            data-toggle-knob
+                            class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform {{ $isFormVisible ? 'translate-x-6' : 'translate-x-1' }}"
+                        ></span>
+                        <span class="sr-only">Ubah status form</span>
+                    </button>
+                </div>
+            </div>
 
         </div>
 

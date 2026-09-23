@@ -79,6 +79,8 @@
 
                     @case(2)
 
+                    @case(15)
+
                         @include(
                             'admin.units.question.partials.forms.customer-assessment-1-5.index',
                             [
@@ -91,6 +93,8 @@
 
 
                     @case(3)
+
+                    @case(16)
 
                         @include(
                             'admin.units.question.partials.forms.customer-assessment-1-7.index',

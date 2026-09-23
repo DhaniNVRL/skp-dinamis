@@ -1,8 +1,17 @@
 @php
+    $assessmentScaleMaximum = in_array((int) $form->formtype_id, [3, 16], true) ? 7 : 5;
+    $assessmentScaleValues = range(1, $assessmentScaleMaximum);
+
+    if (! in_array((int) $form->formtype_id, [15, 16], true)) {
+        $assessmentScaleValues[] = 0;
+    }
+
     $questionBodyView = match ((int) $form->formtype_id) {
         1 => 'admin.units.question.partials.forms.general-questionnaire.question-body',
         2 => 'admin.units.question.partials.forms.customer-assessment-1-5.question-body',
         3 => 'admin.units.question.partials.forms.customer-assessment-1-7.question-body',
+        15 => 'admin.units.question.partials.forms.customer-assessment-1-5.question-body',
+        16 => 'admin.units.question.partials.forms.customer-assessment-1-7.question-body',
         4 => 'admin.units.question.partials.forms.engagement-assessment-1-5.question-body',
         5 => 'admin.units.question.partials.forms.engagement-assessment-1-7.question-body',
         6 => 'admin.units.question.partials.forms.ranking-1-3.question-body',
@@ -22,6 +31,7 @@
         'form' => $form,
         'question' => $question,
         'competitors' => $competitors ?? collect(),
+        'assessmentScaleValues' => $assessmentScaleValues,
     ])
 @else
     <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">

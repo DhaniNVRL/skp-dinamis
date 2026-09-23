@@ -41,7 +41,7 @@
             </h5>
 
             <div class="flex flex-wrap justify-center gap-3">
-                @foreach ([1, 2, 3, 4, 5, 6, 7, 0] as $value)
+                @foreach ($assessmentScaleValues as $value)
                     <label
                         class="inline-flex h-10 w-10 items-center justify-center
                                rounded-full border border-blue-300 bg-white
@@ -68,7 +68,7 @@
             </h5>
 
             <div class="flex flex-wrap justify-center gap-3">
-                @foreach ([1, 2, 3, 4, 5, 6, 7, 0] as $value)
+                @foreach ($assessmentScaleValues as $value)
                     <label
                         class="inline-flex h-10 w-10 items-center justify-center
                                rounded-full border border-emerald-300 bg-white

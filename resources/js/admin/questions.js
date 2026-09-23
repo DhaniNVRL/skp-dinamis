@@ -67,9 +67,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     "customerAssessment15TypeOptions"
                 );
 
+            case 15:
+                return document.getElementById(
+                    "customerAssessment15WithoutZeroTypeOptions"
+                );
+
             case 3:
                 return document.getElementById(
                     "customerAssessment17TypeOptions"
+                );
+
+            case 16:
+                return document.getElementById(
+                    "customerAssessment17WithoutZeroTypeOptions"
                 );
 
             case 4:
@@ -568,9 +578,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     "customerAssessment15TypeOptions"
                 );
 
+            case 15:
+                return document.getElementById(
+                    "customerAssessment15WithoutZeroTypeOptions"
+                );
+
             case 3:
                 return document.getElementById(
                     "customerAssessment17TypeOptions"
+                );
+
+            case 16:
+                return document.getElementById(
+                    "customerAssessment17WithoutZeroTypeOptions"
                 );
 
             case 4:

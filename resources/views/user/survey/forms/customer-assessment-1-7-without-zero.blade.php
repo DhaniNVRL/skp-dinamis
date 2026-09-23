@@ -3,6 +3,6 @@
     [
         'maximumScale' => 7,
         'reasonMaximum' => 4,
-        'includeZero' => true,
+        'includeZero' => false,
     ]
 )

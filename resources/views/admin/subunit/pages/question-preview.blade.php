@@ -21,5 +21,7 @@
         </div>
     </div>
 
-    @include('admin.subunit.show-question.index')
+    @include('admin.subunit.show-question.index', [
+        'forms' => $visibleForms ?? $forms,
+    ])
 </div>

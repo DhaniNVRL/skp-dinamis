@@ -108,6 +108,20 @@ class FormTypeSeeder extends Seeder
                 'description' => 'Form Pembanding Tanpa Nama Competitor',
                 'created_at' => now(),
                 'updated_at' => now(),
+            ],
+            [
+                'id' => 15,
+                'name' => 'Form Penilaian Pelanggan',
+                'description' => 'Skala 1-5 Tanpa Nilai 0',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 16,
+                'name' => 'Form Penilaian Pelanggan',
+                'description' => 'Skala 1-7 Tanpa Nilai 0',
+                'created_at' => now(),
+                'updated_at' => now(),
             ]
         ], ['id'], ['name', 'description', 'updated_at']);
     }

@@ -235,7 +235,7 @@
                                                 [
                                                     'question' => $question,
                                                     'maximum' => $scaleMaximum,
-                                                    'includeZero' => true,
+                                                    'includeZero' => $includeZero ?? true,
                                                     'name' => "indicator_{$questionScope}",
                                                 ]
                                             )

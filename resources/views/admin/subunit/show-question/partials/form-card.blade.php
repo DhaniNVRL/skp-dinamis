@@ -79,7 +79,7 @@
                     ?? $form->id_formtype
                     ?? 0
                 );
-                $usesSingleHeader = in_array($formTypeId, [2, 3], true);
+                $usesSingleHeader = in_array($formTypeId, [2, 3, 15, 16], true);
 
                 /*
                  * Form Penilaian Pelanggan 1-5 dan 1-7 memakai satu Header
@@ -157,7 +157,8 @@
                             'questions' => $customerAssessmentQuestions,
                             'subunits' => $allSubunits,
                             'activeMapSubUnit' => $activeMapSubUnit,
-                            'scaleMaximum' => $formTypeId === 3 ? 7 : 5,
+                            'scaleMaximum' => in_array($formTypeId, [3, 16], true) ? 7 : 5,
+                            'includeZero' => ! in_array($formTypeId, [15, 16], true),
                         ]
                     )
                 @endif

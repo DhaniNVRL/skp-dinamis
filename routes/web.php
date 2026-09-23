@@ -24,6 +24,7 @@ use App\Http\Controllers\SubUnitQuestionController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\SurveyBranchRuleController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\UnitFormVisibilityController;
 use App\Http\Controllers\UserDashboardController;
 
 use App\Http\Controllers\Auth\LoginController;
@@ -487,6 +488,11 @@ Route::delete('/groups/{group}/branch-rules/{rule}', [SurveyBranchRuleController
             )->name('subunit-question.toggle');
         });
 
+        Route::post(
+            '/unit-form-visibility/toggle',
+            [UnitFormVisibilityController::class, 'toggle']
+        )->name('unit-form-visibility.toggle');
+
         Route::controller(CompetitorController::class)
         ->group(function () {
             Route::post('/competitor/store', 'store')
@@ -605,6 +611,5 @@ Route::get('/', function () {
         default => abort(403, 'Role tidak dikenali.'),
     };
 });
-
 
 

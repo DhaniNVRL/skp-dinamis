@@ -67,6 +67,14 @@
                         @include('user.survey.forms.customer-assessment-1-7')
                         @break
 
+                    @case(15)
+                        @include('user.survey.forms.customer-assessment-1-5-without-zero')
+                        @break
+
+                    @case(16)
+                        @include('user.survey.forms.customer-assessment-1-7-without-zero')
+                        @break
+
                     @case(4)
                         @include('user.survey.forms.engagement-assessment-1-5')
                         @break

@@ -119,7 +119,11 @@ class FormController extends Controller
     public function edit($id)
     {
         $form = Form::query()->findOrFail($id);
-        $formtypes = FormType::query()->orderBy('name')->get();
+        $formtypes = FormType::query()
+            ->orderBy('name')
+            ->orderBy('description')
+            ->orderBy('id')
+            ->get();
 
         return view('admin.edit.editform', compact('form', 'formtypes'));
     }
@@ -325,7 +329,14 @@ class FormController extends Controller
         }
 
         $row = 2;
-        foreach (FormType::query()->orderBy('id')->get(['id', 'name']) as $type) {
+        foreach (
+            FormType::query()
+                ->orderBy('name')
+                ->orderBy('description')
+                ->orderBy('id')
+                ->get(['id', 'name', 'description'])
+            as $type
+        ) {
             $master->setCellValue("C{$row}", $type->id);
             $master->setCellValue("D{$row}", $type->name);
             $row++;

@@ -4,12 +4,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function initializeShowQuestion() {
     const page = document.getElementById(
-        "showQuestionPage"
+        "questionPreviewPage"
     );
 
     if (!page) {
         console.warn(
-            "showQuestionPage tidak ditemukan."
+            "questionPreviewPage tidak ditemukan."
         );
 
         return;
@@ -136,6 +136,11 @@ function synchronizeInitialState(page) {
                             checkbox
                         );
                     });
+            }
+
+            if (questionType === "select") {
+                const select = question.querySelector("select[data-general-option-input]");
+                updateGeneralSelectQuestion(question, select);
             }
         });
 }
@@ -326,6 +331,29 @@ function handleGeneralOptionChange(input) {
         updateGeneralCheckboxOption(
             input
         );
+    }
+
+
+    if (questionType === "select") {
+        updateGeneralSelectQuestion(question, input);
+    }
+}
+
+function updateGeneralSelectQuestion(question, select) {
+    question.querySelectorAll("[data-general-child]").forEach(function (child) {
+        setGeneralChildVisibility(child, false);
+    });
+
+    const selectedOption = select?.selectedOptions?.[0];
+
+    if (!selectedOption || selectedOption.dataset.hasChild !== "1") {
+        return;
+    }
+
+    const child = document.getElementById(selectedOption.dataset.childTarget);
+
+    if (child) {
+        setGeneralChildVisibility(child, true);
     }
 }
 

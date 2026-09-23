@@ -12,6 +12,7 @@ import './admin/groups';
 import './admin/hide-and-show';
 import './admin/options';
 import './admin/questions';
+import './admin/show-question';
 import './admin/subunit';
 import './admin/units';
 import './admin/users';

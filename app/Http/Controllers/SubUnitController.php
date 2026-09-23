@@ -14,6 +14,7 @@ use App\Models\SubUnit;
 use App\Models\Competitor;
 use App\Models\UnitCompetitorVisibility;
 use App\Services\UnitCompetitorVisibilityService;
+use App\Services\UnitFormVisibilityService;
 use App\Models\SubUnitQuestion;
 use App\Models\Answer;
 use Illuminate\Http\Request;
@@ -101,6 +102,12 @@ class SubUnitController extends Controller
             })
             ->all();
 
+        $unitFormVisibilityMap = app(UnitFormVisibilityService::class)
+            ->visibilityMap($forms, (int) $unit->id);
+        $visibleForms = $forms
+            ->filter(fn (Form $form) => $unitFormVisibilityMap[(int) $form->id] ?? true)
+            ->values();
+
         $allCompetitors = Competitor::query()
             ->where('group_id', $unit->group_id)
             ->orderBy('name')
@@ -141,6 +148,8 @@ class SubUnitController extends Controller
             'subunits' => $subunits,
             'allSubunits' => $allSubunits,
             'forms' => $forms,
+            'visibleForms' => $visibleForms,
+            'unitFormVisibilityMap' => $unitFormVisibilityMap,
             'competitors' => $competitors,
             'allCompetitors' => $allCompetitors,
             'selectedCompetitorIds' => $selectedCompetitorIds,
@@ -802,4 +811,3 @@ class SubUnitController extends Controller
         );
     }
 }
-

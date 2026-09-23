@@ -55,7 +55,7 @@
 
                 <div class="flex flex-wrap justify-center gap-3">
 
-                    @foreach (array_merge(range(1, $maximumScale), [0]) as $value)
+                    @foreach ($assessmentScaleValues as $value)
 
                         <label
                             class="inline-flex h-10 w-10 items-center justify-center
@@ -87,7 +87,7 @@
 
                 <div class="flex flex-wrap justify-center gap-3">
 
-                    @foreach (array_merge(range(1, $maximumScale), [0]) as $value)
+                    @foreach ($assessmentScaleValues as $value)
 
                         <label
                             class="inline-flex h-10 w-10 items-center justify-center

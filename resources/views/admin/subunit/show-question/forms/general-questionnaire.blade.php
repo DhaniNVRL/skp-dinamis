@@ -46,7 +46,11 @@
 
         {{-- TYPE 1: SHORT TEXT --}}
         @elseif ($questionTypeId === 1)
-            <div class="rounded-xl border border-gray-200 bg-white p-5">
+            <div
+                data-general-question
+                data-general-question-type="select"
+                class="rounded-xl border border-gray-200 bg-white p-5"
+            >
                 <div class="mb-4 flex items-start gap-3">
                     @include(
                         'admin.subunit.show-question.forms.partials.question-number',
@@ -280,6 +284,67 @@
                         </div>
                     @endforelse
                 </div>
+            </div>
+
+        {{-- TYPE 5: DROPDOWN --}}
+        @elseif ($questionTypeId === 5)
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+                <div class="mb-4 flex items-start gap-3">
+                    @include(
+                        'admin.subunit.show-question.forms.partials.question-number',
+                        ['question' => $question]
+                    )
+
+                    <h3 class="font-semibold text-gray-800">
+                        {{ $question->name }}
+                    </h3>
+                </div>
+
+                <select
+                    name="general_answers[{{ $question->id }}][{{ $scopeId }}]"
+                    data-general-option-input
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                >
+                    <option value="">Pilih jawaban</option>
+                    @foreach ($sortedOptions as $option)
+                        <option
+                            value="{{ $option->id }}"
+                            data-has-child="{{ (int) $option->has_child === 1 ? '1' : '0' }}"
+                            data-child-target="general_select_child_{{ $question->id }}_{{ $scopeId }}_{{ $option->id }}"
+                        >
+                            {{ $option->answer_text }}
+                        </option>
+                    @endforeach
+                </select>
+
+                @foreach ($sortedOptions->where('has_child', 1) as $option)
+                    <div
+                        id="general_select_child_{{ $question->id }}_{{ $scopeId }}_{{ $option->id }}"
+                        data-general-child
+                        class="mt-3 hidden"
+                    >
+                        @if (filled($option->child_label))
+                            <label class="mb-2 block text-xs font-medium text-gray-600">
+                                {{ $option->child_label }}
+                            </label>
+                        @endif
+
+                        <textarea
+                            name="general_child_answers[{{ $question->id }}][{{ $scopeId }}][{{ $option->id }}]"
+                            rows="3"
+                            disabled
+                            data-general-child-input
+                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                            placeholder="{{ $option->answer_text2 ?: 'Jawaban tambahan...' }}"
+                        ></textarea>
+                    </div>
+                @endforeach
+
+                @if ($sortedOptions->isEmpty())
+                    <p class="mt-2 text-sm text-gray-500">
+                        Pilihan jawaban belum tersedia.
+                    </p>
+                @endif
             </div>
 
 

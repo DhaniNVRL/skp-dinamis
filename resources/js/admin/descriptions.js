@@ -910,8 +910,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
-    window.__editDescriptionInitialized = true;
-
     const editModal = document.getElementById(
         "editDescriptionModal"
     );
@@ -936,6 +934,20 @@ document.addEventListener("DOMContentLoaded", function () {
         "editDescriptionContent"
     );
 
+    const editTrigger = document.querySelector(
+        '[data-modal-open="editDescriptionModal"]'
+    );
+
+    if (
+        !editTrigger &&
+        !editModal &&
+        !editForm &&
+        !editEditor &&
+        !editContentInput
+    ) {
+        return;
+    }
+
     if (
         !editModal ||
         !editForm ||
@@ -954,6 +966,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         return;
     }
+
+    window.__editDescriptionInitialized = true;
 
     /*
     |--------------------------------------------------------------------------
@@ -1164,8 +1178,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
-    window.__deleteDescriptionInitialized = true;
-
     const deleteForm = document.getElementById(
         "deleteDescriptionForm"
     );
@@ -1178,6 +1190,19 @@ document.addEventListener("DOMContentLoaded", function () {
         "delete_description_form_name"
     );
 
+    const deleteTrigger = document.querySelector(
+        '[data-modal-open="deleteDescriptionModal"]'
+    );
+
+    if (
+        !deleteTrigger &&
+        !deleteForm &&
+        !deleteIdInput &&
+        !formNameElement
+    ) {
+        return;
+    }
+
     if (!deleteForm) {
         console.error(
             "#deleteDescriptionForm tidak ditemukan."
@@ -1185,6 +1210,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         return;
     }
+
+    window.__deleteDescriptionInitialized = true;
 
     /*
     |--------------------------------------------------------------------------

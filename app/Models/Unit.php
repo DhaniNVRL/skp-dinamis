@@ -32,4 +32,9 @@ class Unit extends Model
             'id'
         );
     }
+
+    public function formVisibilities()
+    {
+        return $this->hasMany(UnitFormVisibility::class);
+    }
 }

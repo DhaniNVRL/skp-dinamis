@@ -172,6 +172,36 @@
         )
         @break
 
+    {{-- CUSTOMER ASSESSMENT 1-5 WITHOUT ZERO --}}
+    @case(15)
+        @include(
+            'admin.subunit.show-question.forms.customer-assessment-1-5',
+            [
+                'form' => $form,
+                'questions' => $questions,
+                'subunits' => $subunits,
+                'subunitIds' => $subunitIds,
+                'activeMapSubUnit' => $activeMapSubUnit,
+                'includeZero' => false,
+            ]
+        )
+        @break
+
+    {{-- CUSTOMER ASSESSMENT 1-7 WITHOUT ZERO --}}
+    @case(16)
+        @include(
+            'admin.subunit.show-question.forms.customer-assessment-1-7',
+            [
+                'form' => $form,
+                'questions' => $questions,
+                'subunits' => $subunits,
+                'subunitIds' => $subunitIds,
+                'activeMapSubUnit' => $activeMapSubUnit,
+                'includeZero' => false,
+            ]
+        )
+        @break
+
     @default
         <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
             Form type {{ $formTypeId }} belum didukung.

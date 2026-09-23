@@ -28,6 +28,8 @@ class AnswerController extends Controller
         8,
         9,
         10,
+        15,
+        16,
     ];
 
     private const FEEDBACK_TYPES = [
@@ -44,6 +46,8 @@ class AnswerController extends Controller
     private const CUSTOMER_TYPES = [
         2,
         3,
+        15,
+        16,
     ];
 
     private const MEANINGFUL_ANSWER_ROLE_IDS = [
@@ -174,6 +178,12 @@ class AnswerController extends Controller
             'Survei sudah selesai dan akun harus direset oleh Admin sebelum jawaban dapat diubah.'
         );
 
+        $branching = app(\App\Services\SurveyBranchingService::class);
+
+        if ($branching->shouldSkipForm($form, (int) Auth::id())) {
+            return $this->goToNextForm($form);
+        }
+
         if (
             (int) $form->formtype_id
             === 12
@@ -276,11 +286,6 @@ class AnswerController extends Controller
             (array) $request->input(
                 'answers',
                 []
-            );
-
-        $branching =
-            app(
-                \App\Services\SurveyBranchingService::class
             );
 
         $hiddenConditionalQuestionIds =
@@ -1129,19 +1134,15 @@ class AnswerController extends Controller
                 );
 
             $maximumScale =
-                (int) $form->formtype_id
-                    === 2
+                in_array((int) $form->formtype_id, [2, 15], true)
                     ? 5
                     : 7;
 
-            $allowedValues =
-                array_merge(
-                    range(
-                        1,
-                        $maximumScale
-                    ),
-                    [0]
-                );
+            $allowedValues = range(1, $maximumScale);
+
+            if (!in_array((int) $form->formtype_id, [15, 16], true)) {
+                $allowedValues[] = 0;
+            }
 
             if (
                 !filled($importance)
@@ -1174,8 +1175,7 @@ class AnswerController extends Controller
             }
 
             $reasonMaximum =
-                (int) $form->formtype_id
-                    === 2
+                in_array((int) $form->formtype_id, [2, 15], true)
                     ? 3
                     : 4;
 
@@ -1330,6 +1330,20 @@ class AnswerController extends Controller
             ] =
                 "Pertanyaan {$question->name} wajib diisi.";
         }
+
+        if (
+            $questionTypeId === 5
+            && in_array((int) $form->formtype_id, [15, 16], true)
+            && !in_array(
+                (int) Arr::get($payload, 'value'),
+                range(1, (int) $form->formtype_id === 15 ? 5 : 7),
+                true
+            )
+        ) {
+            $errors[
+                "answers.{$question->id}.{$subunitId}.value"
+            ] = "Nilai {$question->name} wajib dipilih.";
+        }
     }
 
 
@@ -1360,7 +1374,7 @@ class AnswerController extends Controller
         if (
             in_array(
                 $questionTypeId,
-                [3, 4],
+                [3, 4, 5],
                 true
             )
         ) {

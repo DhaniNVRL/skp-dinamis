@@ -1,6 +1,7 @@
 <div
     id="hideShowPage"
     data-toggle-url="{{ route('subunit-question.toggle') }}"
+    data-form-toggle-url="{{ route('unit-form-visibility.toggle') }}"
     class="space-y-6"
 >
     <input
@@ -18,11 +19,12 @@
 
             <div>
                 <h2 class="text-lg font-semibold text-gray-800">
-                    Hide and Show Pertanyaan
+                    Hide and Show Form dan Pertanyaan
                 </h2>
 
                 <p class="mt-1 text-sm text-gray-600">
-                    Atur pertanyaan yang ditampilkan pada setiap Sub Unit.
+                    Atur form untuk Unit ini dan pertanyaan yang ditampilkan pada setiap Sub Unit.
+                    Form yang disembunyikan otomatis dilewati oleh responden.
                     Seluruh Sub Unit langsung ditampilkan tanpa perlu memilih
                     Sub Unit terlebih dahulu.
                 </p>
@@ -64,6 +66,8 @@
                     'allSubunits' => $allSubunits,
                     'activeMapSubUnit' => $activeMapSubUnit,
                     'unitName' => $units->name,
+                    'unitId' => $units->id,
+                    'isFormVisible' => $unitFormVisibilityMap[(int) $form->id] ?? true,
                 ]
             )
         @endforeach

@@ -212,6 +212,7 @@
     @include('admin.units.question.templates.forms.general-questionnaire')
     @include('admin.units.question.templates.forms.customer-assessment-1-5')
     @include('admin.units.question.templates.forms.customer-assessment-1-7')
+    @include('admin.units.question.templates.forms.customer-assessment-without-zero')
     @include('admin.units.question.templates.forms.engagement-assessment-1-5')
     @include('admin.units.question.templates.forms.engagement-assessment-1-7')
     @include('admin.units.question.templates.forms.ranking-1-3')

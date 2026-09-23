@@ -747,6 +747,10 @@
                         input
                     );
                 }
+
+                if (input.tagName === "SELECT") {
+                    refreshSelectChild(input);
+                }
             }
         );
 
@@ -769,8 +773,39 @@
                         input
                     );
                 }
+
+                if (input.tagName === "SELECT") {
+                    refreshSelectChild(input);
+                }
             }
         );
+    }
+
+
+    function refreshSelectChild(select) {
+        const group = select.closest("[data-option-group]");
+
+        if (!group) {
+            return;
+        }
+
+        group.querySelectorAll("[data-child-container]").forEach(
+            function (child) {
+                toggleChildContainer(child, false);
+            }
+        );
+
+        const selectedOption = select.selectedOptions[0];
+
+        if (!selectedOption || selectedOption.dataset.hasChild !== "1") {
+            return;
+        }
+
+        const child = document.getElementById(selectedOption.dataset.childTarget);
+
+        if (child) {
+            toggleChildContainer(child, true);
+        }
     }
 
 

@@ -7,6 +7,7 @@
      * Customer Assessment 1-5.
      */
     $scaleMaximum = 5;
+    $includeZero = (bool) ($includeZero ?? true);
 
     /*
      * Alasan hanya muncul jika nilai Kinerja 1-3.
@@ -297,7 +298,7 @@
                             [
                                 'question' => $question,
                                 'maximum' => $scaleMaximum,
-                                'includeZero' => true,
+                                'includeZero' => $includeZero,
                                 'name' => "indicator_{$questionScope}",
                                 'leftLabel' => null,
                                 'rightLabel' => null,

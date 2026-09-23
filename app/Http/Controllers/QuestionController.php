@@ -704,7 +704,7 @@ class QuestionController extends Controller
         | 2. Customer Assessment 1-5
         |--------------------------------------------------------------------------
         */
-        elseif ($formTypeId === 2) {
+        elseif (in_array($formTypeId, [2, 15], true)) {
             return collect([
                 [
                     'id' => 1,
@@ -754,7 +754,7 @@ class QuestionController extends Controller
         | 3. Customer Assessment 1-7
         |--------------------------------------------------------------------------
         */
-        elseif ($formTypeId === 3) {
+        elseif (in_array($formTypeId, [3, 16], true)) {
             return collect([
                 [
                     'id' => 1,

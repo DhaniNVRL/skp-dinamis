@@ -464,6 +464,16 @@
                                 Alamat email
                             </p>
 
+                        @elseif ($questionTypeId === 5)
+
+                            <p
+                                class="mt-1 text-xs
+                                       uppercase tracking-wide
+                                       text-gray-400"
+                            >
+                                Pilih dari daftar
+                            </p>
+
                         @endif
 
                     </div>
@@ -971,6 +981,90 @@
                         @endforelse
 
                     </div>
+
+
+                {{-- ======================================================== --}}
+                {{-- TYPE 5: DROPDOWN --}}
+                {{-- ======================================================== --}}
+
+                @elseif ($questionTypeId === 5)
+
+                    <div data-option-group>
+                        <select
+                            id="answer-{{ $question->id }}"
+                            name="answers[{{ $question->id }}][value]"
+                            required
+                            data-option-input
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                        >
+                            <option value="">Pilih jawaban</option>
+
+                            @foreach ($question->options->sortBy('no')->values() as $option)
+                                <option
+                                    value="{{ $option->id }}"
+                                    data-has-child="{{ (int) $option->has_child === 1 ? '1' : '0' }}"
+                                    data-child-target="dropdown-child-{{ $question->id }}-{{ $option->id }}"
+                                    @selected((string) $storedValue === (string) $option->id)
+                                >
+                                    {{ $option->answer_text }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        @foreach ($question->options->where('has_child', 1)->sortBy('no')->values() as $option)
+                            @php
+                                $isSelected = (string) $storedValue === (string) $option->id;
+                                $childValue = data_get($storedChildren, $option->id, '');
+                                $childErrorKey = "answers.{$question->id}.child.{$option->id}";
+                                $hasChildError = $errors->has($childErrorKey);
+                            @endphp
+
+                            <div
+                                id="dropdown-child-{{ $question->id }}-{{ $option->id }}"
+                                data-child-container
+                                class="{{ $isSelected ? '' : 'hidden' }} mt-3"
+                            >
+                                @if (filled($option->child_label))
+                                    <label
+                                        for="dropdown-child-answer-{{ $question->id }}-{{ $option->id }}"
+                                        class="mb-2 block text-sm font-medium text-gray-700"
+                                    >
+                                        {{ $option->child_label }}
+                                    </label>
+                                @endif
+
+                                <textarea
+                                    id="dropdown-child-answer-{{ $question->id }}-{{ $option->id }}"
+                                    name="answers[{{ $question->id }}][child][{{ $option->id }}]"
+                                    rows="3"
+                                    data-child-input
+                                    @if ($useMeaningfulValidation)
+                                        data-meaningful-answer
+                                        data-answer-type="child"
+                                        data-answer-label="Jawaban tambahan"
+                                    @endif
+                                    @required($isSelected)
+                                    @disabled(!$isSelected)
+                                    maxlength="5000"
+                                    placeholder="{{ $option->answer_text2 ?: 'Tulis jawaban tambahan...' }}"
+                                    class="w-full rounded-lg border bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 {{ $hasChildError ? 'border-red-500 ring-2 ring-red-100' : 'border-gray-300' }}"
+                                >{{ $childValue }}</textarea>
+
+                                @error($childErrorKey)
+                                    <p class="mt-2 text-sm font-medium text-red-600" data-meaningful-error>
+                                        <i class="fa-solid fa-circle-exclamation mr-1"></i>
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+                            </div>
+                        @endforeach
+                    </div>
+
+                    @if ($question->options->isEmpty())
+                        <p class="mt-2 text-sm text-gray-500">
+                            Pilihan jawaban belum tersedia.
+                        </p>
+                    @endif
 
 
                 {{-- ======================================================== --}}

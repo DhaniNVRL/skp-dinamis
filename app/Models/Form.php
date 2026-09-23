@@ -70,4 +70,9 @@ class Form extends Model
     {
         return $this->hasMany(Answer::class, 'form_id');
     }
+
+    public function unitVisibilities()
+    {
+        return $this->hasMany(UnitFormVisibility::class);
+    }
 }

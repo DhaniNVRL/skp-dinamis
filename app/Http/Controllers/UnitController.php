@@ -42,7 +42,11 @@ class UnitController extends Controller
             ->orderBy('no_urut', 'asc')
             ->get();
 
-        $formTypes = FormType::all();
+        $formTypes = FormType::query()
+            ->orderBy('name')
+            ->orderBy('description')
+            ->orderBy('id')
+            ->get();
 
         $questionTypes = QuestionType::all();
 

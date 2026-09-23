@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Schema;
 
 class SurveyBranchingService
 {
+    public function __construct(
+        private readonly UnitFormVisibilityService $formVisibility
+    ) {
+    }
+
     /**
      * Percabangan otomatis untuk Kuesioner Umum.
      *
@@ -124,6 +129,10 @@ class SurveyBranchingService
     }
     public function shouldSkipForm(Form $form, int $userId): bool
     {
+        if (!$this->formVisibility->isVisibleForUser($form, $userId)) {
+            return true;
+        }
+
         if (Schema::hasTable('survey_branch_rules')) {
             $configured = SurveyBranchRule::query()
                 ->where('group_id', $form->group_id)
