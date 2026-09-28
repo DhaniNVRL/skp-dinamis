@@ -41,6 +41,7 @@
                        focus:border-indigo-500 focus:outline-none
                        focus:ring-1 focus:ring-indigo-500"
             ></textarea>
+
         </td>
 
         {{-- Jenis pertanyaan --}}

@@ -396,7 +396,8 @@ class QuestionController extends Controller
         */
         DB::transaction(function () use (
             $question,
-            $validated
+            $validated,
+            $form
         ): void {
             Answer::query()
                 ->where('question_id', $question->id)
@@ -426,6 +427,50 @@ class QuestionController extends Controller
                 'success',
                 'Pertanyaan berhasil diperbarui. Jawaban responden untuk pertanyaan tersebut telah dihapus agar tetap konsisten.'
             );
+    }
+
+    public function updateComparison(Request $request, $id)
+    {
+        $question = Question::query()->with('form')->findOrFail($id);
+        abort_unless(in_array((int) $question->form->formtype_id, [2, 3, 15, 16], true), 422);
+
+        $validated = $request->validate([
+            'comparison_enabled' => ['nullable', 'boolean'],
+            'comparison_prompt' => ['nullable', 'string', 'max:1000'],
+            'comparison_options' => ['nullable', 'string', 'max:5000'],
+        ]);
+        $enabled = (bool) ($validated['comparison_enabled'] ?? false);
+
+        if (! $enabled) {
+            $question->update([
+                'comparison_enabled' => false,
+                'comparison_prompt' => null,
+                'comparison_options' => null,
+            ]);
+            return back()->with('success', 'Pembanding tahun dinonaktifkan.');
+        }
+
+        $prompt = trim((string) ($validated['comparison_prompt'] ?? ''));
+        $options = collect(preg_split('/\R/u', (string) ($validated['comparison_options'] ?? '')))
+            ->map(fn ($option) => trim((string) $option))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($prompt === '' || count($options) < 2) {
+            throw ValidationException::withMessages([
+                'comparison_prompt' => 'Pembanding tahun memerlukan narasi dan minimal dua pilihan jawaban.',
+            ]);
+        }
+
+        $question->update([
+            'comparison_enabled' => true,
+            'comparison_prompt' => $prompt,
+            'comparison_options' => $options,
+        ]);
+
+        return back()->with('success', 'Pembanding tahun berhasil disimpan.');
     }
 
     /**
@@ -1112,6 +1157,8 @@ class QuestionController extends Controller
                     'INPUT_OPTIONS'
                 );
 
+            $comparisonSheet = $spreadsheet->getSheetByName('INPUT_PEMBANDING');
+
             $masterFormSheet =
                 $spreadsheet->getSheetByName(
                     'MASTER_FORM'
@@ -1180,6 +1227,10 @@ class QuestionController extends Controller
                     false
                 );
 
+            $comparisonRows = $comparisonSheet
+                ? $comparisonSheet->toArray(null, true, true, false)
+                : [];
+
             /*
             |--------------------------------------------------------------------------
             | Validasi header
@@ -1192,6 +1243,10 @@ class QuestionController extends Controller
             $this->validateOptionHeaders(
                 $optionRows
             );
+
+            if ($comparisonSheet) {
+                $this->validateComparisonHeaders($comparisonRows);
+            }
 
             /*
             |--------------------------------------------------------------------------
@@ -1255,6 +1310,10 @@ class QuestionController extends Controller
                     (string) ($row[5] ?? '')
                 );
 
+                $comparisonEnabledValue = trim((string) ($row[6] ?? ''));
+                $comparisonPrompt = trim((string) ($row[7] ?? ''));
+                $comparisonOptionsValue = trim((string) ($row[8] ?? ''));
+
                 /*
                 |--------------------------------------------------------------------------
                 | Skip row kosong
@@ -1269,7 +1328,10 @@ class QuestionController extends Controller
                     &&
                     $name === ''
                     &&
-                    $questionTypeValue === '';
+                    $questionTypeValue === ''
+                    && $comparisonEnabledValue === ''
+                    && $comparisonPrompt === ''
+                    && $comparisonOptionsValue === '';
 
                 if ($isEmpty) {
                     continue;
@@ -1386,6 +1448,30 @@ class QuestionController extends Controller
                     ]);
                 }
 
+                $supportsComparison = in_array((int) $form->formtype_id, [2, 3, 15, 16], true);
+                $comparisonEnabled = $comparisonEnabledValue === ''
+                    ? 0
+                    : $this->extractReferenceId($comparisonEnabledValue);
+
+                if ($comparisonEnabled === null || !in_array($comparisonEnabled, [0, 1], true)) {
+                    throw ValidationException::withMessages([
+                        'file' => "Pembanding aktif pada baris {$excelRow} harus 0 - Tidak atau 1 - Iya.",
+                    ]);
+                }
+
+                if (!$supportsComparison && $comparisonEnabled === 1) {
+                    throw ValidationException::withMessages([
+                        'file' => "Pembanding tahun pada baris {$excelRow} hanya berlaku untuk Form Penilaian Pelanggan.",
+                    ]);
+                }
+
+                $comparisonOptions = collect(preg_split('/\R/u', $comparisonOptionsValue))
+                    ->map(fn ($option) => trim((string) $option))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+
                 /*
                 |--------------------------------------------------------------------------
                 | KODE PERTANYAAN tetap harus unik
@@ -1436,8 +1522,46 @@ class QuestionController extends Controller
                     'name' => $name,
 
                     'questiontype_id' => $questionTypeId,
+                    'comparison_enabled' => $comparisonEnabled === 1,
+                    'comparison_prompt' => $comparisonEnabled === 1 ? $comparisonPrompt : null,
+                    'comparison_options' => $comparisonEnabled === 1 ? $comparisonOptions : null,
                 ];
             }
+
+            $comparisonOptionsByCode = [];
+            foreach ($comparisonRows as $index => $row) {
+                if ($index === 0) continue;
+                $excelRow = $index + 1;
+                $code = strtoupper(trim((string) ($row[0] ?? '')));
+                $order = trim((string) ($row[1] ?? ''));
+                $text = trim((string) ($row[2] ?? ''));
+                if ($code === '' && $order === '' && $text === '') continue;
+
+                if (!isset($questionsForImport[$code])) {
+                    throw ValidationException::withMessages(['file' => "Kode pertanyaan pembanding pada baris {$excelRow} tidak ditemukan."]);
+                }
+                if (filter_var($order, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false || $text === '') {
+                    throw ValidationException::withMessages(['file' => "Urutan dan pilihan pembanding pada baris {$excelRow} wajib diisi dengan benar."]);
+                }
+                $comparisonOptionsByCode[$code][(int) $order] = $text;
+            }
+
+            foreach ($questionsForImport as $code => &$questionData) {
+                if (!empty($comparisonOptionsByCode[$code])) {
+                    ksort($comparisonOptionsByCode[$code]);
+                    $questionData['comparison_options'] = array_values(array_unique($comparisonOptionsByCode[$code]));
+                }
+
+                if ($questionData['comparison_enabled'] && (
+                    blank($questionData['comparison_prompt'])
+                    || count($questionData['comparison_options'] ?? []) < 2
+                )) {
+                    throw ValidationException::withMessages([
+                        'file' => "Pembanding untuk kode {$code} memerlukan pertanyaan dan minimal dua pilihan pada sheet INPUT_PEMBANDING.",
+                    ]);
+                }
+            }
+            unset($questionData);
 
             /*
             |--------------------------------------------------------------------------
@@ -1701,6 +1825,10 @@ class QuestionController extends Controller
                                 'questiontype_id' => $questionData[
                                         'questiontype_id'
                                     ],
+
+                                'comparison_enabled' => $questionData['comparison_enabled'],
+                                'comparison_prompt' => $questionData['comparison_prompt'],
+                                'comparison_options' => $questionData['comparison_options'],
                             ]);
 
                         $questionCount++;
@@ -1802,6 +1930,8 @@ class QuestionController extends Controller
             'no',
             'nama_pertanyaan',
             'tipe_pertanyaan',
+            'pembanding_aktif',
+            'pertanyaan_pembanding',
         ];
 
         $actualHeaders = array_map(
@@ -1815,13 +1945,21 @@ class QuestionController extends Controller
             array_slice(
                 $rows[0] ?? [],
                 0,
-                6
+                count($expectedHeaders)
             )
         );
 
+        // Template lama tanpa kolom pembanding tetap dapat digunakan.
+        $legacyHeaders = array_slice($expectedHeaders, 0, 6);
+        $previousExtendedHeaders = [...$expectedHeaders, 'pilihan_pembanding'];
+        $hasExtendedHeaders = collect(array_slice($actualHeaders, 6))
+            ->contains(fn ($header) => $header !== '');
+
         if (
-            $actualHeaders !==
-            $expectedHeaders
+            array_slice($actualHeaders, 0, 6) !== $legacyHeaders
+            || ($hasExtendedHeaders
+                && array_slice($actualHeaders, 0, 8) !== $expectedHeaders
+                && $actualHeaders !== $previousExtendedHeaders)
         ) {
             throw ValidationException::withMessages([
                 'file' => 'Judul kolom pada sheet INPUT_PERTANYAAN tidak sesuai template.',
@@ -1864,6 +2002,21 @@ class QuestionController extends Controller
         ) {
             throw ValidationException::withMessages([
                 'file' => 'Judul kolom pada sheet INPUT_OPTIONS tidak sesuai template.',
+            ]);
+        }
+    }
+
+    private function validateComparisonHeaders(array $rows): void
+    {
+        $expected = ['kode_pertanyaan', 'urutan', 'pilihan_pembanding'];
+        $actual = array_map(
+            fn ($value) => strtolower(trim((string) $value)),
+            array_slice($rows[0] ?? [], 0, 3)
+        );
+
+        if ($actual !== $expected) {
+            throw ValidationException::withMessages([
+                'file' => 'Judul kolom pada sheet INPUT_PEMBANDING tidak sesuai template.',
             ]);
         }
     }

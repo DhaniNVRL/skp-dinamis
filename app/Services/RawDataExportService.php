@@ -309,6 +309,7 @@ class RawDataExportService
 
     private function answerField(mixed $payload, string $field, Question $question, ?int $rank = null): mixed
     {
+        $payload = $this->normalizePayload($payload);
         $payload = is_array($payload) ? $payload : ['value' => $payload];
         $value = match ($field) {
             'importance' => data_get($payload, 'importance', data_get($payload, 'kepentingan')),
@@ -319,7 +320,19 @@ class RawDataExportService
             'strength' => data_get($payload, 'strength', data_get($payload, 'keunggulan')),
             'complaint' => data_get($payload, 'complaint', data_get($payload, 'keluhan')),
             'suggestion' => data_get($payload, 'suggestion', data_get($payload, 'saran')),
-            'ranking_value' => data_get($payload, $rank.'.value', data_get($payload, 'value.'.$rank.'.value')),
+            'ranking_value' => data_get(
+                $payload,
+                'value.'.$rank.'.option_id',
+                data_get(
+                    $payload,
+                    'value.'.$rank.'.value',
+                    data_get(
+                        $payload,
+                        $rank.'.option_id',
+                        data_get($payload, $rank.'.value')
+                    )
+                )
+            ),
             'ranking_child' => data_get($payload, $rank.'.child', data_get($payload, 'value.'.$rank.'.child')),
             'child' => data_get($payload, 'child', data_get($payload, 'children', data_get($payload, 'alasan_lainnya', []))),
             'value' => data_get($payload, 'value', data_get($payload, 'nilai', $payload)),
@@ -327,6 +340,21 @@ class RawDataExportService
         };
 
         return $this->readableValue($value, $question);
+    }
+
+    private function normalizePayload(mixed $payload): mixed
+    {
+        for ($attempt = 0; $attempt < 2 && is_string($payload); $attempt++) {
+            $decoded = json_decode($payload, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                break;
+            }
+
+            $payload = $decoded;
+        }
+
+        return $payload;
     }
 
     private function readableValue(mixed $value, Question $question): mixed

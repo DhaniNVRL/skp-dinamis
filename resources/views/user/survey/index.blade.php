@@ -39,10 +39,15 @@
         action="{{ route('survey.save', $form) }}"
         method="POST"
         novalidate
+        data-draft-url="{{ route('survey.draft.store', $form) }}"
+        data-has-validation-errors="{{ $errors->any() ? '1' : '0' }}"
         data-server-invalid-question-ids='@json($serverInvalidQuestionIds)'
         class="space-y-6 pb-4"
     >
         @csrf
+
+        <div id="surveyDraftStatus" class="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-lg border bg-white px-4 py-2.5 text-sm font-medium shadow-lg" role="status" aria-live="polite"></div>
+        <script id="surveyDraftPayload" type="application/json">{!! json_encode($surveyDraftPayload ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 
         <div class="space-y-6">
 

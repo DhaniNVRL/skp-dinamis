@@ -314,6 +314,11 @@
                                 )
                             );
 
+                            $storedComparison = old(
+                                "answers.{$question->id}.{$subunitId}.comparison",
+                                data_get($storedAnswer, 'comparison')
+                            );
+
                             /*
                             |--------------------------------------------------------------------------
                             | Reason
@@ -637,6 +642,46 @@
 
                                     </div>
 
+                                @endif
+
+                                @if ($question->comparison_enabled)
+                                    @php
+                                        $comparisonErrorKey =
+                                            "answers.{$question->id}.{$subunitId}.comparison";
+                                    @endphp
+
+                                    <div class="rounded-xl border border-violet-200 bg-violet-50 p-5">
+                                        <div class="mb-4">
+                                            <h4 class="font-semibold text-gray-900">{{ $question->comparison_prompt }}</h4>
+                                            <p class="mt-1 text-xs text-gray-500">Pilih satu jawaban yang paling sesuai.</p>
+                                        </div>
+
+                                        <div class="space-y-3" data-option-group>
+                                            @forelse (($question->comparison_options ?? []) as $option)
+                                                <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-violet-200 bg-white p-4 transition hover:border-violet-400">
+                                                    <input
+                                                        type="radio"
+                                                        name="answers[{{ $question->id }}][{{ $subunitId }}][comparison]"
+                                                        value="{{ $option }}"
+                                                        @checked((string) $storedComparison === (string) $option)
+                                                        required
+                                                        class="mt-0.5 h-4 w-4 border-gray-300 text-violet-600 focus:ring-violet-500"
+                                                    >
+                                                    <span class="text-sm font-medium text-gray-800">{{ $option }}</span>
+                                                </label>
+                                            @empty
+                                                <div class="rounded-lg border border-dashed border-violet-300 bg-white p-4 text-sm text-gray-500">
+                                                    Pilihan pembanding tahun belum tersedia.
+                                                </div>
+                                            @endforelse
+                                        </div>
+
+                                        @error($comparisonErrorKey)
+                                            <p class="mt-3 text-sm font-medium text-red-600">
+                                                <i class="fa-solid fa-circle-exclamation mr-1"></i>{{ $message }}
+                                            </p>
+                                        @enderror
+                                    </div>
                                 @endif
 
 

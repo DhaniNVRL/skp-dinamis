@@ -9,6 +9,7 @@ use App\Models\Group;
 use App\Models\Unit;
 use App\Models\Activity;
 use App\Models\Answer;
+use App\Models\SurveyDraft;
 use App\Models\RespondentCompetitor;
 use App\Models\Form;
 use App\Models\UserProfile;
@@ -1000,6 +1001,9 @@ class DataUserController extends Controller
             $user = User::query()->lockForUpdate()->findOrFail($id);
             $answerCount = Answer::query()->where('user_id', $user->id)->count();
             Answer::query()->where('user_id', $user->id)->delete();
+            if (Schema::hasTable('survey_drafts')) {
+                SurveyDraft::query()->where('user_id', $user->id)->delete();
+            }
 
             return [$user->username, $answerCount];
         });
@@ -1100,6 +1104,12 @@ class DataUserController extends Controller
             Answer::query()
                 ->where('user_id', $user->id)
                 ->delete();
+
+            if (Schema::hasTable('survey_drafts')) {
+                SurveyDraft::query()
+                    ->where('user_id', $user->id)
+                    ->delete();
+            }
 
             if (Schema::hasTable('respondent_competitors')) {
                 RespondentCompetitor::query()

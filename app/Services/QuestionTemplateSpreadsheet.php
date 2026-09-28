@@ -26,6 +26,9 @@ class QuestionTemplateSpreadsheet
         $optionSheet = $spreadsheet->createSheet();
         $optionSheet->setTitle('INPUT_OPTIONS');
 
+        $comparisonSheet = $spreadsheet->createSheet();
+        $comparisonSheet->setTitle('INPUT_PEMBANDING');
+
         $masterFormSheet = $spreadsheet->createSheet();
         $masterFormSheet->setTitle('MASTER_FORM');
 
@@ -46,6 +49,8 @@ class QuestionTemplateSpreadsheet
         $this->createOptionSheet(
             $optionSheet
         );
+
+        $this->createComparisonSheet($comparisonSheet);
 
         $this->createMasterFormSheet(
             $masterFormSheet,
@@ -80,6 +85,8 @@ class QuestionTemplateSpreadsheet
             'no',
             'nama_pertanyaan',
             'tipe_pertanyaan',
+            'pembanding_aktif',
+            'pertanyaan_pembanding',
         ];
 
         $sheet->fromArray(
@@ -190,16 +197,34 @@ class QuestionTemplateSpreadsheet
 
             $sheet->getCell('F'.$row)
                 ->setDataValidation($validation);
+
+            $comparisonValidation = new DataValidation;
+            $comparisonValidation->setType(DataValidation::TYPE_LIST);
+            $comparisonValidation->setErrorStyle(DataValidation::STYLE_STOP);
+            $comparisonValidation->setAllowBlank(true);
+            $comparisonValidation->setShowDropDown(true);
+            $comparisonValidation->setShowErrorMessage(true);
+            $comparisonValidation->setShowInputMessage(true);
+            $comparisonValidation->setErrorTitle('Status pembanding tidak valid');
+            $comparisonValidation->setError('Pilih 0 - Tidak atau 1 - Iya.');
+            $comparisonValidation->setPromptTitle('Pembanding Tahun');
+            $comparisonValidation->setPrompt('Pilih 1 - Iya untuk menambahkan pembanding tahun.');
+            $comparisonValidation->setFormula1('"0 - Tidak,1 - Iya"');
+            $sheet->getCell('G'.$row)->setDataValidation($comparisonValidation);
         }
+
+        $sheet->getComment('H1')->getText()->createTextRun(
+            'Wajib diisi jika pembanding_aktif bernilai 1 - Iya.'
+        );
 
         $this->styleHeader(
             $sheet,
-            'A1:F1',
+            'A1:H1',
             '2563EB'
         );
 
         $sheet->freezePane('A2');
-        $sheet->setAutoFilter('A1:F'.$lastRow);
+        $sheet->setAutoFilter('A1:H'.$lastRow);
 
         $sheet->getColumnDimension('A')->setWidth(22);
         $sheet->getColumnDimension('B')->setWidth(42);
@@ -207,6 +232,8 @@ class QuestionTemplateSpreadsheet
         $sheet->getColumnDimension('D')->setWidth(12);
         $sheet->getColumnDimension('E')->setWidth(65);
         $sheet->getColumnDimension('F')->setWidth(55);
+        $sheet->getColumnDimension('G')->setWidth(24);
+        $sheet->getColumnDimension('H')->setWidth(65);
 
         $sheet->getStyle('A2:A'.$lastRow)
             ->getFill()
@@ -214,13 +241,13 @@ class QuestionTemplateSpreadsheet
             ->getStartColor()
             ->setRGB('FEF3C7');
 
-        $sheet->getStyle('C2:F'.$lastRow)
+        $sheet->getStyle('C2:H'.$lastRow)
             ->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()
             ->setRGB('FEFCE8');
 
-        $sheet->getStyle('E2:F'.$lastRow)
+        $sheet->getStyle('E2:H'.$lastRow)
             ->getAlignment()
             ->setWrapText(true);
 
@@ -231,7 +258,7 @@ class QuestionTemplateSpreadsheet
 
         $this->addBorders(
             $sheet,
-            'A1:F'.$lastRow
+            'A1:H'.$lastRow
         );
     }
 
@@ -411,6 +438,44 @@ class QuestionTemplateSpreadsheet
             $sheet,
             'A1:E'.$lastRow
         );
+    }
+
+    private function createComparisonSheet(Worksheet $sheet): void
+    {
+        $sheet->fromArray([
+            'kode_pertanyaan',
+            'urutan',
+            'pilihan_pembanding',
+        ], null, 'A1');
+
+        $lastRow = $this->maximumRows + 1;
+        $sheet->setCellValue('Z1', 'DAFTAR_KODE_PERTANYAAN');
+
+        for ($row = 2; $row <= $lastRow; $row++) {
+            $sheet->setCellValue('Z'.$row, "='INPUT_PERTANYAAN'!A{$row}");
+
+            $validation = new DataValidation;
+            $validation->setType(DataValidation::TYPE_LIST);
+            $validation->setErrorStyle(DataValidation::STYLE_STOP);
+            $validation->setAllowBlank(true);
+            $validation->setShowDropDown(true);
+            $validation->setShowErrorMessage(true);
+            $validation->setErrorTitle('Kode tidak valid');
+            $validation->setError('Pilih kode dari sheet INPUT_PERTANYAAN.');
+            $validation->setFormula1('$Z$2:$Z$'.$lastRow);
+            $sheet->getCell('A'.$row)->setDataValidation($validation);
+        }
+
+        $sheet->getColumnDimension('Z')->setVisible(false);
+        $this->styleHeader($sheet, 'A1:C1', '7C3AED');
+        $sheet->freezePane('A2');
+        $sheet->setAutoFilter('A1:C'.$lastRow);
+        $sheet->getColumnDimension('A')->setWidth(22);
+        $sheet->getColumnDimension('B')->setWidth(12);
+        $sheet->getColumnDimension('C')->setWidth(65);
+        $sheet->getStyle('A2:C'.$lastRow)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FEFCE8');
+        $sheet->getStyle('C2:C'.$lastRow)->getAlignment()->setWrapText(true);
+        $this->addBorders($sheet, 'A1:C'.$lastRow);
     }
 
     private function createMasterFormSheet(
@@ -626,6 +691,14 @@ class QuestionTemplateSpreadsheet
             [
                 14,
                 'File import harus berformat XLSX atau XLS.',
+            ],
+            [
+                15,
+                'Untuk Form Penilaian Pelanggan, pilih 1 - Iya pada pembanding_aktif jika pertanyaan memerlukan pembanding tahun.',
+            ],
+            [
+                16,
+                'Jika pembanding aktif, isi pertanyaan_pembanding lalu masukkan minimal dua pilihan pada sheet INPUT_PEMBANDING, satu pilihan per baris.',
             ],
         ];
 

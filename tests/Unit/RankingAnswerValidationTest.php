@@ -45,6 +45,26 @@ class RankingAnswerValidationTest extends TestCase
         $this->assertArrayHasKey('answers.100.value.5.option_id', $errors);
     }
 
+    public function test_new_ranking_answers_are_normalized_to_legacy_storage_shape(): void
+    {
+        $method = new ReflectionMethod(AnswerController::class, 'rankingPayloadForStorage');
+        $controller = app(AnswerController::class);
+
+        $stored = $method->invoke($controller, [
+            'value' => [
+                1 => ['option_id' => '231', 'child' => null],
+                2 => ['option_id' => '225', 'child' => 'Alasan pilihan kedua'],
+                3 => ['option_id' => '227'],
+            ],
+        ]);
+
+        $this->assertSame([
+            1 => ['value' => '231', 'child' => null],
+            2 => ['value' => '225', 'child' => 'Alasan pilihan kedua'],
+            3 => ['value' => '227', 'child' => null],
+        ], $stored);
+    }
+
     private function rankingContext(int $formTypeId): array
     {
         $form = new Form(['formtype_id' => $formTypeId]);

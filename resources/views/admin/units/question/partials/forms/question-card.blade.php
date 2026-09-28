@@ -33,6 +33,9 @@
         'competitors' => $competitors ?? collect(),
         'assessmentScaleValues' => $assessmentScaleValues,
     ])
+    @if (in_array((int) $form->formtype_id, [2, 3, 15, 16], true))
+        @include('admin.units.question.partials.forms.annual-comparison', compact('question'))
+    @endif
 @else
     <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
         Tampilan pertanyaan untuk tipe form #{{ $form->formtype_id }} belum tersedia.

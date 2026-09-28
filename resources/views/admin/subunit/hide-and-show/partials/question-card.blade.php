@@ -220,6 +220,7 @@
                             'scopeType' => 'Sub Unit',
                             'targetNames' => [$subunit->name],
                             'isActive' => $isActive,
+                            'isDisabled' => $isQuestionToggleDisabled ?? false,
                         ]
                     )
 
@@ -275,6 +276,7 @@
                     'scopeType' => 'Unit',
                     'targetNames' => [$resolvedUnitName],
                     'isActive' => $allAreActive,
+                    'isDisabled' => $isQuestionToggleDisabled ?? false,
                 ]
             )
 

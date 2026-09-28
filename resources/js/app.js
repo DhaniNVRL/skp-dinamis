@@ -4,6 +4,7 @@ import './admin/global/dynamic-table';
 import './admin/global/filter';
 import './admin/global/modal';
 import './admin/global/tab';
+import './admin/global/scroll-restoration';
 import './admin/activities';
 import './admin/complete-profile';
 import './admin/descriptions';

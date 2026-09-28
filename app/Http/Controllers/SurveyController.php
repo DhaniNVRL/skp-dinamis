@@ -9,6 +9,7 @@ use App\Models\RespondentCompetitor;
 use App\Models\SubUnit;
 use App\Models\SubUnitQuestion;
 use App\Models\SurveySession;
+use App\Models\SurveyDraft;
 use App\Models\UserProfile;
 use App\Services\UnitCompetitorVisibilityService;
 use Illuminate\Http\RedirectResponse;
@@ -164,6 +165,13 @@ class SurveyController extends Controller
                     = is_array($value) ? $value : ['value' => $answer->answer];
             });
 
+        $surveyDraft = Schema::hasTable('survey_drafts')
+            ? SurveyDraft::query()
+                ->where('user_id', Auth::id())
+                ->where('form_id', $form->id)
+                ->first()
+            : null;
+
         SurveySession::updateOrCreate(
             ['user_id' => Auth::id()],
             [
@@ -185,6 +193,7 @@ class SurveyController extends Controller
             'competitors' => $competitors,
             'respondentCompetitors' => $respondentCompetitors,
             'answerMap' => $answerMap,
+            'surveyDraftPayload' => $surveyDraft?->payload ?? [],
             'conditionalBranches' => $branching->definitions($form),
             'previousForm' => $visibleCurrentIndex > 0 ? $visibleForms[$visibleCurrentIndex - 1] : null,
             'nextForm' => $visibleCurrentIndex < $visibleForms->count() - 1 ? $visibleForms[$visibleCurrentIndex + 1] : null,
@@ -299,6 +308,12 @@ class SurveyController extends Controller
                 'current_form_id' => null,
             ]);
 
+            if (Schema::hasTable('survey_drafts')) {
+                SurveyDraft::query()
+                    ->where('user_id', Auth::id())
+                    ->delete();
+            }
+
             if ($this->isSurveyor()) {
                 return redirect()
                     ->route('user.dashboard')
@@ -353,7 +368,7 @@ class SurveyController extends Controller
         $forms = Form::query()
             ->where('group_id', $profile->group_id)
             ->with([
-                'questions:id,form_id,no_header,no,questiontype_id',
+                'questions:id,form_id,no_header,no,questiontype_id,comparison_enabled,comparison_prompt,comparison_options',
                 'questions.questiontype:id,name',
                 'questions.options:id,question_id,answer_text',
             ])

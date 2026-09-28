@@ -44,6 +44,12 @@ class UnitFormVisibilityTest extends TestCase
             $table->timestamps();
             $table->unique(['unit_id', 'form_id']);
         });
+        Schema::create('subunit_questions', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('form_id');
+            $table->unsignedBigInteger('question_id');
+            $table->unsignedBigInteger('subunit_id');
+        });
 
         DB::table('groups')->insert(['id' => 1]);
         DB::table('units')->insert(['id' => 10, 'group_id' => 1]);
@@ -59,10 +65,17 @@ class UnitFormVisibilityTest extends TestCase
             'user_id' => 30,
             'unit_id' => 10,
         ]);
+        DB::table('subunit_questions')->insert([
+            'id' => 1,
+            'form_id' => 20,
+            'question_id' => 40,
+            'subunit_id' => 50,
+        ]);
     }
 
     protected function tearDown(): void
     {
+        Schema::dropIfExists('subunit_questions');
         Schema::dropIfExists('unit_form_visibilities');
         Schema::dropIfExists('user_profiles');
         Schema::dropIfExists('forms');
@@ -87,6 +100,11 @@ class UnitFormVisibilityTest extends TestCase
             'unit_id' => 10,
             'form_id' => 20,
             'is_visible' => 0,
+        ]);
+        $this->assertDatabaseHas('subunit_questions', [
+            'form_id' => 20,
+            'question_id' => 40,
+            'subunit_id' => 50,
         ]);
 
         $form = Form::query()->findOrFail(20);
@@ -114,5 +132,27 @@ class UnitFormVisibilityTest extends TestCase
 
         $response = app(UnitFormVisibilityController::class)->toggle($request);
         $this->assertTrue($response->getData(true)['is_visible']);
+    }
+
+    public function test_question_toggle_is_disabled_without_changing_its_saved_state(): void
+    {
+        $html = view('admin.subunit.hide-and-show.partials.toggle-button', [
+            'formId' => 20,
+            'questionId' => 40,
+            'subunitIds' => [50],
+            'scopeType' => 'Sub Unit',
+            'targetNames' => ['Unit Uji'],
+            'isActive' => true,
+            'isDisabled' => true,
+        ])->render();
+
+        $this->assertStringContainsString('disabled', $html);
+        $this->assertStringContainsString('aria-disabled="true"', $html);
+        $this->assertStringContainsString('data-active="1"', $html);
+        $this->assertDatabaseHas('subunit_questions', [
+            'form_id' => 20,
+            'question_id' => 40,
+            'subunit_id' => 50,
+        ]);
     }
 }

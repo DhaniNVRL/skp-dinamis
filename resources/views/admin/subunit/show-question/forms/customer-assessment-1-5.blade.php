@@ -344,6 +344,7 @@
                     {{ $question->name }}
                 </div>
             @endif
+            @include('admin.subunit.show-question.forms.partials.optional-annual-comparison', compact('question', 'scopeId'))
         @endforeach
     @empty
         @include(

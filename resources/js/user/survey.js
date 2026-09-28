@@ -20,8 +20,180 @@
             initializeServerValidation(form);
             initializeRankingAssessment(page);
             initializeSurveyorAutofill(form);
+            initializeSurveyDraft(form);
         }
     );
+
+    function initializeSurveyDraft(form) {
+        const endpoint = form.dataset.draftUrl;
+        const status = document.getElementById("surveyDraftStatus");
+        const payloadElement = document.getElementById("surveyDraftPayload");
+
+        if (!endpoint || !status || !payloadElement) return;
+
+        let restored = false;
+        let dirty = false;
+        let saving = false;
+        let inputTimer = null;
+        let retryTimer = null;
+        let sequence = 0;
+        let submitting = false;
+        const csrfToken = form.querySelector('input[name="_token"]')?.value || "";
+
+        const fields = () => Array.from(new FormData(form).entries())
+            .filter(([name]) => /^(answers|respondent_competitors)\[/.test(name))
+            .map(([name, value]) => ({
+                name,
+                value: typeof value === "string" ? value : value.name,
+            }));
+
+        const setStatus = (state, message) => {
+            const styles = {
+                saving: ["fa-spinner fa-spin", "border-blue-200 text-blue-700"],
+                saved: ["fa-circle-check", "border-emerald-200 text-emerald-700"],
+                offline: ["fa-cloud-arrow-up", "border-amber-200 text-amber-700"],
+                error: ["fa-circle-exclamation", "border-red-200 text-red-700"],
+            };
+            const [icon, classes] = styles[state];
+            status.className = `fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-lg border bg-white px-4 py-2.5 text-sm font-medium shadow-lg ${classes}`;
+            status.replaceChildren();
+            const iconElement = document.createElement("i");
+            iconElement.className = `fa-solid ${icon}`;
+            const textElement = document.createElement("span");
+            textElement.textContent = message;
+            status.append(iconElement, textElement);
+        };
+
+        const save = async () => {
+            if (!dirty || saving) return;
+
+            dirty = false;
+            saving = true;
+            const currentSequence = ++sequence;
+            setStatus("saving", "Menyimpan jawaban...");
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({ fields: fields() }),
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                if (currentSequence === sequence) {
+                    setStatus("saved", "Jawaban tersimpan");
+                    window.setTimeout(() => status.classList.add("hidden"), 1800);
+                }
+            } catch (_) {
+                dirty = true;
+                setStatus(
+                    navigator.onLine ? "error" : "offline",
+                    navigator.onLine
+                        ? "Jawaban belum tersimpan. Mencoba kembali..."
+                        : "Menunggu koneksi untuk menyimpan..."
+                );
+                window.clearTimeout(retryTimer);
+                retryTimer = window.setTimeout(save, 3000);
+            } finally {
+                saving = false;
+                if (dirty && navigator.onLine) {
+                    window.clearTimeout(retryTimer);
+                    retryTimer = window.setTimeout(save, 500);
+                }
+            }
+        };
+
+        const queueSave = (delay = 0) => {
+            if (!restored) return;
+            dirty = true;
+            window.clearTimeout(inputTimer);
+            inputTimer = window.setTimeout(save, delay);
+        };
+
+        const restore = () => {
+            if (form.dataset.hasValidationErrors === "1") {
+                restored = true;
+                queueSave(0);
+                return;
+            }
+
+            let savedFields = [];
+            try {
+                savedFields = JSON.parse(payloadElement.textContent || "[]");
+            } catch (_) {
+                savedFields = [];
+            }
+
+            const grouped = new Map();
+            savedFields.forEach(({ name, value }) => {
+                if (!grouped.has(name)) grouped.set(name, []);
+                grouped.get(name).push(String(value ?? ""));
+            });
+
+            form.querySelectorAll("[name]").forEach((control) => {
+                if (!grouped.has(control.name)) return;
+                const values = grouped.get(control.name);
+
+                if (control.type === "radio" || control.type === "checkbox") {
+                    control.checked = values.includes(String(control.value));
+                } else if (control.tagName === "SELECT" && control.multiple) {
+                    Array.from(control.options).forEach((option) => {
+                        option.selected = values.includes(String(option.value));
+                    });
+                } else {
+                    control.value = values[values.length - 1];
+                }
+            });
+
+            form.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked, select')
+                .forEach((control) => control.dispatchEvent(new Event("change", { bubbles: true })));
+
+            restored = true;
+        };
+
+        form.addEventListener("change", (event) => {
+            if (!event.target.matches("input, select, textarea")) return;
+            queueSave(0);
+        });
+
+        form.addEventListener("input", (event) => {
+            if (!event.target.matches('input:not([type="radio"]):not([type="checkbox"]), textarea')) return;
+            queueSave(800);
+        });
+
+        form.addEventListener("submit", () => {
+            submitting = true;
+            dirty = false;
+            window.clearTimeout(inputTimer);
+        });
+
+        window.addEventListener("online", () => {
+            if (dirty) save();
+        });
+
+        window.addEventListener("beforeunload", () => {
+            if (submitting || (!dirty && !saving)) return;
+            fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": csrfToken,
+                },
+                credentials: "same-origin",
+                keepalive: true,
+                body: JSON.stringify({ fields: fields() }),
+            });
+        });
+
+        window.setTimeout(restore, 0);
+    }
 
 
     /*

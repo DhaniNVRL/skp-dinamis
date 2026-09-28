@@ -10,6 +10,7 @@ use App\Models\RespondentCompetitor;
 use App\Models\SubUnit;
 use App\Models\SubUnitQuestion;
 use App\Models\SurveySession;
+use App\Models\SurveyDraft;
 use App\Models\UserProfile;
 use App\Services\UnitCompetitorVisibilityService;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class AnswerController extends Controller
@@ -460,6 +462,19 @@ class AnswerController extends Controller
                         continue;
                     }
 
+                    if (
+                        in_array(
+                            (int) $form->formtype_id,
+                            [6, 7],
+                            true
+                        )
+                    ) {
+                        $questionPayload =
+                            $this->rankingPayloadForStorage(
+                                (array) $questionPayload
+                            );
+                    }
+
                     $this->saveAnswer(
                         $form,
                         $question->id,
@@ -474,6 +489,32 @@ class AnswerController extends Controller
         return $this->goToNextForm(
             $form
         );
+    }
+
+    private function rankingPayloadForStorage(array $payload): array
+    {
+        return collect(
+            (array) Arr::get(
+                $payload,
+                'value',
+                []
+            )
+        )
+            ->mapWithKeys(function ($ranking, $rank): array {
+                $ranking = (array) $ranking;
+
+                return [
+                    (string) $rank => [
+                        'value' => Arr::get(
+                            $ranking,
+                            'option_id',
+                            Arr::get($ranking, 'value')
+                        ),
+                        'child' => Arr::get($ranking, 'child'),
+                    ],
+                ];
+            })
+            ->all();
     }
 
 
@@ -1113,6 +1154,18 @@ class AnswerController extends Controller
         $questionTypeId =
             (int) $question
                 ->questiontype_id;
+
+        if ($question->comparison_enabled) {
+            $comparison = Arr::get($payload, 'comparison');
+            $validComparisons = collect($question->comparison_options ?? [])
+                ->map(fn ($option) => (string) $option)
+                ->all();
+
+            if (!filled($comparison) || !in_array((string) $comparison, $validComparisons, true)) {
+                $errors["answers.{$question->id}.{$subunitId}.comparison"] =
+                    "Jawaban pembanding tahun {$question->name} wajib dipilih.";
+            }
+        }
 
         if (
             in_array(
@@ -1945,6 +1998,13 @@ class AnswerController extends Controller
     private function goToNextForm(
         Form $form
     ): RedirectResponse {
+        if (Schema::hasTable('survey_drafts')) {
+            SurveyDraft::query()
+                ->where('user_id', Auth::id())
+                ->where('form_id', $form->id)
+                ->delete();
+        }
+
         $nextForm =
             app(
                 \App\Services\SurveyBranchingService::class

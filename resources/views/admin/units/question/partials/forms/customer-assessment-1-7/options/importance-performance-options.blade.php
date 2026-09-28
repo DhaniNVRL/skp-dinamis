@@ -1,5 +1,6 @@
 @php
     $questionOptions = $question->options ?? collect();
+    $isAnnualComparison = $isAnnualComparison ?? false;
 @endphp
 
 <div
@@ -24,7 +25,9 @@
                 </h4>
 
                 <p class="mt-1 text-xs text-gray-500">
-                    Penilaian Kepentingan & Kinerja dengan pilihan alasan
+                    {{ $isAnnualComparison
+                        ? 'Penilaian Kepentingan & Kinerja dengan pembanding tahun'
+                        : 'Penilaian Kepentingan & Kinerja dengan pilihan alasan' }}
                 </p>
             </div>
         </div>
@@ -90,11 +93,13 @@
 
                 <div>
                     <h5 class="text-sm font-semibold text-gray-800">
-                        Pilihan Alasan
+                        {{ $isAnnualComparison ? 'Pilihan Pembanding Tahun' : 'Pilihan Alasan' }}
                     </h5>
 
                     <p class="mt-1 text-xs text-gray-500">
-                        Pilihan yang dapat dipilih sebagai alasan penilaian.
+                        {{ $isAnnualComparison
+                            ? 'Pilihan radio untuk membandingkan kondisi tahun ini dengan tahun sebelumnya.'
+                            : 'Pilihan yang dapat dipilih sebagai alasan penilaian.' }}
                     </p>
                 </div>
 
@@ -111,7 +116,7 @@
                         text-white transition hover:bg-indigo-700"
                 >
                     <i class="fa-solid fa-plus"></i>
-                    Tambah Pilihan Alasan
+                    {{ $isAnnualComparison ? 'Tambah Pilihan Pembanding' : 'Tambah Pilihan Alasan' }}
                 </button>
 
             </div>
@@ -142,7 +147,7 @@
                             <div class="flex min-w-0 flex-1 items-start gap-3">
 
                                 <input
-                                    type="checkbox"
+                                    type="{{ $isAnnualComparison ? 'radio' : 'checkbox' }}"
                                     disabled
                                     autocomplete="off"
                                     class="mt-1 rounded border-gray-300
@@ -237,11 +242,11 @@
 
                     <div class="rounded-lg border border-dashed border-gray-300 bg-white p-5 text-center">
                         <p class="text-sm font-medium text-gray-600">
-                            Belum ada pilihan alasan
+                            {{ $isAnnualComparison ? 'Belum ada pilihan pembanding' : 'Belum ada pilihan alasan' }}
                         </p>
 
                         <p class="mt-1 text-xs text-gray-500">
-                            Tekan tombol Tambah Pilihan Alasan untuk memasukkan option.
+                            Tekan tombol tambah untuk memasukkan pilihan yang dapat dipilih responden.
                         </p>
                     </div>
 

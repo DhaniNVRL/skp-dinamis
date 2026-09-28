@@ -42,13 +42,19 @@
                 );
 
                 $storedRankings = old(
-                    "answers.{$question->id}.value",
-                    data_get(
-                        $storedAnswer,
-                        'value',
-                        []
-                    )
+                    "answers.{$question->id}.value"
                 );
+
+                if (is_null($storedRankings)) {
+                    $storedRankings = data_get(
+                        $storedAnswer,
+                        'value'
+                    );
+
+                    if (!is_array($storedRankings)) {
+                        $storedRankings = $storedAnswer;
+                    }
+                }
             @endphp
 
 
@@ -185,7 +191,11 @@
                                     */
                                     $selectedOptionId = data_get(
                                         $storedRankings,
-                                        "{$rank}.option_id"
+                                        "{$rank}.option_id",
+                                        data_get(
+                                            $storedRankings,
+                                            "{$rank}.value"
+                                        )
                                     );
 
                                     $selectedChild = data_get(

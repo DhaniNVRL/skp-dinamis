@@ -14,6 +14,14 @@ class Question extends Model
         'no',
         'name',
         'questiontype_id',
+        'comparison_enabled',
+        'comparison_prompt',
+        'comparison_options',
+    ];
+
+    protected $casts = [
+        'comparison_enabled' => 'boolean',
+        'comparison_options' => 'array',
     ];
 
     /**

@@ -424,6 +424,9 @@ Route::delete('/groups/{group}/branch-rules/{rule}', [SurveyBranchRuleController
                 Route::put('/question/{id}', 'update')
                     ->name('question.update');
 
+                Route::put('/question/{id}/comparison', 'updateComparison')
+                    ->name('question.comparison.update');
+
                 Route::delete('/question/{id}', 'destroy')
                     ->name('question.destroy');
         });
@@ -577,6 +580,11 @@ Route::delete('/groups/{group}/branch-rules/{rule}', [SurveyBranchRuleController
                 [AnswerController::class, 'store']
             )->name('survey.save');
 
+            Route::post(
+                '/survey/form/{form}/draft',
+                [\App\Http\Controllers\SurveyDraftController::class, 'store']
+            )->name('survey.draft.store');
+
             Route::put(
                 '/survey/form/{form}',
                 [AnswerController::class, 'update']
@@ -611,5 +619,3 @@ Route::get('/', function () {
         default => abort(403, 'Role tidak dikenali.'),
     };
 });
-
-

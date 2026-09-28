@@ -301,6 +301,32 @@ document.addEventListener("DOMContentLoaded", function () {
         true
     );
 
+    document.addEventListener("change", function (event) {
+        const toggle = event.target.closest("[data-comparison-toggle]");
+        if (!toggle) return;
+
+        const fields = toggle.closest("[data-comparison-config]")
+            ?.querySelector("[data-comparison-fields]");
+        fields?.classList.toggle("hidden", !toggle.checked);
+
+        if (toggle.checked) {
+            const config = toggle.closest("[data-comparison-config]");
+            const prompt = config?.querySelector('[data-question-field="comparison_prompt"]');
+            const options = config?.querySelector('[data-question-field="comparison_options"]');
+
+            if (prompt && !prompt.value.trim()) {
+                prompt.value = "Bagaimana Bapak/Ibu menilai kondisi tahun ini dengan tahun lalu?";
+            }
+            if (options && !options.value.trim()) {
+                options.value = [
+                    "Lebih baik tahun 2025",
+                    "Tahun ini lebih baik daripada 2025",
+                    "Sama saja",
+                ].join("\n");
+            }
+        }
+    });
+
     /*
     |--------------------------------------------------------------------------
     | Isi Create Question Modal
@@ -561,6 +587,12 @@ document.addEventListener("DOMContentLoaded", function () {
         "edit_question_type_warning"
     );
 
+    const comparisonConfig = document.getElementById("edit_comparison_config");
+    const comparisonEnabled = document.getElementById("edit_comparison_enabled");
+    const comparisonFields = document.getElementById("edit_comparison_fields");
+    const comparisonPrompt = document.getElementById("edit_comparison_prompt");
+    const comparisonOptions = document.getElementById("edit_comparison_options");
+
     /*
     |--------------------------------------------------------------------------
     | Ambil template berdasarkan jenis form
@@ -815,11 +847,36 @@ document.addEventListener("DOMContentLoaded", function () {
                 editQuestionTrigger.dataset.questionTypeId
             );
 
+            const supportsComparison = [2, 3, 15, 16].includes(Number(formTypeInput.value));
+            comparisonConfig?.classList.remove("hidden");
+
+            if (comparisonEnabled) {
+                comparisonEnabled.checked =
+                    supportsComparison && editQuestionTrigger.dataset.comparisonEnabled === "1";
+            }
+            comparisonFields?.classList.toggle("hidden", !comparisonEnabled?.checked);
+            if (comparisonPrompt) {
+                comparisonPrompt.value = editQuestionTrigger.dataset.comparisonPrompt || "";
+            }
+            if (comparisonOptions) {
+                try {
+                    comparisonOptions.value = JSON.parse(
+                        editQuestionTrigger.dataset.comparisonOptions || "[]"
+                    ).join("\n");
+                } catch (_) {
+                    comparisonOptions.value = "";
+                }
+            }
+
             if (typeWarning) {
                 typeWarning.classList.add("hidden");
             }
         }
     );
+
+    comparisonEnabled?.addEventListener("change", function () {
+        comparisonFields?.classList.toggle("hidden", !comparisonEnabled.checked);
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -1686,4 +1743,120 @@ document.addEventListener("submit", function (event) {
         <i class="fa-solid fa-spinner fa-spin"></i>
         Memproses Import...
     `;
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("comparisonModal");
+    const form = document.getElementById("comparisonForm");
+    const enabled = document.getElementById("comparison_enabled");
+    const fields = document.getElementById("comparisonFields");
+    const prompt = document.getElementById("comparison_prompt");
+    const options = document.getElementById("comparison_options");
+    const optionRows = document.getElementById("comparisonOptionRows");
+    const optionTemplate = document.getElementById("comparisonOptionRowTemplate");
+    const addOptionButton = document.getElementById("addComparisonOption");
+    let trigger = null;
+
+    if (!modal || !form || !enabled || !fields || !prompt || !options ||
+        !optionRows || !optionTemplate || !addOptionButton) return;
+
+    const optionInputs = () => Array.from(
+        optionRows.querySelectorAll("[data-comparison-option-input]")
+    );
+
+    const syncOptionsValue = () => {
+        options.value = optionInputs()
+            .map((input) => input.value.trim())
+            .filter(Boolean)
+            .join("\n");
+    };
+
+    const refreshOptionRows = () => {
+        const rows = Array.from(optionRows.querySelectorAll("[data-comparison-option-row]"));
+        rows.forEach((row, index) => {
+            const label = row.querySelector("[data-comparison-option-label]");
+            const removeButton = row.querySelector("[data-remove-comparison-option]");
+            if (label) label.textContent = `Pilihan Radio ${index + 1}`;
+            if (removeButton) {
+                removeButton.disabled = rows.length <= 2 || !enabled.checked;
+                removeButton.classList.toggle("cursor-not-allowed", removeButton.disabled);
+                removeButton.classList.toggle("opacity-50", removeButton.disabled);
+            }
+        });
+        syncOptionsValue();
+    };
+
+    const addOptionRow = (value = "", focus = false) => {
+        const fragment = optionTemplate.content.cloneNode(true);
+        const input = fragment.querySelector("[data-comparison-option-input]");
+        input.value = value;
+        optionRows.appendChild(fragment);
+        refreshOptionRows();
+        if (focus) optionRows.lastElementChild?.querySelector("input")?.focus();
+    };
+
+    const renderOptionRows = (values) => {
+        optionRows.replaceChildren();
+        const choices = Array.isArray(values) && values.length
+            ? values
+            : [
+                "Lebih baik tahun 2025",
+                "Tahun ini lebih baik daripada 2025",
+                "Sama saja",
+            ];
+        choices.forEach((value) => addOptionRow(String(value)));
+        while (optionInputs().length < 2) addOptionRow();
+        refreshOptionRows();
+    };
+
+    const syncFields = () => {
+        fields.classList.toggle("hidden", !enabled.checked);
+        prompt.disabled = !enabled.checked;
+        options.disabled = !enabled.checked;
+        addOptionButton.disabled = !enabled.checked;
+        optionInputs().forEach((input) => {
+            input.disabled = !enabled.checked;
+            input.required = enabled.checked;
+        });
+        refreshOptionRows();
+    };
+
+    document.addEventListener("click", function (event) {
+        const button = event.target.closest('[data-modal-open="comparisonModal"]');
+        if (button) trigger = button;
+    }, true);
+
+    document.addEventListener("modal:opened", function (event) {
+        if (event.detail?.id !== "comparisonModal" || !trigger) return;
+
+        form.action = trigger.dataset.action || "";
+        enabled.checked = trigger.dataset.enabled === "1";
+        prompt.value = trigger.dataset.prompt ||
+            "Bagaimana Bapak/Ibu menilai kondisi tahun ini dengan tahun lalu?";
+
+        try {
+            const stored = JSON.parse(trigger.dataset.options || "[]");
+            renderOptionRows(stored);
+        } catch (_) {
+            renderOptionRows([]);
+        }
+
+        syncFields();
+    });
+
+    addOptionButton.addEventListener("click", function () {
+        addOptionRow("", true);
+        syncFields();
+    });
+
+    optionRows.addEventListener("input", syncOptionsValue);
+    optionRows.addEventListener("click", function (event) {
+        const removeButton = event.target.closest("[data-remove-comparison-option]");
+        if (!removeButton || removeButton.disabled) return;
+        removeButton.closest("[data-comparison-option-row]")?.remove();
+        refreshOptionRows();
+    });
+
+    form.addEventListener("submit", syncOptionsValue);
+    enabled.addEventListener("change", syncFields);
 });

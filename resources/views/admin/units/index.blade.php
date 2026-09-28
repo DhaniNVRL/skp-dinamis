@@ -161,6 +161,7 @@
 {{-- ========================= --}}
 @include('admin.units.question.modals.create-question')
 @include('admin.units.question.modals.edit-question')
+@include('admin.units.question.modals.comparison')
 @include('admin.units.question.modals.delete-question')
 
 {{-- ========================= --}}

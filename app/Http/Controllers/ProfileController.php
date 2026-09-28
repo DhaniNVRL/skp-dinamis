@@ -8,6 +8,7 @@ use App\Models\CompleteProfile;
 use App\Models\Group;
 use App\Models\RespondentCompetitor;
 use App\Models\SurveySession;
+use App\Models\SurveyDraft;
 use App\Models\Unit;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
@@ -326,6 +327,9 @@ class ProfileController extends Controller
 
             if ($canEditProfile && $selectionChanged) {
                 Answer::where('user_id', auth()->id())->delete();
+                if (Schema::hasTable('survey_drafts')) {
+                    SurveyDraft::where('user_id', auth()->id())->delete();
+                }
                 if (Schema::hasTable('respondent_competitors')) {
                     RespondentCompetitor::where('user_id', auth()->id())->delete();
                 }
@@ -502,6 +506,12 @@ class ProfileController extends Controller
             Answer::query()
                 ->where('user_id', $userId)
                 ->delete();
+
+            if (Schema::hasTable('survey_drafts')) {
+                SurveyDraft::query()
+                    ->where('user_id', $userId)
+                    ->delete();
+            }
 
             if (Schema::hasTable('respondent_competitors')) {
                 RespondentCompetitor::query()

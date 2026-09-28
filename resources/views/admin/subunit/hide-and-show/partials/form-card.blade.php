@@ -250,6 +250,9 @@
                     'isPerSubUnit' =>
                         $isPerSubUnit,
 
+                    'isQuestionToggleDisabled' =>
+                        ! $isFormVisible,
+
                     'questionIteration' =>
                         $loop->iteration,
 

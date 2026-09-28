@@ -8,8 +8,11 @@
     data-target-names="{{ collect($targetNames)->filter()->implode(', ') }}"
     data-active="{{ $isActive ? '1' : '0' }}"
     aria-pressed="{{ $isActive ? 'true' : 'false' }}"
+    aria-disabled="{{ !empty($isDisabled) ? 'true' : 'false' }}"
+    @disabled(!empty($isDisabled))
     class="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition
-        {{ $isActive ? 'bg-green-500' : 'bg-gray-300' }}"
+        {{ $isActive ? 'bg-green-500' : 'bg-gray-300' }}
+        {{ !empty($isDisabled) ? 'cursor-not-allowed opacity-50' : '' }}"
 >
     <span
         data-toggle-knob

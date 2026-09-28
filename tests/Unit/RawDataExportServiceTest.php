@@ -59,4 +59,71 @@ class RawDataExportServiceTest extends TestCase
             $method->invoke($service, $payload, 'reason', $question)
         );
     }
+
+    public function test_current_ranking_payload_exports_option_text_and_child_reason(): void
+    {
+        $method = new ReflectionMethod(RawDataExportService::class, 'answerField');
+        $service = new RawDataExportService();
+        $question = new Question();
+        $option = new Option([
+            'answer_text' => 'Ketersediaan dan kelengkapan teknologi',
+            'has_child' => 1,
+        ]);
+        $option->id = 231;
+        $question->setRelation('options', collect([$option]));
+
+        $payload = [
+            'value' => [
+                1 => [
+                    'option_id' => '231',
+                    'child' => 'Alasan ranking pertama',
+                ],
+            ],
+        ];
+
+        $this->assertSame(
+            'Ketersediaan dan kelengkapan teknologi',
+            $method->invoke($service, $payload, 'ranking_value', $question, 1)
+        );
+        $this->assertSame(
+            'Alasan ranking pertama',
+            $method->invoke($service, $payload, 'ranking_child', $question, 1)
+        );
+    }
+
+    public function test_legacy_ranking_value_payload_remains_supported(): void
+    {
+        $method = new ReflectionMethod(RawDataExportService::class, 'answerField');
+        $service = new RawDataExportService();
+        $question = new Question();
+        $option = new Option(['answer_text' => 'Kemudahan informasi']);
+        $option->id = 225;
+        $question->setRelation('options', collect([$option]));
+
+        $payload = [1 => ['value' => 225]];
+
+        $this->assertSame(
+            'Kemudahan informasi',
+            $method->invoke($service, $payload, 'ranking_value', $question, 1)
+        );
+    }
+
+    public function test_double_encoded_legacy_ranking_payload_remains_supported(): void
+    {
+        $method = new ReflectionMethod(RawDataExportService::class, 'answerField');
+        $service = new RawDataExportService();
+        $question = new Question();
+        $option = new Option(['answer_text' => 'Ketersediaan teknologi']);
+        $option->id = 231;
+        $question->setRelation('options', collect([$option]));
+
+        $payload = json_encode(json_encode([
+            1 => ['value' => '231', 'child' => null],
+        ]));
+
+        $this->assertSame(
+            'Ketersediaan teknologi',
+            $method->invoke($service, $payload, 'ranking_value', $question, 1)
+        );
+    }
 }
