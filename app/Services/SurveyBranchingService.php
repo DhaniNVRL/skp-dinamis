@@ -16,12 +16,9 @@ class SurveyBranchingService
     ) {
     }
 
-    /**
-     * Percabangan otomatis untuk Kuesioner Umum.
-     *
-     * Pertanyaan bernomor 1 dengan opsi Ya/Tidak menjadi pemicu ketika
-     * pada form yang sama terdapat nomor 1a, 1b, 1c, dan seterusnya.
-     */
+    // Percabangan otomatis untuk Kuesioner Umum.
+    // Pertanyaan bernomor 1 dengan opsi Ya/Tidak menjadi pemicu ketika
+    // pada form yang sama terdapat nomor 1a, 1b, 1c, dan seterusnya.
     public function definitions(Form $form): Collection
     {
         if ((int) $form->formtype_id !== 1) {

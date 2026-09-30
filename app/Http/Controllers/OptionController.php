@@ -11,12 +11,10 @@ use Illuminate\Validation\ValidationException;
 
 class OptionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Display a listing of the resource.
     public function index()
     {
-        //
+
     }
 
     public function masterdata(){
@@ -24,17 +22,13 @@ class OptionController extends Controller
         return view('/admin/masterdata/option', compact('option'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    // Show the form for creating a new resource.
     public function create()
     {
-        //
+
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Store a newly created resource in storage.
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -146,18 +140,14 @@ class OptionController extends Controller
             );
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // Display the specified resource.
     public function show(Option $option)
     {
-        //
+
     }
 
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // Update the specified resource in storage.
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -222,9 +212,7 @@ class OptionController extends Controller
             );
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Remove the specified resource from storage.
     public function destroy($id)
     {
         $option = Option::with('question.form')

@@ -107,11 +107,7 @@ class QuestionTemplateSpreadsheet
 
         $lastRow = $this->maximumRows + 1;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Form muncul hanya saat nama pertanyaan diisi
-        |--------------------------------------------------------------------------
-        */
+        // Form muncul hanya saat nama pertanyaan diisi
         for ($row = 2; $row <= $lastRow; $row++) {
             $sheet->setCellValue(
                 'B'.$row,
@@ -123,11 +119,7 @@ class QuestionTemplateSpreadsheet
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Daftar tipe pertanyaan pada kolom tersembunyi
-        |--------------------------------------------------------------------------
-        */
+        // Daftar tipe pertanyaan pada kolom tersembunyi
         $sheet->setCellValue(
             'Z1',
             'DAFTAR_TIPE_PERTANYAAN'
@@ -154,11 +146,7 @@ class QuestionTemplateSpreadsheet
         $sheet->getColumnDimension('Z')
             ->setVisible(false);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Dropdown tipe pertanyaan
-        |--------------------------------------------------------------------------
-        */
+        // Dropdown tipe pertanyaan
         for ($row = 2; $row <= $lastRow; $row++) {
             $validation = new DataValidation;
 
@@ -279,11 +267,7 @@ class QuestionTemplateSpreadsheet
             'A1'
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Penjelasan pada header has_child
-        |--------------------------------------------------------------------------
-        */
+        // Penjelasan pada header has_child
         $sheet->getComment('D1')
             ->getText()
             ->createTextRun(
@@ -300,11 +284,7 @@ class QuestionTemplateSpreadsheet
 
         $lastRow = $this->maximumRows + 1;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Mengambil kode dari INPUT_PERTANYAAN
-        |--------------------------------------------------------------------------
-        */
+        // Mengambil kode dari INPUT_PERTANYAAN
         $sheet->setCellValue(
             'Z1',
             'DAFTAR_KODE_PERTANYAAN'
@@ -320,11 +300,7 @@ class QuestionTemplateSpreadsheet
         $sheet->getColumnDimension('Z')
             ->setVisible(false);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Dropdown kode pertanyaan dan has_child
-        |--------------------------------------------------------------------------
-        */
+        // Dropdown kode pertanyaan dan has_child
         for ($row = 2; $row <= $lastRow; $row++) {
             $codeValidation = new DataValidation;
 
@@ -364,11 +340,7 @@ class QuestionTemplateSpreadsheet
             $sheet->getCell('A'.$row)
                 ->setDataValidation($codeValidation);
 
-            /*
-            |--------------------------------------------------------------------------
-            | Dropdown has_child
-            |--------------------------------------------------------------------------
-            */
+            // Dropdown has_child
             $childValidation = new DataValidation;
 
             $childValidation->setType(

@@ -96,9 +96,7 @@ class UnitController extends Controller
             ->with('success', 'Unit berhasil ditambahkan.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // Update the specified resource in storage.
     public function update(Request $request, $id)
     {
         $unit = Unit::findOrFail($id);
@@ -120,9 +118,7 @@ class UnitController extends Controller
             ->with('success', 'Unit berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Remove the specified resource from storage.
     public function destroy($id)
     {
         $unit = Unit::findOrFail($id);

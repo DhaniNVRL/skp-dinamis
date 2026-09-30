@@ -82,7 +82,7 @@
     $sortedQuestions = collect(
         $form->questions ?? []
     )
-        ->sort(function ($first, $second) {
+        ->sort(function ($first, $second) use ($formTypeId) {
 
             /*
             |--------------------------------------------------------------------------
@@ -112,6 +112,18 @@
 
             if ($headerComparison !== 0) {
                 return $headerComparison;
+            }
+
+            $priorityComparison = \App\Models\Question::displayTypePriority(
+                $formTypeId,
+                (int) ($first->questiontype_id ?? $first->id_questiontypes ?? 0)
+            ) <=> \App\Models\Question::displayTypePriority(
+                $formTypeId,
+                (int) ($second->questiontype_id ?? $second->id_questiontypes ?? 0)
+            );
+
+            if ($priorityComparison !== 0) {
+                return $priorityComparison;
             }
 
             /*

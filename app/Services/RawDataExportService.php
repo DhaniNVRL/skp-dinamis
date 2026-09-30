@@ -204,6 +204,17 @@ class RawDataExportService
                 }
 
                 if (in_array($type, [11, 13], true)) {
+                    if ((int) $question->questiontype_id === 3) {
+                        $descriptors[] = [
+                            'header' => $code.'_NAMA_KOMPETITOR',
+                            'type' => 'global',
+                            'question' => $question,
+                            'field' => 'value',
+                        ];
+
+                        continue;
+                    }
+
                     foreach ($form->competitors as $competitor) {
                         $descriptors[] = [
                             'header' => $code.'_'.str($competitor->name)->upper()->toString(),

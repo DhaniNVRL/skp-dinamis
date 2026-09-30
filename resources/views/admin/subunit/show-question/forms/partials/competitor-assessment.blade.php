@@ -27,6 +27,16 @@
                     ) === 2;
                 })
                 ->sortBy('no');
+
+            $competitorNameQuestions = $group
+                ->filter(function ($question) {
+                    return (int) (
+                        $question->questiontype_id
+                        ?? $question->id_questiontypes
+                        ?? 0
+                    ) === 3;
+                })
+                ->sortBy('no');
         @endphp
 
         @foreach ($assessmentQuestions as $question)
@@ -78,6 +88,32 @@
                             Belum ada kompetitor.
                         </div>
                     @endforelse
+                </div>
+            </section>
+        @endforeach
+
+        @foreach ($competitorNameQuestions as $question)
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <header class="border-b border-gray-200 bg-gray-50 px-5 py-4">
+                    <div class="flex items-start gap-3">
+                        @include(
+                            'admin.subunit.show-question.forms.partials.question-number',
+                            compact('question')
+                        )
+
+                        <div>
+                            <h3 class="font-semibold leading-6 text-gray-800">{{ $question->name }}</h3>
+                            <p class="mt-1 text-xs text-gray-500">Isian nama kompetitor</p>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="p-5">
+                    <textarea
+                        rows="3"
+                        placeholder="Sebutkan nama kompetitor..."
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm"
+                    ></textarea>
                 </div>
             </section>
         @endforeach

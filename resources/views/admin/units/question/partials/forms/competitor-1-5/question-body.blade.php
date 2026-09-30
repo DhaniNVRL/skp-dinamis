@@ -29,6 +29,13 @@
         )
         @break
 
+    @case(3)
+        @include(
+            'admin.units.question.partials.forms.competitor-textarea',
+            compact('question', 'form')
+        )
+        @break
+
     @default
         <div class="rounded-lg border border-dashed border-red-300 bg-red-50 p-4">
             <p class="text-sm font-medium text-red-700">

@@ -36,11 +36,7 @@ class DataUserController extends Controller
 
     public function index(Request $request)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Query User Profile
-        |--------------------------------------------------------------------------
-        */
+        // Query User Profile
 
         $query = UserProfile::query()
             ->whereHas('user')
@@ -53,11 +49,7 @@ class DataUserController extends Controller
                 'unit',
             ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Filter Pencarian
-        |--------------------------------------------------------------------------
-        */
+        // Filter Pencarian
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -75,11 +67,7 @@ class DataUserController extends Controller
             });
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Filter Role
-        |--------------------------------------------------------------------------
-        */
+        // Filter Role
 
         if ($request->filled('role')) {
             $query->whereHas('user.role', function ($role) use ($request) {
@@ -87,11 +75,7 @@ class DataUserController extends Controller
             });
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Filter Activity
-        |--------------------------------------------------------------------------
-        */
+        // Filter Activity
 
         if ($request->filled('activity')) {
             $query->where(
@@ -100,11 +84,7 @@ class DataUserController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Filter Group
-        |--------------------------------------------------------------------------
-        */
+        // Filter Group
 
         if ($request->filled('group')) {
             $query->where(
@@ -113,11 +93,7 @@ class DataUserController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Filter Unit
-        |--------------------------------------------------------------------------
-        */
+        // Filter Unit
 
         if ($request->filled('unit')) {
             $query->where(
@@ -126,20 +102,13 @@ class DataUserController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Sorting ID User dan Username
-        |--------------------------------------------------------------------------
-        |
-        | sort_by:
-        | - id
-        | - username
-        |
-        | sort_direction:
-        | - asc  = terkecil ke terbesar / A-Z
-        | - desc = terbesar ke terkecil / Z-A
-        |
-        */
+        // Sorting ID User dan Username
+        // sort_by:
+        // - id
+        // - username
+        // sort_direction:
+        // - asc  = terkecil ke terbesar / A-Z
+        // - desc = terbesar ke terkecil / Z-A
 
         $sortBy = $request->input(
             'sort_by',
@@ -165,16 +134,10 @@ class DataUserController extends Controller
             true
         ) ? $sortDirection : 'asc';
 
-        /*
-        |--------------------------------------------------------------------------
-        | Terapkan Sorting
-        |--------------------------------------------------------------------------
-        |
-        | Menggunakan subquery agar tidak perlu melakukan JOIN.
-        | Dengan demikian, relasi Eloquent dan kolom UserProfile
-        | tetap menggunakan struktur query aslinya.
-        |
-        */
+        // Terapkan Sorting
+        // Menggunakan subquery agar tidak perlu melakukan JOIN.
+        // Dengan demikian, relasi Eloquent dan kolom UserProfile
+        // tetap menggunakan struktur query aslinya.
 
         if ($sortBy === 'id') {
 
@@ -204,26 +167,16 @@ class DataUserController extends Controller
 
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Urutan Tambahan
-        |--------------------------------------------------------------------------
-        |
-        | Menjaga urutan tetap konsisten ketika terdapat
-        | username yang sama atau nilai sorting setara.
-        |
-        */
+        // Urutan Tambahan
+        // Menjaga urutan tetap konsisten ketika terdapat
+        // username yang sama atau nilai sorting setara.
 
         $query->orderBy(
             'user_profiles.id',
             'asc'
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Data Master
-        |--------------------------------------------------------------------------
-        */
+        // Data Master
 
         $roles = Role::orderBy('name')->get();
 
@@ -233,21 +186,13 @@ class DataUserController extends Controller
 
         $units = Unit::orderBy('name')->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pagination
-        |--------------------------------------------------------------------------
-        */
+        // Pagination
 
         $userProfiles = $query
             ->paginate(20)
             ->withQueryString();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Return View
-        |--------------------------------------------------------------------------
-        */
+        // Return View
 
         return view('admin.users.index', compact(
             'userProfiles',
@@ -850,11 +795,7 @@ class DataUserController extends Controller
         $groupId = $validated['group_id'] ?? null;
         $unitId = $validated['unit_id'] ?? null;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validasi Activity berdasarkan Role
-        |--------------------------------------------------------------------------
-        */
+        // Validasi Activity berdasarkan Role
 
         $activityIsOptional = in_array(
             $roleId,
@@ -871,17 +812,11 @@ class DataUserController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Aturan Role
-        |--------------------------------------------------------------------------
-        |
-        | Role 1: Activity, Group, Unit dikosongkan.
-        | Role 2: Activity opsional; Group dan Unit opsional.
-        | Role 4: Activity wajib; Group dan Unit opsional.
-        | Role lain: Group dan Unit dikosongkan.
-        |
-        */
+        // Aturan Role
+        // Role 1: Activity, Group, Unit dikosongkan.
+        // Role 2: Activity opsional; Group dan Unit opsional.
+        // Role 4: Activity wajib; Group dan Unit opsional.
+        // Role lain: Group dan Unit dikosongkan.
 
         if ($roleId === 1) {
             $activityId = null;
@@ -892,11 +827,7 @@ class DataUserController extends Controller
             $unitId = null;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validasi Relasi Activity -> Group -> Unit
-        |--------------------------------------------------------------------------
-        */
+        // Validasi Relasi Activity -> Group -> Unit
 
         if (
             $groupId
@@ -928,11 +859,7 @@ class DataUserController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Cegah Perubahan Role Akun Sendiri
-        |--------------------------------------------------------------------------
-        */
+        // Cegah Perubahan Role Akun Sendiri
 
         if (
             (int) $user->id === (int) auth()->id()
@@ -944,11 +871,7 @@ class DataUserController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Simpan User dan Profile
-        |--------------------------------------------------------------------------
-        */
+        // Simpan User dan Profile
 
         DB::transaction(function () use (
             $request,

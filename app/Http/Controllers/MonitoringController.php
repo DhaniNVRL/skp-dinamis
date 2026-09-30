@@ -16,19 +16,11 @@ class MonitoringController extends Controller
 {
     public function index(Request $request)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | User Monitoring Login
-        |--------------------------------------------------------------------------
-        */
+        // User Monitoring Login
 
         $user = auth()->user();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pastikan Role Monitoring
-        |--------------------------------------------------------------------------
-        */
+        // Pastikan Role Monitoring
 
         if (
             !$user->hasRole('monitoring')
@@ -40,15 +32,9 @@ class MonitoringController extends Controller
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Ambil Activity Monitoring
-        |--------------------------------------------------------------------------
-        |
-        | Activity tidak diambil dari request.
-        | Activity diambil langsung dari profile user Monitoring.
-        |
-        */
+        // Ambil Activity Monitoring
+        // Activity tidak diambil dari request.
+        // Activity diambil langsung dari profile user Monitoring.
 
         $monitoringProfile = $user->profile;
 
@@ -85,16 +71,9 @@ class MonitoringController extends Controller
                 ->with('warning', 'Lengkapi Activity, Group, dan Unit sebelum membuka Dashboard Monitoring.');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validasi Filter
-        |--------------------------------------------------------------------------
-        |
-        | activity_id SENGAJA tidak ada.
-        |
-        | Monitoring tidak boleh memilih Activity sendiri.
-        |
-        */
+        // Validasi Filter
+        // activity_id SENGAJA tidak ada.
+        // Monitoring tidak boleh memilih Activity sendiri.
 
         $activityGroupIds = Group::query()
             ->where('activity_id', $activityId)
@@ -134,31 +113,19 @@ class MonitoringController extends Controller
             $filters['unit_id'] = $lockedUnitId;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Query Dasar Responden
-        |--------------------------------------------------------------------------
-        */
+        // Query Dasar Responden
 
         $baseQuery = $this->respondentQuery(
             $filters,
             $activityId
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Total Responden
-        |--------------------------------------------------------------------------
-        */
+        // Total Responden
 
         $totalRespondents = (clone $baseQuery)
             ->count();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Sudah Mengisi
-        |--------------------------------------------------------------------------
-        */
+        // Sudah Mengisi
 
         $completedCount = (clone $baseQuery)
             ->whereHas(
@@ -172,11 +139,7 @@ class MonitoringController extends Controller
             )
             ->count();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Sedang Mengisi
-        |--------------------------------------------------------------------------
-        */
+        // Sedang Mengisi
 
         $inProgressCount = (clone $baseQuery)
             ->whereDoesntHave(
@@ -213,11 +176,7 @@ class MonitoringController extends Controller
             )
             ->count();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Belum Mengisi
-        |--------------------------------------------------------------------------
-        */
+        // Belum Mengisi
 
         $notStartedCount = max(
             0,
@@ -226,11 +185,7 @@ class MonitoringController extends Controller
                 - $inProgressCount
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Query List Responden
-        |--------------------------------------------------------------------------
-        */
+        // Query List Responden
 
         $respondentsQuery = (clone $baseQuery)
             ->with([
@@ -275,22 +230,14 @@ class MonitoringController extends Controller
             $filters['status'] ?? null
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pagination
-        |--------------------------------------------------------------------------
-        */
+        // Pagination
 
         $respondents = $respondentsQuery
             ->latest('id')
             ->paginate(20)
             ->withQueryString();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Mapping Status
-        |--------------------------------------------------------------------------
-        */
+        // Mapping Status
 
         $respondents
             ->getCollection()
@@ -330,14 +277,8 @@ class MonitoringController extends Controller
                 }
             );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Activity Monitoring
-        |--------------------------------------------------------------------------
-        |
-        | Hanya mengambil satu Activity sesuai akun Monitoring.
-        |
-        */
+        // Activity Monitoring
+        // Hanya mengambil satu Activity sesuai akun Monitoring.
 
         $activity = Activity::query()
             ->select([
@@ -346,14 +287,8 @@ class MonitoringController extends Controller
             ])
             ->findOrFail($activityId);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Group
-        |--------------------------------------------------------------------------
-        |
-        | Hanya group dari Activity Monitoring.
-        |
-        */
+        // Group
+        // Hanya group dari Activity Monitoring.
 
         $groups = Group::query()
             ->select([
@@ -372,14 +307,8 @@ class MonitoringController extends Controller
             ->orderBy('name')
             ->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Unit
-        |--------------------------------------------------------------------------
-        |
-        | Unit hanya dari Group yang termasuk Activity Monitoring.
-        |
-        */
+        // Unit
+        // Unit hanya dari Group yang termasuk Activity Monitoring.
 
         $units = Unit::query()
             ->select([
@@ -403,11 +332,7 @@ class MonitoringController extends Controller
             ->orderBy('name')
             ->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | View
-        |--------------------------------------------------------------------------
-        */
+        // View
 
         $dashboardRoute = $user->hasRole('surveyor')
             ? 'surveyor.dashboard'
@@ -526,11 +451,7 @@ class MonitoringController extends Controller
             });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Respondent Query
-    |--------------------------------------------------------------------------
-    */
+    // Respondent Query
 
     private function respondentQuery(
         array $filters,
@@ -539,31 +460,18 @@ class MonitoringController extends Controller
 
         return UserProfile::query()
 
-            /*
-            |--------------------------------------------------------------------------
-            | WAJIB Activity Monitoring
-            |--------------------------------------------------------------------------
-            |
-            | Ini bagian terpenting.
-            |
-            | Walaupun user mencoba:
-            |
-            | ?activity_id=99
-            |
-            | data tetap hanya berdasarkan activity miliknya.
-            |
-            */
+            // WAJIB Activity Monitoring
+            // Ini bagian terpenting.
+            // Walaupun user mencoba:
+            // ?activity_id=99
+            // data tetap hanya berdasarkan activity miliknya.
 
             ->where(
                 'activity_id',
                 $activityId
             )
 
-            /*
-            |--------------------------------------------------------------------------
-            | Hanya Responden
-            |--------------------------------------------------------------------------
-            */
+            // Hanya Responden
 
             ->whereHas(
                 'user.role',
@@ -575,11 +483,7 @@ class MonitoringController extends Controller
                 }
             )
 
-            /*
-            |--------------------------------------------------------------------------
-            | Search
-            |--------------------------------------------------------------------------
-            */
+            // Search
 
             ->when(
                 $filters['username'] ?? null,
@@ -623,11 +527,7 @@ class MonitoringController extends Controller
                 }
             )
 
-            /*
-            |--------------------------------------------------------------------------
-            | Group
-            |--------------------------------------------------------------------------
-            */
+            // Group
 
             ->when(
                 $filters['group_id'] ?? null,
@@ -640,11 +540,7 @@ class MonitoringController extends Controller
                 )
             )
 
-            /*
-            |--------------------------------------------------------------------------
-            | Unit
-            |--------------------------------------------------------------------------
-            */
+            // Unit
 
             ->when(
                 $filters['unit_id'] ?? null,
@@ -659,11 +555,7 @@ class MonitoringController extends Controller
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Resolve Status
-    |--------------------------------------------------------------------------
-    */
+    // Resolve Status
 
     private function resolveStatus(
         ?string $sessionStatus,

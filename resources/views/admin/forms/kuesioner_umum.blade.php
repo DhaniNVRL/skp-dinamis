@@ -30,6 +30,15 @@
 @endif
 
 @foreach ($questions->sortBy('no') as $question)
+@php
+    $sortedOptions = $question->options
+        ->sortBy('no', SORT_NATURAL)
+        ->values();
+
+    $optionGrid = \App\Support\QuestionOptionGrid::layout(
+        $sortedOptions->count()
+    );
+@endphp
 <div class="mb-6 p-4 border rounded-lg shadow-sm bg-white">
 
     {{-- HEADER --}}
@@ -63,9 +72,12 @@
         {{-- TYPE 3 (RADIO) --}}
         @if ($question->id_questiontypes == 3)
 
-        <div class="question-block space-y-2">
+        <div
+            class="question-block question-option-grid"
+            style="--question-option-columns: {{ $optionGrid['columns'] }}"
+        >
 
-            @foreach ($question->options as $opsion)
+            @foreach ($sortedOptions as $opsion)
                 <div class="option-item flex flex-col p-3 border rounded-lg hover:bg-blue-50 transition">
 
                     {{-- TOP ROW (RADIO + ACTION) --}}
@@ -152,9 +164,12 @@
         {{-- TYPE 4 (CHECKBOX) --}}
         @elseif ($question->id_questiontypes == 4)
 
-        <div class="question-block space-y-2">
+        <div
+            class="question-block question-option-grid"
+            style="--question-option-columns: {{ $optionGrid['columns'] }}"
+        >
 
-            @foreach ($question->options as $opsion)
+            @foreach ($sortedOptions as $opsion)
                 <div class="option-item flex flex-col p-3 border rounded-lg hover:bg-blue-50 transition">
 
                     {{-- TOP ROW (CHECKBOX + ACTION) --}}

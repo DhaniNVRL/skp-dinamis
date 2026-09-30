@@ -30,11 +30,7 @@ use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\Auth\LoginController;
 
 
-/*
-|--------------------------------------------------------------------------
-| Login dan Register
-|--------------------------------------------------------------------------
-*/
+// Login dan Register
 
 Route::controller(LoginController::class)->middleware('guest')->group(function () {
     Route::get('/login', 'showLoginForm')
@@ -49,19 +45,11 @@ Route::post('/logout', [LoginController::class, 'logout'])
     ->name('logout');
 
 
-/*
-|--------------------------------------------------------------------------
-| Semua route yang membutuhkan login
-|--------------------------------------------------------------------------
-*/
+// Semua route yang membutuhkan login
 
 Route::middleware('auth')->group(function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Dashboard
-    |--------------------------------------------------------------------------
-    */
+    // Dashboard
 
     Route::middleware('role:Admin,pm')->group(function () {
         Route::get(

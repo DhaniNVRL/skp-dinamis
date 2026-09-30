@@ -18,6 +18,14 @@
         @php
             $key = $form->id.'-'.$question->id;
 
+            $sortedOptions = $question->options
+                ->sortBy('no', SORT_NATURAL)
+                ->values();
+
+            $optionGrid = \App\Support\QuestionOptionGrid::layout(
+                $sortedOptions->count()
+            );
+
             // cek apakah ada relasi subunit_questions
             $hasRelation = isset($activeMapSubUnit[$key])
                 && count(array_intersect($activeMapSubUnit[$key], $subunitList)) > 0;
@@ -41,9 +49,12 @@
                     {{-- TYPE 3 RADIO --}}
                     @if ($question->id_questiontypes == 3)
 
-                        <div class="question-block space-y-2">
+                        <div
+                            class="question-block question-option-grid"
+                            style="--question-option-columns: {{ $optionGrid['columns'] }}"
+                        >
 
-                            @foreach ($question->options as $opsion)
+                            @foreach ($sortedOptions as $opsion)
                                 <div class="option-item flex flex-col p-3 border rounded-lg hover:bg-blue-50 transition">
 
                                     <div class="flex items-center justify-between">
@@ -86,9 +97,12 @@
                     {{-- TYPE 4 CHECKBOX --}}
                     @elseif ($question->id_questiontypes == 4)
 
-                        <div class="question-block space-y-2">
+                        <div
+                            class="question-block question-option-grid"
+                            style="--question-option-columns: {{ $optionGrid['columns'] }}"
+                        >
 
-                            @foreach ($question->options as $opsion)
+                            @foreach ($sortedOptions as $opsion)
                                 <div class="option-item flex flex-col p-3 border rounded-lg hover:bg-blue-50 transition">
 
                                     <div class="flex items-center justify-between">

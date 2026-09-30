@@ -24,19 +24,11 @@ class MonitoringDashboardController extends Controller
             'sort_direction' => ['nullable', 'in:asc,desc'],
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Query Dasar Responden
-        |--------------------------------------------------------------------------
-        */
+        // Query Dasar Responden
 
         $baseQuery = $this->respondentQuery($filters);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Ringkasan Status Responden
-        |--------------------------------------------------------------------------
-        */
+        // Ringkasan Status Responden
 
         $totalRespondents = (clone $baseQuery)->count();
 
@@ -68,11 +60,7 @@ class MonitoringDashboardController extends Controller
             $totalRespondents - $completedCount - $inProgressCount
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Query Tabel Responden
-        |--------------------------------------------------------------------------
-        */
+        // Query Tabel Responden
 
         $respondentsQuery = (clone $baseQuery)
             ->with([
@@ -119,29 +107,18 @@ class MonitoringDashboardController extends Controller
                 },
             ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Filter Status Tabel
-        |--------------------------------------------------------------------------
-        */
+        // Filter Status Tabel
 
         $this->applyStatusFilter(
             $respondentsQuery,
             $filters['status'] ?? null
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Sorting Username
-        |--------------------------------------------------------------------------
-        |
-        | Panah atas  : desc = Z ke A
-        | Panah bawah : asc  = A ke Z
-        |
-        | Menggunakan subquery agar tidak mengubah struktur query
-        | UserProfile maupun relasi yang sudah digunakan dashboard.
-        |
-        */
+        // Sorting Username
+        // Panah atas  : desc = Z ke A
+        // Panah bawah : asc  = A ke Z
+        // Menggunakan subquery agar tidak mengubah struktur query
+        // UserProfile maupun relasi yang sudah digunakan dashboard.
 
         $sortDirection = $filters['sort_direction'] ?? 'asc';
 
@@ -158,21 +135,13 @@ class MonitoringDashboardController extends Controller
             )
             ->orderBy('user_profiles.id', 'asc');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pagination
-        |--------------------------------------------------------------------------
-        */
+        // Pagination
 
         $respondents = $respondentsQuery
             ->paginate(20)
             ->withQueryString();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Tentukan Status Setiap Responden
-        |--------------------------------------------------------------------------
-        */
+        // Tentukan Status Setiap Responden
 
         $respondents->getCollection()->transform(function (UserProfile $profile) {
             $session = $profile->user?->surveySession;
@@ -198,11 +167,7 @@ class MonitoringDashboardController extends Controller
             return $profile;
         });
 
-        /*
-        |--------------------------------------------------------------------------
-        | Master Data Filter
-        |--------------------------------------------------------------------------
-        */
+        // Master Data Filter
 
         $activities = Activity::query()
             ->select('id', 'name')
@@ -219,11 +184,7 @@ class MonitoringDashboardController extends Controller
             ->orderBy('name')
             ->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Return View
-        |--------------------------------------------------------------------------
-        */
+        // Return View
 
         return view('admin.dashboard.modern', compact(
             'respondents',

@@ -418,9 +418,7 @@ class SubUnitController extends Controller
 
         $spreadsheet = new Spreadsheet();
 
-        /*
-         * SHEET INPUT
-         */
+        // SHEET INPUT
         $inputSheet = $spreadsheet->getActiveSheet();
         $inputSheet->setTitle('Input Sub Unit');
 
@@ -440,9 +438,7 @@ class SubUnitController extends Controller
 
         $inputSheet->freezePane('A2');
 
-        /*
-         * SHEET INFORMASI UNIT
-         */
+        // SHEET INFORMASI UNIT
         $unitSheet = $spreadsheet->createSheet();
         $unitSheet->setTitle('Informasi Unit');
 
@@ -474,9 +470,7 @@ class SubUnitController extends Controller
             ->getColumnDimension('B')
             ->setWidth(50);
 
-        /*
-         * SHEET PETUNJUK
-         */
+        // SHEET PETUNJUK
         $instructionSheet = $spreadsheet->createSheet();
         $instructionSheet->setTitle('Petunjuk');
 

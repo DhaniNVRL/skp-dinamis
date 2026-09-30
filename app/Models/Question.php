@@ -24,21 +24,18 @@ class Question extends Model
         'comparison_options' => 'array',
     ];
 
-    /**
-     * Urutan baku pertanyaan pada seluruh halaman admin dan survei.
-     *
-     * Kolom no_header dan no bertipe varchar, tetapi harus ditampilkan
-     * secara natural (C1, C2, ..., C10), bukan secara leksikografis
-     * (C1, C10, C2). Apabila keduanya sama, tipe judul ditempatkan sebelum
-     * pertanyaan biasa, kemudian ID menjadi penentu urutan terakhir.
-     */
+    // Urutan baku pertanyaan pada seluruh halaman admin dan survei.
+    // Kolom no_header dan no bertipe varchar, tetapi harus ditampilkan
+    // secara natural (C1, C2, ..., C10), bukan secara leksikografis
+    // (C1, C10, C2). Apabila keduanya sama, tipe judul ditempatkan sebelum
+    // pertanyaan biasa. Khusus form Penilaian Pelanggan, pertanyaan dengan
+    // dua indikator ditampilkan sebelum satu indikator, lalu textarea.
+    // ID menjadi penentu urutan terakhir.
     public function scopeInDisplayOrder(Builder $query): Builder
     {
         return $query
             ->orderByRaw('LENGTH(COALESCE(questions.no_header, \'\'))')
             ->orderBy('questions.no_header')
-            ->orderByRaw('LENGTH(COALESCE(questions.no, \'\'))')
-            ->orderBy('questions.no')
             ->orderByRaw(
                 'CASE
                     WHEN questions.questiontype_id = 10
@@ -56,7 +53,46 @@ class Question extends Model
                     ELSE 1
                 END'
             )
+            ->orderByRaw(
+                'CASE
+                    WHEN EXISTS (
+                        SELECT 1 FROM forms
+                        WHERE forms.id = questions.form_id
+                          AND forms.formtype_id IN (2, 3, 15, 16)
+                    ) AND questions.questiontype_id IN (2, 3, 4, 7, 8) THEN 0
+                    WHEN EXISTS (
+                        SELECT 1 FROM forms
+                        WHERE forms.id = questions.form_id
+                          AND forms.formtype_id IN (2, 3, 15, 16)
+                    ) AND questions.questiontype_id = 5 THEN 1
+                    WHEN EXISTS (
+                        SELECT 1 FROM forms
+                        WHERE forms.id = questions.form_id
+                          AND forms.formtype_id IN (2, 3, 15, 16)
+                    ) AND questions.questiontype_id = 6 THEN 2
+                    ELSE 0
+                END'
+            )
+            ->orderByRaw('LENGTH(COALESCE(questions.no, \'\'))')
+            ->orderBy('questions.no')
             ->orderBy('questions.id');
+    }
+
+    public static function displayTypePriority(
+        int $formTypeId,
+        int $questionTypeId
+    ): int {
+        if (! in_array($formTypeId, [2, 3, 15, 16], true)) {
+            return 0;
+        }
+
+        return match (true) {
+            $questionTypeId === 1 => 0,
+            in_array($questionTypeId, [2, 3, 4, 7, 8], true) => 1,
+            $questionTypeId === 5 => 2,
+            $questionTypeId === 6 => 3,
+            default => 1,
+        };
     }
 
     public function questiontype()

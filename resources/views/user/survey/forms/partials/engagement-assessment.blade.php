@@ -97,9 +97,9 @@
                                     class="inline-flex h-9 min-w-9
                                            shrink-0 items-center
                                            justify-center rounded-lg
-                                           bg-purple-100 px-2
+                                           bg-indigo-100 px-2
                                            text-sm font-semibold
-                                           text-purple-700"
+                                           text-indigo-700"
                                 >
                                     {{ $questionNumber }}
                                 </span>
@@ -128,13 +128,13 @@
                             <div
                                 data-option-group
                                 class="rounded-xl border
-                                       border-purple-200
-                                       bg-purple-50 px-5 py-6"
+                                       border-indigo-200
+                                       bg-indigo-50 p-5"
                             >
                                 <div
                                     class="flex flex-wrap
                                            items-center justify-center
-                                           gap-3 md:gap-4"
+                                           gap-3"
                                 >
                                     @foreach ($scaleValues as $value)
                                         <label
@@ -155,22 +155,22 @@
                                             >
 
                                             <span
-                                                class="inline-flex h-11 w-11
+                                                class="inline-flex h-10 w-10
                                                        items-center
                                                        justify-center
                                                        rounded-full border
-                                                       border-purple-300
+                                                       border-indigo-300
                                                        bg-white text-sm
                                                        font-medium
-                                                       text-purple-700
+                                                       text-indigo-700
                                                        transition
-                                                       hover:border-purple-500
-                                                       hover:bg-purple-100
-                                                       peer-checked:border-purple-600
-                                                       peer-checked:bg-purple-600
+                                                       hover:border-indigo-500
+                                                       hover:bg-indigo-100
+                                                       peer-checked:border-indigo-600
+                                                       peer-checked:bg-indigo-600
                                                        peer-checked:text-white
                                                        peer-focus:ring-2
-                                                       peer-focus:ring-purple-200"
+                                                       peer-focus:ring-indigo-200"
                                             >
                                                 {{ $value }}
                                             </span>

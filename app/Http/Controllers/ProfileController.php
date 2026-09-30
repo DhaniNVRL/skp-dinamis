@@ -18,11 +18,7 @@ use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Lengkapi profil pertama kali
-    |--------------------------------------------------------------------------
-    */
+    // Lengkapi profil pertama kali
     public function complete()
     {
         $existingProfile = UserProfile::where(
@@ -56,11 +52,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Simpan profil pertama kali
-    |--------------------------------------------------------------------------
-    */
+    // Simpan profil pertama kali
     public function store(Request $request)
     {
         $validated = $this->validateProfile(
@@ -100,11 +92,7 @@ class ProfileController extends Controller
             );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Tampilkan profil responden
-    |--------------------------------------------------------------------------
-    */
+    // Tampilkan profil responden
     public function show()
     {
         $profile = $this->getUserProfile();
@@ -138,9 +126,7 @@ class ProfileController extends Controller
             ->latest('id')
             ->first();
 
-        /*
-        * Profil lengkap hanya jika semua ID terisi.
-        */
+        // Profil lengkap hanya jika semua ID terisi.
         $isProfileComplete =
             filled($profile->activity_id) &&
             filled($profile->group_id) &&
@@ -157,11 +143,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Halaman edit profil
-    |--------------------------------------------------------------------------
-    */
+    // Halaman edit profil
     public function edit()
     {
         $profile = $this->getUserProfile();
@@ -177,9 +159,7 @@ class ProfileController extends Controller
                 ->route('profile.complete');
         }
 
-        /*
-        * Cek kelengkapan profil.
-        */
+        // Cek kelengkapan profil.
         $isProfileComplete =
             filled($profile->activity_id) &&
             filled($profile->group_id) &&
@@ -241,11 +221,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Update profil responden
-    |--------------------------------------------------------------------------
-    */
+    // Update profil responden
     public function update(Request $request)
     {
         $profile = UserProfile::where(
@@ -253,9 +229,7 @@ class ProfileController extends Controller
             auth()->id()
         )->firstOrFail();
 
-        /*
-        * Cek kelengkapan profil sebelum update.
-        */
+        // Cek kelengkapan profil sebelum update.
         $isProfileComplete =
             filled($profile->activity_id) &&
             filled($profile->group_id) &&
@@ -353,11 +327,7 @@ class ProfileController extends Controller
             );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Ambil Unit berdasarkan Group
-    |--------------------------------------------------------------------------
-    */
+    // Ambil Unit berdasarkan Group
     public function getUnitsByGroup(Group $group)
     {
         $profile = UserProfile::where(
@@ -365,9 +335,7 @@ class ProfileController extends Controller
             auth()->id()
         )->firstOrFail();
 
-        /*
-        * Tolak jika Group bukan bagian Activity responden.
-        */
+        // Tolak jika Group bukan bagian Activity responden.
         if (
             ! $this->canSelectActivity() &&
             (int) $group->activity_id !==
@@ -416,11 +384,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Validasi profil responden
-    |--------------------------------------------------------------------------
-    */
+    // Validasi profil responden
     private function validateProfile(
         Request $request
     ): array {
@@ -449,9 +413,7 @@ class ProfileController extends Controller
                     ),
             ],
 
-            /*
-             * Unit wajib berasal dari Group yang dipilih.
-             */
+            // Unit wajib berasal dari Group yang dipilih.
             'unit_id' => [
                 'required',
                 'integer',
@@ -489,9 +451,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Reset mandiri hanya untuk akun Surveyor yang sedang login.
-     */
+    // Reset mandiri hanya untuk akun Surveyor yang sedang login.
     public function resetOwnAccount()
     {
         abort_unless(
@@ -537,11 +497,7 @@ class ProfileController extends Controller
             ->with('success', 'Reset Account berhasil. Seluruh jawaban, progres survei, dan pilihan profil telah dihapus.');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Ambil profil responden login
-    |--------------------------------------------------------------------------
-    */
+    // Ambil profil responden login
     private function getUserProfile(): ?UserProfile
     {
         return UserProfile::with([
@@ -556,11 +512,7 @@ class ProfileController extends Controller
             ->first();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Cek survei selesai
-    |--------------------------------------------------------------------------
-    */
+    // Cek survei selesai
     private function hasCompletedSurvey(): bool
     {
         return SurveySession::where(
@@ -571,11 +523,7 @@ class ProfileController extends Controller
             ->exists();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Status survei
-    |--------------------------------------------------------------------------
-    */
+    // Status survei
     private function getSurveyStatus(
         ?SurveySession $session
     ): array {
@@ -656,9 +604,7 @@ class ProfileController extends Controller
                 'integer',
                 Rule::exists('activities', 'id'),
             ],
-            /*
-            * Group wajib berasal dari Activity responden.
-            */
+            // Group wajib berasal dari Activity responden.
             'group_id' => [
                 'required',
                 'integer',
@@ -674,9 +620,7 @@ class ProfileController extends Controller
                     }),
             ],
 
-            /*
-            * Unit wajib berasal dari Group yang dipilih.
-            */
+            // Unit wajib berasal dari Group yang dipilih.
             'unit_id' => [
                 'required',
                 'integer',

@@ -22,9 +22,18 @@
             return (int) $a->id <=> (int) $b->id;
         })
         ->values();
+
+    $optionGrid = \App\Support\QuestionOptionGrid::layout(
+        $sortedOptions->count()
+    );
 @endphp
 
 <div class="space-y-3">
+
+    <div
+        class="question-option-grid"
+        style="--question-option-columns: {{ $optionGrid['columns'] }}"
+    >
 
     @forelse ($sortedOptions as $option)
 
@@ -40,7 +49,7 @@
     @empty
 
         <div
-            class="rounded-xl border border-dashed border-gray-300
+            class="col-span-full rounded-xl border border-dashed border-gray-300
                    bg-gray-50 px-5 py-8 text-center"
         >
             <div
@@ -64,6 +73,8 @@
         </div>
 
     @endforelse
+
+    </div>
 
     <button
         type="button"

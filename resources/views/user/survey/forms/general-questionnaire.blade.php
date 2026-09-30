@@ -191,6 +191,27 @@
             $questionTypeId =
                 (int) $question->questiontype_id;
 
+            $sortedOptions = collect();
+
+            if (in_array($questionTypeId, [3, 4], true)) {
+                $sortedOptions = $question->options
+                    ->sort(function ($a, $b) {
+                        $numberComparison = strnatcasecmp(
+                            (string) ($a->no ?? ''),
+                            (string) ($b->no ?? '')
+                        );
+
+                        return $numberComparison !== 0
+                            ? $numberComparison
+                            : (int) $a->id <=> (int) $b->id;
+                    })
+                    ->values();
+            }
+
+            $optionGrid = \App\Support\QuestionOptionGrid::layout(
+                $sortedOptions->count()
+            );
+
             $isTitleOnly =
                 $question->questiontype?->isTitleOnly()
                 ?? false;
@@ -567,13 +588,12 @@
                     <div
                         data-option-group
                         data-option-type="radio"
-                        class="space-y-3"
+                        class="question-option-grid"
+                        style="--question-option-columns: {{ $optionGrid['columns'] }}"
                     >
 
                         @forelse (
-                            $question->options
-                                ->sortBy('no')
-                                ->values()
+                            $sortedOptions
                             as $option
                         )
 
@@ -750,7 +770,7 @@
                         @empty
 
                             <div
-                                class="rounded-lg border
+                                class="col-span-full rounded-lg border
                                        border-dashed
                                        border-gray-300
                                        p-5 text-center
@@ -786,13 +806,12 @@
                         data-option-group
                         data-option-type="checkbox"
                         data-required-group
-                        class="space-y-3"
+                        class="question-option-grid"
+                        style="--question-option-columns: {{ $optionGrid['columns'] }}"
                     >
 
                         @forelse (
-                            $question->options
-                                ->sortBy('no')
-                                ->values()
+                            $sortedOptions
                             as $option
                         )
 
@@ -969,7 +988,7 @@
                         @empty
 
                             <div
-                                class="rounded-lg border
+                                class="col-span-full rounded-lg border
                                        border-dashed
                                        border-gray-300
                                        p-5 text-center

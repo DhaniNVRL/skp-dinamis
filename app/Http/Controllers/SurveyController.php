@@ -256,10 +256,8 @@ class SurveyController extends Controller
                     );
             }
 
-            /*
-            * Jika sudah selesai, jangan diproses
-            * kembali.
-            */
+            // Jika sudah selesai, jangan diproses
+            // kembali.
             if ($session->status === 'completed') {
                 if ($this->isSurveyor()) {
                     return redirect()
@@ -299,9 +297,7 @@ class SurveyController extends Controller
                     );
             }
 
-            /*
-            * Selesaikan survei.
-            */
+            // Selesaikan survei.
             $session->update([
                 'status' => 'completed',
                 'finished_at' => now(),
@@ -320,14 +316,10 @@ class SurveyController extends Controller
                     ->with('success', 'Simulasi selesai dan dikunci. Jawaban serta profil tetap tersimpan sampai Admin melakukan Reset Account.');
             }
 
-            /*
-            * Logout responden.
-            */
+            // Logout responden.
             Auth::logout();
 
-            /*
-            * Hapus session login lama.
-            */
+            // Hapus session login lama.
             $request
                 ->session()
                 ->invalidate();
@@ -336,9 +328,7 @@ class SurveyController extends Controller
                 ->session()
                 ->regenerateToken();
 
-            /*
-            * Redirect ke login dengan alert.
-            */
+            // Redirect ke login dengan alert.
             return redirect()
                 ->route('login')
                 ->with(

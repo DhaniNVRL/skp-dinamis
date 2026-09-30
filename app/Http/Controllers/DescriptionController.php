@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class DescriptionController extends Controller
 {
-    /**
-     * Store description.
-     */
+    // Store description.
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -69,9 +67,7 @@ class DescriptionController extends Controller
             );
     }
 
-    /**
-     * Update description.
-     */
+    // Update description.
     public function update(Request $request, $id)
     {
         $description = Description::findOrFail($id);
@@ -98,9 +94,7 @@ class DescriptionController extends Controller
             );
     }
 
-    /**
-     * Delete description.
-     */
+    // Delete description.
     public function destroy($id)
     {
         $description = Description::findOrFail($id);

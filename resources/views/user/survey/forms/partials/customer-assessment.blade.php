@@ -40,7 +40,7 @@
     |--------------------------------------------------------------------------
     */
     $sortedQuestions = $questions
-        ->sort(function ($a, $b) {
+        ->sort(function ($a, $b) use ($form) {
             $headerA = trim(
                 (string) ($a->no_header ?? '')
             );
@@ -56,6 +56,18 @@
 
             if ($headerCompare !== 0) {
                 return $headerCompare;
+            }
+
+            $priorityCompare = \App\Models\Question::displayTypePriority(
+                (int) $form->formtype_id,
+                (int) $a->questiontype_id
+            ) <=> \App\Models\Question::displayTypePriority(
+                (int) $form->formtype_id,
+                (int) $b->questiontype_id
+            );
+
+            if ($priorityCompare !== 0) {
+                return $priorityCompare;
             }
 
             $noA = trim(

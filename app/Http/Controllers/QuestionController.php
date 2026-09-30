@@ -19,17 +19,13 @@ class QuestionController extends Controller
 {
     protected $group;
 
-    /**
-     * Display a listing of the resource.
-     */
+    // Display a listing of the resource.
     public function index()
     {
-        //
+
     }
 
-    /**
-     * Master data question.
-     */
+    // Master data question.
     public function masterdata()
     {
         $questions = Question::query()
@@ -42,23 +38,18 @@ class QuestionController extends Controller
         );
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    // Show the form for creating a new resource.
     public function create()
     {
-        //
+
     }
 
-    /**
-     * Store pertanyaan.
-     *
-     * Catatan:
-     * - Survei yang sudah berjalan TIDAK menghalangi penambahan.
-     * - no boleh 0.
-     * - no boleh 3.1, 3.10, dst.
-     * - no boleh sama/kembar.
-     */
+    // Store pertanyaan.
+    // Catatan:
+    // - Survei yang sudah berjalan TIDAK menghalangi penambahan.
+    // - no boleh 0.
+    // - no boleh 3.1, 3.10, dst.
+    // - no boleh sama/kembar.
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -86,23 +77,17 @@ class QuestionController extends Controller
                 'max:20',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | NO PERTANYAAN
-            |--------------------------------------------------------------------------
-            | Contoh yang diperbolehkan:
-            |
-            | 0
-            | 1
-            | 2
-            | 3.1
-            | 3.2
-            | 3.10
-            | 3.11
-            |
-            | Tidak menggunakan unique/distinct,
-            | sehingga nilai yang sama diperbolehkan.
-            */
+            // NO PERTANYAAN
+            // Contoh yang diperbolehkan:
+            // 0
+            // 1
+            // 2
+            // 3.1
+            // 3.2
+            // 3.10
+            // 3.11
+            // Tidak menggunakan unique/distinct,
+            // sehingga nilai yang sama diperbolehkan.
             'questions.*.no' => [
                 'required',
                 'string',
@@ -123,21 +108,13 @@ class QuestionController extends Controller
             ],
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pastikan form sesuai dengan group
-        |--------------------------------------------------------------------------
-        */
+        // Pastikan form sesuai dengan group
         $form = Form::query()
             ->where('id', $validated['form_id'])
             ->where('group_id', $validated['group_id'])
             ->firstOrFail();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Description tidak memiliki pertanyaan
-        |--------------------------------------------------------------------------
-        */
+        // Description tidak memiliki pertanyaan
         if ((int) $form->formtype_id === 12) {
             return redirect()
                 ->route('admin.units', [
@@ -150,11 +127,7 @@ class QuestionController extends Controller
                 );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Tipe pertanyaan yang diperbolehkan
-        |--------------------------------------------------------------------------
-        */
+        // Tipe pertanyaan yang diperbolehkan
         $allowedQuestionTypeIds = $this
             ->getQuestionTypesByForm($form)
             ->pluck('id')
@@ -177,11 +150,7 @@ class QuestionController extends Controller
             }
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Simpan pertanyaan
-        |--------------------------------------------------------------------------
-        */
+        // Simpan pertanyaan
         DB::transaction(function () use (
             $validated,
             $form
@@ -196,10 +165,8 @@ class QuestionController extends Controller
 
                     'no_header' => $questionData['no_header'] ?? null,
 
-                    /*
-                    | Simpan sebagai string.
-                    | Jangan cast menjadi integer/float.
-                    */
+                    // Simpan sebagai string.
+                    // Jangan cast menjadi integer/float.
                     'no' => (string) $questionData['no'],
 
                     'name' => $questionData['name'],
@@ -220,17 +187,13 @@ class QuestionController extends Controller
             );
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // Display the specified resource.
     public function show(Question $question)
     {
-        //
+
     }
 
-    /**
-     * Edit pertanyaan.
-     */
+    // Edit pertanyaan.
     public function edit($id)
     {
         $question = Question::query()
@@ -253,11 +216,8 @@ class QuestionController extends Controller
         );
     }
 
-    /**
-     * Update pertanyaan.
-     *
-     * Tetap dapat dilakukan ketika survey sudah berjalan.
-     */
+    // Update pertanyaan.
+    // Tetap dapat dilakukan ketika survey sudah berjalan.
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -279,14 +239,10 @@ class QuestionController extends Controller
                 'max:20',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | NO
-            |--------------------------------------------------------------------------
-            | 0 diperbolehkan.
-            | 3.1, 3.10, dst diperbolehkan.
-            | Nomor sama dengan pertanyaan lain diperbolehkan.
-            */
+            // NO
+            // 0 diperbolehkan.
+            // 3.1, 3.10, dst diperbolehkan.
+            // Nomor sama dengan pertanyaan lain diperbolehkan.
             'no' => [
                 'required',
                 'string',
@@ -312,11 +268,7 @@ class QuestionController extends Controller
                 $validated['form_id']
             );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pastikan form milik group
-        |--------------------------------------------------------------------------
-        */
+        // Pastikan form milik group
         abort_unless(
             (int) $form->group_id ===
             (int) $validated['group_id'],
@@ -324,11 +276,7 @@ class QuestionController extends Controller
             'Form tidak sesuai dengan group yang dipilih.'
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Form Description
-        |--------------------------------------------------------------------------
-        */
+        // Form Description
         if ((int) $form->formtype_id === 12) {
             return redirect()
                 ->route('admin.units', [
@@ -341,11 +289,7 @@ class QuestionController extends Controller
                 );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validasi Question Type
-        |--------------------------------------------------------------------------
-        */
+        // Validasi Question Type
         $allowedQuestionTypeIds = $this
             ->getQuestionTypesByForm($form)
             ->pluck('id')
@@ -366,19 +310,11 @@ class QuestionController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Ambil Question
-        |--------------------------------------------------------------------------
-        */
+        // Ambil Question
         $question = Question::query()
             ->findOrFail($id);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pastikan question benar-benar dari form tersebut
-        |--------------------------------------------------------------------------
-        */
+        // Pastikan question benar-benar dari form tersebut
         abort_unless(
             (int) $question->form_id ===
                 (int) $form->id
@@ -389,11 +325,7 @@ class QuestionController extends Controller
             'Pertanyaan tidak sesuai dengan form yang dipilih.'
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update
-        |--------------------------------------------------------------------------
-        */
+        // Update
         DB::transaction(function () use (
             $question,
             $validated,
@@ -473,15 +405,12 @@ class QuestionController extends Controller
         return back()->with('success', 'Pembanding tahun berhasil disimpan.');
     }
 
-    /**
-     * Delete satu pertanyaan.
-     *
-     * Yang ikut dihapus:
-     * - answers
-     * - options
-     * - subunit_questions
-     * - question
-     */
+    // Delete satu pertanyaan.
+    // Yang ikut dihapus:
+    // - answers
+    // - options
+    // - subunit_questions
+    // - question
     public function destroy($id)
     {
         $question = Question::query()
@@ -493,11 +422,7 @@ class QuestionController extends Controller
             DB::transaction(function () use (
                 $question
             ): void {
-                /*
-                |--------------------------------------------------------------------------
-                | 1. Hapus jawaban
-                |--------------------------------------------------------------------------
-                */
+                // 1. Hapus jawaban
                 Answer::query()
                     ->where(
                         'question_id',
@@ -505,11 +430,7 @@ class QuestionController extends Controller
                     )
                     ->delete();
 
-                /*
-                |--------------------------------------------------------------------------
-                | 2. Hapus option
-                |--------------------------------------------------------------------------
-                */
+                // 2. Hapus option
                 DB::table('options')
                     ->where(
                         'question_id',
@@ -517,11 +438,7 @@ class QuestionController extends Controller
                     )
                     ->delete();
 
-                /*
-                |--------------------------------------------------------------------------
-                | 3. Hapus konfigurasi sub unit
-                |--------------------------------------------------------------------------
-                */
+                // 3. Hapus konfigurasi sub unit
                 DB::table('subunit_questions')
                     ->where(
                         'question_id',
@@ -529,11 +446,7 @@ class QuestionController extends Controller
                     )
                     ->delete();
 
-                /*
-                |--------------------------------------------------------------------------
-                | 4. Hapus question
-                |--------------------------------------------------------------------------
-                */
+                // 4. Hapus question
                 $question->delete();
             });
 
@@ -561,15 +474,12 @@ class QuestionController extends Controller
         }
     }
 
-    /**
-     * Bulk delete.
-     *
-     * Ikut menghapus:
-     * - answers
-     * - options
-     * - subunit_questions
-     * - questions
-     */
+    // Bulk delete.
+    // Ikut menghapus:
+    // - answers
+    // - options
+    // - subunit_questions
+    // - questions
     public function bulkDelete(Request $request)
     {
         $validated = $request->validate([
@@ -598,22 +508,14 @@ class QuestionController extends Controller
                 $validated['form_id']
             );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Description tidak mempunyai question
-        |--------------------------------------------------------------------------
-        */
+        // Description tidak mempunyai question
         if ((int) $form->formtype_id === 12) {
             throw ValidationException::withMessages([
                 'ids' => 'Form tipe Description tidak memiliki pertanyaan yang dapat dihapus.',
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pastikan semua pertanyaan dari form tersebut
-        |--------------------------------------------------------------------------
-        */
+        // Pastikan semua pertanyaan dari form tersebut
         $questions = Question::query()
             ->where(
                 'form_id',
@@ -641,11 +543,7 @@ class QuestionController extends Controller
                 $questionIds =
                     $validated['ids'];
 
-                /*
-                |--------------------------------------------------------------------------
-                | 1. Answers
-                |--------------------------------------------------------------------------
-                */
+                // 1. Answers
                 DB::table('answers')
                     ->whereIn(
                         'question_id',
@@ -653,11 +551,7 @@ class QuestionController extends Controller
                     )
                     ->delete();
 
-                /*
-                |--------------------------------------------------------------------------
-                | 2. Options
-                |--------------------------------------------------------------------------
-                */
+                // 2. Options
                 DB::table('options')
                     ->whereIn(
                         'question_id',
@@ -665,11 +559,7 @@ class QuestionController extends Controller
                     )
                     ->delete();
 
-                /*
-                |--------------------------------------------------------------------------
-                | 3. Sub Unit Question
-                |--------------------------------------------------------------------------
-                */
+                // 3. Sub Unit Question
                 DB::table('subunit_questions')
                     ->whereIn(
                         'question_id',
@@ -677,11 +567,7 @@ class QuestionController extends Controller
                     )
                     ->delete();
 
-                /*
-                |--------------------------------------------------------------------------
-                | 4. Questions
-                |--------------------------------------------------------------------------
-                */
+                // 4. Questions
                 Question::query()
                     ->whereIn(
                         'id',
@@ -715,20 +601,14 @@ class QuestionController extends Controller
         }
     }
 
-    /**
-     * Question Type berdasarkan Form Type.
-     */
+    // Question Type berdasarkan Form Type.
     private function getQuestionTypesByForm(
         Form $form
     ): Collection {
         $formTypeId =
             (int) $form->formtype_id;
 
-        /*
-        |--------------------------------------------------------------------------
-        | 1. General Questionnaire
-        |--------------------------------------------------------------------------
-        */
+        // 1. General Questionnaire
         if ($formTypeId === 1) {
             return QuestionType::query()
                 ->orderBy('id')
@@ -744,11 +624,7 @@ class QuestionController extends Controller
                 });
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 2. Customer Assessment 1-5
-        |--------------------------------------------------------------------------
-        */
+        // 2. Customer Assessment 1-5
         elseif (in_array($formTypeId, [2, 15], true)) {
             return collect([
                 [
@@ -794,11 +670,7 @@ class QuestionController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 3. Customer Assessment 1-7
-        |--------------------------------------------------------------------------
-        */
+        // 3. Customer Assessment 1-7
         elseif (in_array($formTypeId, [3, 16], true)) {
             return collect([
                 [
@@ -844,11 +716,7 @@ class QuestionController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 4. Engagement Assessment 1-5
-        |--------------------------------------------------------------------------
-        */
+        // 4. Engagement Assessment 1-5
         elseif ($formTypeId === 4) {
             return collect([
                 [
@@ -864,11 +732,7 @@ class QuestionController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 5. Engagement Assessment 1-7
-        |--------------------------------------------------------------------------
-        */
+        // 5. Engagement Assessment 1-7
         elseif ($formTypeId === 5) {
             return collect([
                 [
@@ -884,11 +748,7 @@ class QuestionController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 6. Ranking 1-3
-        |--------------------------------------------------------------------------
-        */
+        // 6. Ranking 1-3
         elseif ($formTypeId === 6) {
             return collect([
                 [
@@ -904,11 +764,7 @@ class QuestionController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 7. Ranking 1-5
-        |--------------------------------------------------------------------------
-        */
+        // 7. Ranking 1-5
         elseif ($formTypeId === 7) {
             return collect([
                 [
@@ -924,11 +780,7 @@ class QuestionController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 8. Strength Complaint Suggestion
-        |--------------------------------------------------------------------------
-        */
+        // 8. Strength Complaint Suggestion
         elseif ($formTypeId === 8) {
             return collect([
                 [
@@ -944,11 +796,7 @@ class QuestionController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 9. Complaint Suggestion
-        |--------------------------------------------------------------------------
-        */
+        // 9. Complaint Suggestion
         elseif ($formTypeId === 9) {
             return collect([
                 [
@@ -964,11 +812,7 @@ class QuestionController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 10. Suggestion
-        |--------------------------------------------------------------------------
-        */
+        // 10. Suggestion
         elseif ($formTypeId === 10) {
             return collect([
                 [
@@ -984,15 +828,11 @@ class QuestionController extends Controller
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 11 / 13 / 14. Competitor
-        |--------------------------------------------------------------------------
-        */
+        // 11 / 13. Competitor
         elseif (
             in_array(
                 $formTypeId,
-                [11, 13, 14],
+                [11, 13],
                 true
             )
         ) {
@@ -1007,15 +847,34 @@ class QuestionController extends Controller
                     'name' => 'Pertanyaan',
                     'description' => 'Pertanyaan penilaian terhadap kompetitor.',
                 ],
+                [
+                    'id' => 3,
+                    'name' => 'Nama Kompetitor (Textarea)',
+                    'description' => 'Pertanyaan isian untuk menyebutkan nama kompetitor.',
+                ],
+            ]);
+        }
+
+        // 14. Respondent Competitor
+        elseif ($formTypeId === 14) {
+            return collect([
+                [
+                    'id' => 1,
+                    'name' => 'Judul Pertanyaan',
+                    'description' => 'Judul atau pemisah kelompok pertanyaan kompetitor.',
+                ],
+                [
+                    'id' => 2,
+                    'name' => 'Pertanyaan',
+                    'description' => 'Pertanyaan penilaian terhadap kompetitor responden.',
+                ],
             ]);
         }
 
         return collect();
     }
 
-    /**
-     * Download template Excel.
-     */
+    // Download template Excel.
     public function downloadTemplate(
         $formId,
         QuestionTemplateSpreadsheet $templateService
@@ -1071,11 +930,8 @@ class QuestionController extends Controller
         );
     }
 
-    /**
-     * Import Question + Option.
-     *
-     * Survei yang sudah berjalan TIDAK menghalangi import.
-     */
+    // Import Question + Option.
+    // Survei yang sudah berjalan TIDAK menghalangi import.
     public function import(
         Request $request,
         $formId
@@ -1101,11 +957,7 @@ class QuestionController extends Controller
             ],
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pastikan form sesuai
-        |--------------------------------------------------------------------------
-        */
+        // Pastikan form sesuai
         $form = Form::query()
             ->where('id', $formId)
             ->where(
@@ -1118,11 +970,7 @@ class QuestionController extends Controller
             )
             ->firstOrFail();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Description tidak boleh
-        |--------------------------------------------------------------------------
-        */
+        // Description tidak boleh
         if ((int) $form->formtype_id === 12) {
             return redirect()
                 ->route('admin.units', [
@@ -1136,11 +984,7 @@ class QuestionController extends Controller
         }
 
         try {
-            /*
-            |--------------------------------------------------------------------------
-            | Buka Spreadsheet
-            |--------------------------------------------------------------------------
-            */
+            // Buka Spreadsheet
             $spreadsheet = IOFactory::load(
                 $request
                     ->file('file')
@@ -1164,11 +1008,7 @@ class QuestionController extends Controller
                     'MASTER_FORM'
                 );
 
-            /*
-            |--------------------------------------------------------------------------
-            | Validasi sheet
-            |--------------------------------------------------------------------------
-            */
+            // Validasi sheet
             if (! $questionSheet) {
                 throw ValidationException::withMessages([
                     'file' => 'Sheet INPUT_PERTANYAAN tidak ditemukan.',
@@ -1187,11 +1027,7 @@ class QuestionController extends Controller
                 ]);
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Pastikan template berasal dari form yang benar
-            |--------------------------------------------------------------------------
-            */
+            // Pastikan template berasal dari form yang benar
             $templateFormId = (int)
                 $masterFormSheet
                     ->getCell('A2')
@@ -1206,11 +1042,7 @@ class QuestionController extends Controller
                 ]);
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Baca data Excel
-            |--------------------------------------------------------------------------
-            */
+            // Baca data Excel
             $questionRows =
                 $questionSheet->toArray(
                     null,
@@ -1231,11 +1063,7 @@ class QuestionController extends Controller
                 ? $comparisonSheet->toArray(null, true, true, false)
                 : [];
 
-            /*
-            |--------------------------------------------------------------------------
-            | Validasi header
-            |--------------------------------------------------------------------------
-            */
+            // Validasi header
             $this->validateQuestionHeaders(
                 $questionRows
             );
@@ -1248,11 +1076,7 @@ class QuestionController extends Controller
                 $this->validateComparisonHeaders($comparisonRows);
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Allowed Question Types
-            |--------------------------------------------------------------------------
-            */
+            // Allowed Question Types
             $allowedQuestionTypeIds =
                 $this
                     ->getQuestionTypesByForm(
@@ -1267,17 +1091,11 @@ class QuestionController extends Controller
             $questionsForImport = [];
             $questionCodes = [];
 
-            /*
-            |--------------------------------------------------------------------------
-            | INPUT_PERTANYAAN
-            |--------------------------------------------------------------------------
-            */
+            // INPUT_PERTANYAAN
             foreach (
                 $questionRows as $index => $row
             ) {
-                /*
-                | Row pertama adalah header.
-                */
+                // Row pertama adalah header.
                 if ($index === 0) {
                     continue;
                 }
@@ -1293,11 +1111,7 @@ class QuestionController extends Controller
                     (string) ($row[2] ?? '')
                 );
 
-                /*
-                |--------------------------------------------------------------------------
-                | NO harus dibaca sebagai string
-                |--------------------------------------------------------------------------
-                */
+                // NO harus dibaca sebagai string
                 $number = trim(
                     (string) ($row[3] ?? '')
                 );
@@ -1314,11 +1128,7 @@ class QuestionController extends Controller
                 $comparisonPrompt = trim((string) ($row[7] ?? ''));
                 $comparisonOptionsValue = trim((string) ($row[8] ?? ''));
 
-                /*
-                |--------------------------------------------------------------------------
-                | Skip row kosong
-                |--------------------------------------------------------------------------
-                */
+                // Skip row kosong
                 $isEmpty =
                     $code === ''
                     &&
@@ -1337,34 +1147,23 @@ class QuestionController extends Controller
                     continue;
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Kode
-                |--------------------------------------------------------------------------
-                */
+                // Kode
                 if ($code === '') {
                     throw ValidationException::withMessages([
                         'file' => "Kode pertanyaan pada baris {$excelRow} wajib diisi.",
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | NO
-                |--------------------------------------------------------------------------
-                | Diperbolehkan:
-                |
-                | 0
-                | 1
-                | 2
-                | 3
-                | 3.1
-                | 3.10
-                | 3.11
-                |
-                | NO boleh kembar.
-                |--------------------------------------------------------------------------
-                */
+                // NO
+                // Diperbolehkan:
+                // 0
+                // 1
+                // 2
+                // 3
+                // 3.1
+                // 3.10
+                // 3.11
+                // NO boleh kembar.
                 if ($number === '') {
                     throw ValidationException::withMessages([
                         'file' => "Nomor pertanyaan pada baris {$excelRow} wajib diisi.",
@@ -1383,22 +1182,14 @@ class QuestionController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Nama Question
-                |--------------------------------------------------------------------------
-                */
+                // Nama Question
                 if ($name === '') {
                     throw ValidationException::withMessages([
                         'file' => "Nama pertanyaan pada baris {$excelRow} wajib diisi.",
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | No Header
-                |--------------------------------------------------------------------------
-                */
+                // No Header
                 if (
                     mb_strlen($noHeader) > 20
                 ) {
@@ -1407,11 +1198,7 @@ class QuestionController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Question Name
-                |--------------------------------------------------------------------------
-                */
+                // Question Name
                 if (
                     mb_strlen($name) > 1000
                 ) {
@@ -1420,11 +1207,7 @@ class QuestionController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Question Type
-                |--------------------------------------------------------------------------
-                */
+                // Question Type
                 $questionTypeId =
                     $this->extractReferenceId(
                         $questionTypeValue
@@ -1472,18 +1255,11 @@ class QuestionController extends Controller
                     ->values()
                     ->all();
 
-                /*
-                |--------------------------------------------------------------------------
-                | KODE PERTANYAAN tetap harus unik
-                |--------------------------------------------------------------------------
-                |
-                | Perhatikan:
-                |
-                | NO boleh sama.
-                | KODE tidak boleh sama.
-                |
-                | Kode digunakan untuk menghubungkan pertanyaan dengan option.
-                */
+                // KODE PERTANYAAN tetap harus unik
+                // Perhatikan:
+                // NO boleh sama.
+                // KODE tidak boleh sama.
+                // Kode digunakan untuk menghubungkan pertanyaan dengan option.
                 $normalizedCode =
                     strtoupper($code);
 
@@ -1503,11 +1279,7 @@ class QuestionController extends Controller
                     $normalizedCode
                 ] = true;
 
-                /*
-                |--------------------------------------------------------------------------
-                | Masukkan ke buffer import
-                |--------------------------------------------------------------------------
-                */
+                // Masukkan ke buffer import
                 $questionsForImport[
                     $normalizedCode
                 ] = [
@@ -1563,11 +1335,7 @@ class QuestionController extends Controller
             }
             unset($questionData);
 
-            /*
-            |--------------------------------------------------------------------------
-            | Tidak ada pertanyaan
-            |--------------------------------------------------------------------------
-            */
+            // Tidak ada pertanyaan
             if (
                 empty($questionsForImport)
             ) {
@@ -1576,11 +1344,7 @@ class QuestionController extends Controller
                 ]);
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | INPUT_OPTIONS
-            |--------------------------------------------------------------------------
-            */
+            // INPUT_OPTIONS
             $optionsForImport = [];
 
             foreach (
@@ -1613,11 +1377,7 @@ class QuestionController extends Controller
                     (string) ($row[4] ?? '')
                 );
 
-                /*
-                |--------------------------------------------------------------------------
-                | Skip kosong
-                |--------------------------------------------------------------------------
-                */
+                // Skip kosong
                 $isEmpty =
                     $questionCode === ''
                     &&
@@ -1633,11 +1393,7 @@ class QuestionController extends Controller
                     continue;
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Question Code
-                |--------------------------------------------------------------------------
-                */
+                // Question Code
                 if ($questionCode === '') {
                     throw ValidationException::withMessages([
                         'file' => "Kode pertanyaan option pada baris {$excelRow} wajib diisi.",
@@ -1661,22 +1417,14 @@ class QuestionController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Urutan Option
-                |--------------------------------------------------------------------------
-                */
+                // Urutan Option
                 if ($number === '') {
                     throw ValidationException::withMessages([
                         'file' => "Urutan option pada baris {$excelRow} wajib diisi.",
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Untuk OPTION, tetap integer minimal 1
-                |--------------------------------------------------------------------------
-                */
+                // Untuk OPTION, tetap integer minimal 1
                 if (
                     filter_var(
                         $number,
@@ -1693,11 +1441,7 @@ class QuestionController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Option Text
-                |--------------------------------------------------------------------------
-                */
+                // Option Text
                 if ($answerText === '') {
                     throw ValidationException::withMessages([
                         'file' => "Nama option pada baris {$excelRow} wajib diisi.",
@@ -1712,11 +1456,7 @@ class QuestionController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Has Child
-                |--------------------------------------------------------------------------
-                */
+                // Has Child
                 $hasChild =
                     $this->extractReferenceId(
                         $hasChildValue
@@ -1736,11 +1476,7 @@ class QuestionController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Child Label
-                |--------------------------------------------------------------------------
-                */
+                // Child Label
                 if (
                     (int) $hasChild === 1
                     &&
@@ -1759,11 +1495,7 @@ class QuestionController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Buffer Option
-                |--------------------------------------------------------------------------
-                */
+                // Buffer Option
                 $optionsForImport[
                     $normalizedCode
                 ][] = [
@@ -1779,11 +1511,7 @@ class QuestionController extends Controller
                 ];
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Transaction Import
-            |--------------------------------------------------------------------------
-            */
+            // Transaction Import
             $result = DB::transaction(
                 function () use (
                     $form,
@@ -1796,11 +1524,7 @@ class QuestionController extends Controller
                     foreach (
                         $questionsForImport as $code => $questionData
                     ) {
-                        /*
-                        |--------------------------------------------------------------------------
-                        | Create Question
-                        |--------------------------------------------------------------------------
-                        */
+                        // Create Question
                         $question =
                             Question::create([
                                 'group_id' => $form->group_id,
@@ -1811,9 +1535,7 @@ class QuestionController extends Controller
                                         'no_header'
                                     ],
 
-                                /*
-                                | Tetap string.
-                                */
+                                // Tetap string.
                                 'no' => (string) $questionData[
                                         'no'
                                     ],
@@ -1833,11 +1555,7 @@ class QuestionController extends Controller
 
                         $questionCount++;
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | Create Options
-                        |--------------------------------------------------------------------------
-                        */
+                        // Create Options
                         foreach (
                             $optionsForImport[
                                 $code
@@ -1875,19 +1593,11 @@ class QuestionController extends Controller
                 }
             );
 
-            /*
-            |--------------------------------------------------------------------------
-            | Bersihkan Spreadsheet
-            |--------------------------------------------------------------------------
-            */
+            // Bersihkan Spreadsheet
             $spreadsheet
                 ->disconnectWorksheets();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Success
-            |--------------------------------------------------------------------------
-            */
+            // Success
             return redirect()
                 ->route('admin.units', [
                     'id' => $form->group_id,
@@ -1917,9 +1627,7 @@ class QuestionController extends Controller
         }
     }
 
-    /**
-     * Validasi header INPUT_PERTANYAAN.
-     */
+    // Validasi header INPUT_PERTANYAAN.
     private function validateQuestionHeaders(
         array $rows
     ): void {
@@ -1967,9 +1675,7 @@ class QuestionController extends Controller
         }
     }
 
-    /**
-     * Validasi header INPUT_OPTIONS.
-     */
+    // Validasi header INPUT_OPTIONS.
     private function validateOptionHeaders(
         array $rows
     ): void {
@@ -2021,14 +1727,11 @@ class QuestionController extends Controller
         }
     }
 
-    /**
-     * Ambil ID dari:
-     *
-     * 1 - Text
-     * 2 - Textarea
-     * 0 - Tidak
-     * 1 - Iya
-     */
+    // Ambil ID dari:
+    // 1 - Text
+    // 2 - Textarea
+    // 0 - Tidak
+    // 1 - Iya
     private function extractReferenceId(
         string $value
     ): ?int {

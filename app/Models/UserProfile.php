@@ -6,9 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserProfile extends Model
 {
-    /**
-     * The attributes that are mass assignable.
-     */
+    // The attributes that are mass assignable.
     protected $fillable = [
         'user_id',
         'activity_id',

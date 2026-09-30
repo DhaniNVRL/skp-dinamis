@@ -121,30 +121,18 @@ class GroupController extends Controller
 
         $sheet->setTitle('Input Group');
 
-        /*
-        |--------------------------------------------------------------------------
-        | HEADER
-        |--------------------------------------------------------------------------
-        */
+        // HEADER
 
         $sheet->setCellValue('A1', 'name');
 
-        /*
-        |--------------------------------------------------------------------------
-        | CONTOH DATA
-        |--------------------------------------------------------------------------
-        */
+        // CONTOH DATA
 
         $sheet->setCellValue(
             'A2',
             'Contoh Nama Group'
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | STYLE
-        |--------------------------------------------------------------------------
-        */
+        // STYLE
 
         $sheet->getStyle('A1')
             ->getFont()
@@ -217,9 +205,7 @@ class GroupController extends Controller
             $names = [];
 
             foreach ($rows as $index => $row) {
-                /*
-                | Baris pertama adalah header.
-                */
+                // Baris pertama adalah header.
                 if ($index === 0) {
                     continue;
                 }
@@ -228,18 +214,14 @@ class GroupController extends Controller
                     (string) ($row[0] ?? '')
                 );
 
-                /*
-                | Lewati baris kosong.
-                */
+                // Lewati baris kosong.
                 if ($name === '') {
                     $skipped++;
 
                     continue;
                 }
 
-                /*
-                | Hindari duplikasi Group dalam Activity yang sama.
-                */
+                // Hindari duplikasi Group dalam Activity yang sama.
                 $exists = Group::query()
                     ->where(
                         'activity_id',

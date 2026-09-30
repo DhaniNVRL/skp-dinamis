@@ -16,9 +16,7 @@ class RoleController extends Controller
 {
     private const SYSTEM_ROLES = ['admin', 'pm', 'surveyor', 'monitoring', 'user'];
 
-    /**
-     * Display a listing of the resource.
-     */
+    // Display a listing of the resource.
     public function index()
     {
         $roles = Role::query()->orderBy('id')->get();
@@ -26,17 +24,13 @@ class RoleController extends Controller
         return view('admin.masterdata.role', compact('roles'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    // Show the form for creating a new resource.
     public function create()
     {
-        //
+
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Store a newly created resource in storage.
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -130,26 +124,20 @@ class RoleController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // Display the specified resource.
     public function show(string $id)
     {
-        //
+
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+    // Show the form for editing the specified resource.
     public function edit(string $id)
     {
         $role = Role::findOrFail($id);
         return view('admin.edit.editrole', compact('role'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // Update the specified resource in storage.
     public function update(Request $request, string $id)
     {
         $role = Role::findOrFail($id);
@@ -172,9 +160,7 @@ class RoleController extends Controller
         return redirect()->route('admin.roles')->with('success', 'data berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Remove the specified resource from storage.
     public function destroy(string $id)
     {
         $role= Role::findOrFail($id);

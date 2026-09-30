@@ -14,4 +14,11 @@
         Pertanyaan
     </option>
 
+    <option
+        value="3"
+        data-description="Pertanyaan isian untuk menyebutkan nama kompetitor."
+    >
+        Nama Kompetitor (Textarea)
+    </option>
+
 </template>

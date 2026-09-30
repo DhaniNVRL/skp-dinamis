@@ -84,4 +84,28 @@ class QuestionDisplayOrderTest extends TestCase
             Form::query()->findOrFail(2)->questions->pluck('name')->all()
         );
     }
+
+    public function test_customer_assessment_orders_two_indicators_before_single_indicator_and_textarea(): void
+    {
+        foreach ([2, 3, 15, 16] as $index => $formTypeId) {
+            $formId = 10 + $index;
+            $baseId = 20 + ($index * 10);
+
+            DB::table('forms')->insert([
+                'id' => $formId,
+                'formtype_id' => $formTypeId,
+            ]);
+            DB::table('questions')->insert([
+                ['id' => $baseId, 'form_id' => $formId, 'no_header' => 'C', 'no' => '0', 'name' => 'Judul', 'questiontype_id' => 1],
+                ['id' => $baseId + 1, 'form_id' => $formId, 'no_header' => 'C', 'no' => 'A', 'name' => 'Textarea', 'questiontype_id' => 6],
+                ['id' => $baseId + 2, 'form_id' => $formId, 'no_header' => 'C', 'no' => 'K', 'name' => 'Satu indikator', 'questiontype_id' => 5],
+                ['id' => $baseId + 3, 'form_id' => $formId, 'no_header' => 'C', 'no' => '10', 'name' => 'Dua indikator', 'questiontype_id' => 2],
+            ]);
+
+            $this->assertSame(
+                ['Judul', 'Dua indikator', 'Satu indikator', 'Textarea'],
+                Form::query()->findOrFail($formId)->questions->pluck('name')->all()
+            );
+        }
+    }
 }

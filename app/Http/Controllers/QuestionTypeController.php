@@ -14,9 +14,7 @@ use Throwable;
 
 class QuestionTypeController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Display a listing of the resource.
     public function index()
     {
         $questtypes = QuestionType::query()->orderBy('id')->get();
@@ -24,17 +22,13 @@ class QuestionTypeController extends Controller
         return view('admin.questiontypes.index', compact('questtypes'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    // Show the form for creating a new resource.
     public function create()
     {
-        //
+
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Store a newly created resource in storage.
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -68,26 +62,20 @@ class QuestionTypeController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // Display the specified resource.
     public function show(QuestionType $questionType)
     {
-        //
+
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+    // Show the form for editing the specified resource.
     public function edit(QuestionType $questionType, $id)
     {
         $questtypes = QuestionType::findOrFail($id);
         return view('admin.edit.editquesttypes', compact('questtypes'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // Update the specified resource in storage.
     public function update(Request $request, QuestionType $questionType, $id)
     {
         $questtypes = QuestionType::findOrFail($id);
@@ -103,9 +91,7 @@ class QuestionTypeController extends Controller
 
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Remove the specified resource from storage.
     public function destroy(QuestionType $questionType, $id)
     {
         $questtypes = QuestionType::findOrFail($id);

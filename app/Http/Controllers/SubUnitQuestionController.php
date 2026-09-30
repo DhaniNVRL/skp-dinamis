@@ -51,10 +51,8 @@ class SubUnitQuestionController extends Controller
             $validated['question_id']
         );
 
-        /*
-         * Pastikan pertanyaan memang milik form tersebut.
-         * Sesuaikan form_id jika kolom Question Anda bernama id_forms.
-         */
+        // Pastikan pertanyaan memang milik form tersebut.
+        // Sesuaikan form_id jika kolom Question Anda bernama id_forms.
         if ((int) $question->form_id !== (int) $form->id) {
             throw ValidationException::withMessages([
                 'question_id' => 'Pertanyaan tidak terdaftar pada form yang dipilih.',

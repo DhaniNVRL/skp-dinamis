@@ -23,9 +23,7 @@ use Throwable;
 
 class FormController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Display a listing of the resource.
     public function index($id)
     {
         return redirect()->route('admin.units', [
@@ -41,17 +39,13 @@ class FormController extends Controller
         return view('/admin/masterdata/form', compact('forms'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    // Show the form for creating a new resource.
     public function create()
     {
-        //
+
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Store a newly created resource in storage.
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -105,9 +99,7 @@ class FormController extends Controller
             ->with('success', 'Form berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // Display the specified resource.
     public function show(Form $form)
     {
         return redirect()->route('admin.units', [
@@ -128,9 +120,7 @@ class FormController extends Controller
         return view('admin.edit.editform', compact('form', 'formtypes'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // Update the specified resource in storage.
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -190,9 +180,7 @@ class FormController extends Controller
             );
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Remove the specified resource from storage.
 
 
     public function destroy($id)
@@ -455,24 +443,15 @@ class FormController extends Controller
 
     private function deleteFormRelations(Form $form): void
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Ambil seluruh ID pertanyaan pada form
-        |--------------------------------------------------------------------------
-        */
+        // Ambil seluruh ID pertanyaan pada form
         $questionIds = Question::query()
             ->where('form_id', $form->id)
             ->pluck('id');
 
-        /*
-        |--------------------------------------------------------------------------
-        | 1. Hapus ANSWER
-        |--------------------------------------------------------------------------
-        | Kita hapus berdasarkan form_id DAN question_id.
-        |
-        | form_id penting untuk jawaban yang memang tercatat langsung ke form.
-        | question_id penting sebagai pengaman semua jawaban pertanyaan form.
-        */
+        // 1. Hapus ANSWER
+        // Kita hapus berdasarkan form_id DAN question_id.
+        // form_id penting untuk jawaban yang memang tercatat langsung ke form.
+        // question_id penting sebagai pengaman semua jawaban pertanyaan form.
         Answer::query()
             ->where(function ($query) use ($form, $questionIds) {
 
@@ -487,11 +466,7 @@ class FormController extends Controller
             })
             ->delete();
 
-        /*
-        |--------------------------------------------------------------------------
-        | 2. Hapus OPTION
-        |--------------------------------------------------------------------------
-        */
+        // 2. Hapus OPTION
         if ($questionIds->isNotEmpty()) {
             Option::query()
                 ->whereIn(
@@ -501,22 +476,14 @@ class FormController extends Controller
                 ->delete();
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 3. Hapus konfigurasi Sub Unit / Hide Show
-        |--------------------------------------------------------------------------
-        */
+        // 3. Hapus konfigurasi Sub Unit / Hide Show
         SubUnitQuestion::query()
             ->where('form_id', $form->id)
             ->delete();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Tambahan pengaman
-        |--------------------------------------------------------------------------
-        | Jika ada data lama yang form_id-nya tidak sesuai tetapi question_id
-        | masih menunjuk pertanyaan form ini.
-        */
+        // Tambahan pengaman
+        // Jika ada data lama yang form_id-nya tidak sesuai tetapi question_id
+        // masih menunjuk pertanyaan form ini.
         if ($questionIds->isNotEmpty()) {
             SubUnitQuestion::query()
                 ->whereIn(
@@ -526,38 +493,22 @@ class FormController extends Controller
                 ->delete();
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 4. Hapus DESCRIPTION
-        |--------------------------------------------------------------------------
-        */
+        // 4. Hapus DESCRIPTION
         Description::query()
             ->where('form_id', $form->id)
             ->delete();
 
-        /*
-        |--------------------------------------------------------------------------
-        | 5. Hapus COMPETITOR
-        |--------------------------------------------------------------------------
-        */
+        // 5. Hapus COMPETITOR
         Competitor::query()
             ->where('form_id', $form->id)
             ->delete();
 
-        /*
-        |--------------------------------------------------------------------------
-        | 6. Hapus QUESTION
-        |--------------------------------------------------------------------------
-        */
+        // 6. Hapus QUESTION
         Question::query()
             ->where('form_id', $form->id)
             ->delete();
 
-        /*
-        |--------------------------------------------------------------------------
-        | 7. Terakhir hapus FORM
-        |--------------------------------------------------------------------------
-        */
+        // 7. Terakhir hapus FORM
         $form->delete();
     }
 }

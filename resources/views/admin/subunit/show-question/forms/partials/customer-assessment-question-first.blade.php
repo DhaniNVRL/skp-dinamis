@@ -6,7 +6,7 @@
 <div data-customer-assessment class="space-y-5">
     @forelse ($questions->groupBy('no_header') as $group)
         @php
-            $orderedGroup = $group->sortBy('no')->values();
+            $orderedGroup = $group->values();
 
             $headerQuestion = $orderedGroup->first(function ($question) {
                 return (int) (

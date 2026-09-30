@@ -439,6 +439,18 @@ class AnswerController extends Controller
                             true
                         )
                     ) {
+                        if ((int) $question->questiontype_id === 3) {
+                            $this->saveAnswer(
+                                $form,
+                                $question->id,
+                                (array) $questionPayload,
+                                null,
+                                null
+                            );
+
+                            continue;
+                        }
+
                         foreach (
                             $competitorIds
                             as $competitorId
@@ -518,11 +530,7 @@ class AnswerController extends Controller
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | FEEDBACK FIELDS
-    |--------------------------------------------------------------------------
-    */
+    // FEEDBACK FIELDS
     private function feedbackFieldsForForm(
         Form $form
     ): array {
@@ -558,11 +566,7 @@ class AnswerController extends Controller
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDATE FEEDBACK
-    |--------------------------------------------------------------------------
-    */
+    // VALIDATE FEEDBACK
     private function validateFeedbackAnswer(
         Form $form,
         Question $question,
@@ -613,24 +617,14 @@ class AnswerController extends Controller
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | DUPLICATE FEEDBACK
-    |--------------------------------------------------------------------------
-    |
-    | Contoh:
-    |
-    | Question D1
-    |
-    | Sub Unit A:
-    | Keluhan = "Sudah baik"
-    |
-    | Sub Unit B:
-    | Keluhan = "Sudah baik"
-    |
-    | Maka keduanya dianggap duplicate.
-    |
-    */
+    // DUPLICATE FEEDBACK
+    // Contoh:
+    // Question D1
+    // Sub Unit A:
+    // Keluhan = "Sudah baik"
+    // Sub Unit B:
+    // Keluhan = "Sudah baik"
+    // Maka keduanya dianggap duplicate.
     private function validateDuplicateFeedbackAnswers(
         Form $form,
         Question $question,
@@ -761,11 +755,7 @@ class AnswerController extends Controller
                     []
                 );
 
-            /*
-            |--------------------------------------------------------------------------
-            | CUSTOMER
-            |--------------------------------------------------------------------------
-            */
+            // CUSTOMER
             if (
                 in_array(
                     (int) $form->formtype_id,
@@ -813,11 +803,7 @@ class AnswerController extends Controller
             }
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | FEEDBACK
-            |--------------------------------------------------------------------------
-            */
+            // FEEDBACK
             if (
                 in_array(
                     (int) $form->formtype_id,
@@ -861,10 +847,8 @@ class AnswerController extends Controller
                         );
                 }
 
-                /*
-                 * Cek duplicate setelah seluruh
-                 * Sub Unit divalidasi.
-                 */
+                // Cek duplicate setelah seluruh
+                // Sub Unit divalidasi.
                 $this
                     ->validateDuplicateFeedbackAnswers(
                         $form,
@@ -878,11 +862,7 @@ class AnswerController extends Controller
             }
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | RANKING
-            |--------------------------------------------------------------------------
-            */
+            // RANKING
             if (
                 in_array(
                     (int) $form->formtype_id,
@@ -902,11 +882,7 @@ class AnswerController extends Controller
             }
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | PER SUB UNIT
-            |--------------------------------------------------------------------------
-            */
+            // PER SUB UNIT
             if (
                 in_array(
                     (int) $form->formtype_id,
@@ -959,11 +935,7 @@ class AnswerController extends Controller
             }
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | COMPETITOR
-            |--------------------------------------------------------------------------
-            */
+            // COMPETITOR
             if (
                 in_array(
                     (int) $form->formtype_id,
@@ -971,6 +943,20 @@ class AnswerController extends Controller
                     true
                 )
             ) {
+                if ((int) $question->questiontype_id === 3) {
+                    $value = trim((string) Arr::get($questionPayload, 'value', ''));
+
+                    if ($value === '') {
+                        $errors["answers.{$question->id}.value"] =
+                            "Pertanyaan {$question->name} wajib diisi.";
+                    } elseif (mb_strlen($value) > 5000) {
+                        $errors["answers.{$question->id}.value"] =
+                            "Jawaban {$question->name} maksimal 5000 karakter.";
+                    }
+
+                    continue;
+                }
+
                 foreach (
                     $competitorIds
                     as $competitorId
@@ -1536,11 +1522,7 @@ class AnswerController extends Controller
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | NORMALIZE
-    |--------------------------------------------------------------------------
-    */
+    // NORMALIZE
     private function normalizeAnswer(
         mixed $value
     ): string {

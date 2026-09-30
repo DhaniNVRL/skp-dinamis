@@ -35,6 +35,10 @@
                     return (int) $a->id <=> (int) $b->id;
                 })
                 ->values();
+
+            $optionGrid = \App\Support\QuestionOptionGrid::layout(
+                $sortedOptions->count()
+            );
         @endphp
 
         {{-- TYPE 10: TITLE TANPA JAWABAN --}}
@@ -115,7 +119,10 @@
                     </h3>
                 </div>
 
-                <div class="space-y-3">
+                <div
+                    class="question-option-grid"
+                    style="--question-option-columns: {{ $optionGrid['columns'] }}"
+                >
                     @forelse ($sortedOptions as $option)
                         @php
                             $hasChild =
@@ -180,7 +187,7 @@
                             @endif
                         </div>
                     @empty
-                        <div class="rounded-lg border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500">
+                        <div class="col-span-full rounded-lg border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500">
                             Pilihan jawaban belum tersedia.
                         </div>
                     @endforelse
@@ -214,7 +221,10 @@
                     </div>
                 </div>
 
-                <div class="space-y-3">
+                <div
+                    class="question-option-grid"
+                    style="--question-option-columns: {{ $optionGrid['columns'] }}"
+                >
                     @forelse ($sortedOptions as $option)
                         @php
                             $hasChild =
@@ -279,7 +289,7 @@
                             @endif
                         </div>
                     @empty
-                        <div class="rounded-lg border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500">
+                        <div class="col-span-full rounded-lg border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500">
                             Pilihan jawaban belum tersedia.
                         </div>
                     @endforelse

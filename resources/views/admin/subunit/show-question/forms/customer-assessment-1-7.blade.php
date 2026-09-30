@@ -23,7 +23,7 @@
         $questions->groupBy('no_header')
         as $noHeader => $group
     )
-        @foreach ($group->sortBy('no') as $question)
+        @foreach ($group as $question)
             @php
                 $questionTypeId = (int) (
                     $question->questiontype_id

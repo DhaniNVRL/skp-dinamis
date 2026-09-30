@@ -127,16 +127,25 @@
                 })
                 ->values();
 
-            /*
-             * Selain type 1 akan menjadi pertanyaan penilaian.
-             */
+            // Type 2 menjadi pertanyaan penilaian per kompetitor.
             $assessmentQuestions = $sortedQuestionGroup
-                ->reject(function ($question) {
+                ->filter(function ($question) {
                     return (int) (
                         $question->questiontype_id
                         ?? $question->id_questiontypes
                         ?? 0
-                    ) === 1;
+                    ) === 2;
+                })
+                ->values();
+
+            // Type 3 menjadi textarea global untuk nama kompetitor.
+            $competitorNameQuestions = $sortedQuestionGroup
+                ->filter(function ($question) {
+                    return (int) (
+                        $question->questiontype_id
+                        ?? $question->id_questiontypes
+                        ?? 0
+                    ) === 3;
                 })
                 ->values();
         @endphp
@@ -287,6 +296,60 @@
                 ])
             @endif
         @endif
+
+        @foreach ($competitorNameQuestions as $question)
+            @php
+                $questionNumber = trim(
+                    (string) ($question->no_header ?? '')
+                    . (string) ($question->no ?? '')
+                );
+                $storedValue = old(
+                    "answers.{$question->id}.value",
+                    data_get(
+                        $answerMap,
+                        "{$question->id}.0.0.value",
+                        data_get($answerMap, "{$question->id}.value")
+                    )
+                );
+            @endphp
+
+            <section
+                data-question-container
+                data-question-type="competitor-name"
+                data-question-id="{{ $question->id }}"
+                class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+            >
+                <header class="border-b border-gray-200 bg-gray-50 px-5 py-4">
+                    <div class="flex items-start gap-3">
+                        @if ($questionNumber !== '')
+                            <span class="inline-flex min-w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 px-2.5 py-1 text-sm font-semibold text-blue-700">
+                                {{ $questionNumber }}
+                            </span>
+                        @endif
+
+                        <div class="min-w-0">
+                            <h3 class="font-semibold leading-6 text-gray-800">{{ $question->name }}</h3>
+                            <p class="mt-1 text-xs text-gray-500">Sebutkan nama kompetitor yang dimaksud.</p>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="p-5">
+                    <textarea
+                        name="answers[{{ $question->id }}][value]"
+                        rows="3"
+                        maxlength="5000"
+                        required
+                        placeholder="Sebutkan nama kompetitor..."
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                    >{{ $storedValue }}</textarea>
+
+                    <p data-question-error class="mt-3 hidden text-sm font-medium text-red-600">
+                        Nama kompetitor wajib diisi.
+                    </p>
+                </div>
+            </section>
+        @endforeach
     @empty
         @include(
             'user.survey.partials.empty',
