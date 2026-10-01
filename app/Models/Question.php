@@ -33,7 +33,9 @@ class Question extends Model
     // ID menjadi penentu urutan terakhir.
     public function scopeInDisplayOrder(Builder $query): Builder
     {
-        return $query
+        $driver = $query->getConnection()->getDriverName();
+
+        $query
             ->orderByRaw('LENGTH(COALESCE(questions.no_header, \'\'))')
             ->orderBy('questions.no_header')
             ->orderByRaw(
@@ -72,9 +74,32 @@ class Question extends Model
                     ) AND questions.questiontype_id = 6 THEN 2
                     ELSE 0
                 END'
-            )
-            ->orderByRaw('LENGTH(COALESCE(questions.no, \'\'))')
-            ->orderBy('questions.no')
+            );
+
+        if ($driver === 'sqlite') {
+            $query
+                ->orderByRaw('CAST(COALESCE(questions.no, \'0\') AS INTEGER)')
+                ->orderByRaw(
+                    'CASE
+                        WHEN INSTR(COALESCE(questions.no, \'\'), \'.\') > 0
+                        THEN CAST(SUBSTR(questions.no, INSTR(questions.no, \'.\') + 1) AS INTEGER)
+                        ELSE 0
+                    END'
+                );
+        } else {
+            $query
+                ->orderByRaw('CAST(COALESCE(questions.no, \'0\') AS UNSIGNED)')
+                ->orderByRaw(
+                    'CASE
+                        WHEN LOCATE(\'.\', COALESCE(questions.no, \'\')) > 0
+                        THEN CAST(SUBSTRING_INDEX(questions.no, \'.\', -1) AS UNSIGNED)
+                        ELSE 0
+                    END'
+                );
+        }
+
+        return $query
+            ->orderByRaw('LOWER(COALESCE(questions.no, \'\'))')
             ->orderBy('questions.id');
     }
 

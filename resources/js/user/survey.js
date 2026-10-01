@@ -430,6 +430,30 @@
                             );
                         };
 
+                    const hasSelection =
+                        function (trigger) {
+                            const parentId =
+                                String(
+                                    trigger.parent_id
+                                    || ""
+                                );
+
+                            const selected =
+                                page.querySelector(
+                                    `input[name="answers[${parentId}][value]"]:checked`
+                                )
+                                ||
+                                page.querySelector(
+                                    `select[name="answers[${parentId}][value]"]`
+                                );
+
+                            return Boolean(
+                                selected
+                                &&
+                                String(selected.value || "") !== ""
+                            );
+                        };
+
                     const showRules =
                         Array.isArray(
                             rules.show_rules
@@ -449,6 +473,12 @@
                             showRules.length === 0
                             ||
                             showRules.some(matches)
+                        )
+                        &&
+                        (
+                            hideRules.length === 0
+                            ||
+                            hideRules.every(hasSelection)
                         )
                         &&
                         !hideRules.some(matches);

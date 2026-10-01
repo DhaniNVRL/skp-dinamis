@@ -13,7 +13,10 @@
 
 
     {{-- QUESTIONS --}}
-    @foreach ($form->questions->sortBy('no') as $question)
+    @foreach ($form->questions->sortBy(
+        fn ($question) => trim((string) $question->no_header).trim((string) $question->no),
+        SORT_NATURAL | SORT_FLAG_CASE
+    ) as $question)
 
         @php
             $key = $form->id.'-'.$question->id;

@@ -71,6 +71,31 @@ class QuestionDisplayOrderTest extends TestCase
         );
     }
 
+    public function test_general_questionnaire_places_letter_suffixes_directly_after_their_base_number(): void
+    {
+        DB::table('forms')->insert(['id' => 4, 'formtype_id' => 1]);
+        DB::table('questions')->insert([
+            ['id' => 10, 'form_id' => 4, 'no_header' => 'L', 'no' => '8a', 'name' => 'Pertanyaan L8a', 'questiontype_id' => 1],
+            ['id' => 11, 'form_id' => 4, 'no_header' => 'L', 'no' => '5c', 'name' => 'Pertanyaan L5c', 'questiontype_id' => 1],
+            ['id' => 12, 'form_id' => 4, 'no_header' => 'L', 'no' => '5', 'name' => 'Pertanyaan L5', 'questiontype_id' => 4],
+            ['id' => 13, 'form_id' => 4, 'no_header' => 'L', 'no' => '6', 'name' => 'Pertanyaan L6', 'questiontype_id' => 3],
+            ['id' => 14, 'form_id' => 4, 'no_header' => 'L', 'no' => '5a', 'name' => 'Pertanyaan L5a', 'questiontype_id' => 1],
+            ['id' => 15, 'form_id' => 4, 'no_header' => 'L', 'no' => '5b', 'name' => 'Pertanyaan L5b', 'questiontype_id' => 2],
+        ]);
+
+        $this->assertSame(
+            [
+                'Pertanyaan L5',
+                'Pertanyaan L5a',
+                'Pertanyaan L5b',
+                'Pertanyaan L5c',
+                'Pertanyaan L6',
+                'Pertanyaan L8a',
+            ],
+            Form::query()->findOrFail(4)->questions->pluck('name')->all()
+        );
+    }
+
     public function test_special_form_places_question_type_one_title_before_same_number(): void
     {
         DB::table('forms')->insert(['id' => 2, 'formtype_id' => 2]);

@@ -293,6 +293,17 @@
                     );
                 };
 
+            $hasConditionalSelection =
+                function (array $trigger) use ($answerMap): bool {
+
+                    $selected = data_get(
+                        $answerMap,
+                        $trigger['parent_id'] . '.0.0.value'
+                    );
+
+                    return ! blank($selected);
+                };
+
             $showRules = collect(
                 $conditionalRule['show_rules'] ?? []
             );
@@ -300,6 +311,13 @@
             $hideRules = collect(
                 $conditionalRule['hide_rules'] ?? []
             );
+
+            $hideRulesHaveSelection =
+                $hideRules->isEmpty()
+                ||
+                $hideRules->every(
+                    $hasConditionalSelection
+                );
 
             $conditionalVisible =
                 ! $conditionalRule
@@ -312,6 +330,8 @@
                             $matchesConditionalTrigger
                         )
                     )
+                    &&
+                    $hideRulesHaveSelection
                     &&
                     ! $hideRules->contains(
                         $matchesConditionalTrigger

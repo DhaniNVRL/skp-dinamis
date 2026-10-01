@@ -222,13 +222,6 @@ class SurveyController extends Controller
                 ->with('error', 'Mulai survei sebelum menyelesaikannya.');
         }
 
-        $incompleteForm = $this->firstIncompleteForm($profile);
-
-        if ($incompleteForm) {
-            return redirect()->route('survey.show', $incompleteForm)
-                ->with('error', 'Lengkapi seluruh jawaban pada form ini sebelum menyelesaikan survei.');
-        }
-
         $lastForm = Form::where('group_id', $profile->group_id)
             ->orderByDesc('no_urut')
             ->orderByDesc('id')
@@ -280,20 +273,6 @@ class SurveyController extends Controller
                     ->with(
                         'finish',
                         'Terima kasih, nilai sudah terinput.'
-                    );
-            }
-
-            $profile = $this->completeProfile();
-
-
-            $incompleteForm = $this->firstIncompleteForm($profile);
-
-            if ($incompleteForm) {
-                return redirect()
-                    ->route('survey.show', $incompleteForm)
-                    ->with(
-                        'error',
-                        'Survei belum lengkap. Lengkapi seluruh jawaban sebelum menyelesaikan survei.'
                     );
             }
 

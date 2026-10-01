@@ -1,4 +1,7 @@
-@foreach ($questions->sortBy('no') as $question)
+@foreach ($questions->sortBy(
+    fn ($question) => trim((string) $question->no_header).trim((string) $question->no),
+    SORT_NATURAL | SORT_FLAG_CASE
+) as $question)
     <div class="mb-6 p-4 border rounded-lg shadow-sm bg-white">
         <!-- BODY QUESTION -->
         <div class="mt-4">

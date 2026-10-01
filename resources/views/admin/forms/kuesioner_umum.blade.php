@@ -29,7 +29,10 @@
     </div>
 @endif
 
-@foreach ($questions->sortBy('no') as $question)
+@foreach ($questions->sortBy(
+    fn ($question) => trim((string) $question->no_header).trim((string) $question->no),
+    SORT_NATURAL | SORT_FLAG_CASE
+) as $question)
 @php
     $sortedOptions = $question->options
         ->sortBy('no', SORT_NATURAL)
