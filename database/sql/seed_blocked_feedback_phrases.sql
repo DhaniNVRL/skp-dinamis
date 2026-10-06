@@ -1,0 +1,55 @@
+-- Daftar kata/kalimat lama untuk Form Keluhan dan Saran.
+-- Jalankan setelah migrasi create_blocked_feedback_phrases_table berhasil.
+-- Script aman dijalankan ulang karena normalized_hash memiliki indeks unik.
+
+INSERT INTO `blocked_feedback_phrases`
+    (`phrase`, `normalized_phrase`, `normalized_hash`, `is_active`, `created_at`, `updated_at`)
+VALUES
+    ('tidak ada', 'tidak ada', SHA2('tidak ada', 256), 1, NOW(), NOW()),
+    ('tidak ada saran', 'tidak ada saran', SHA2('tidak ada saran', 256), 1, NOW(), NOW()),
+    ('tidak ada keluhan', 'tidak ada keluhan', SHA2('tidak ada keluhan', 256), 1, NOW(), NOW()),
+    ('tidak ada keunggulan', 'tidak ada keunggulan', SHA2('tidak ada keunggulan', 256), 1, NOW(), NOW()),
+    ('tidak ada masukan', 'tidak ada masukan', SHA2('tidak ada masukan', 256), 1, NOW(), NOW()),
+    ('tidak ada komentar', 'tidak ada komentar', SHA2('tidak ada komentar', 256), 1, NOW(), NOW()),
+    ('tidak ada jawaban', 'tidak ada jawaban', SHA2('tidak ada jawaban', 256), 1, NOW(), NOW()),
+    ('ga ada', 'ga ada', SHA2('ga ada', 256), 1, NOW(), NOW()),
+    ('gak ada', 'gak ada', SHA2('gak ada', 256), 1, NOW(), NOW()),
+    ('nggak ada', 'nggak ada', SHA2('nggak ada', 256), 1, NOW(), NOW()),
+    ('ngga ada', 'ngga ada', SHA2('ngga ada', 256), 1, NOW(), NOW()),
+    ('enggak ada', 'enggak ada', SHA2('enggak ada', 256), 1, NOW(), NOW()),
+    ('g ada', 'g ada', SHA2('g ada', 256), 1, NOW(), NOW()),
+    ('gada', 'gada', SHA2('gada', 256), 1, NOW(), NOW()),
+    ('belum ada', 'belum ada', SHA2('belum ada', 256), 1, NOW(), NOW()),
+    ('nihil', 'nihil', SHA2('nihil', 256), 1, NOW(), NOW()),
+    ('kosong', 'kosong', SHA2('kosong', 256), 1, NOW(), NOW()),
+    ('tidak tahu', 'tidak tahu', SHA2('tidak tahu', 256), 1, NOW(), NOW()),
+    ('ga tahu', 'ga tahu', SHA2('ga tahu', 256), 1, NOW(), NOW()),
+    ('gak tahu', 'gak tahu', SHA2('gak tahu', 256), 1, NOW(), NOW()),
+    ('nggak tahu', 'nggak tahu', SHA2('nggak tahu', 256), 1, NOW(), NOW()),
+    ('ngga tahu', 'ngga tahu', SHA2('ngga tahu', 256), 1, NOW(), NOW()),
+    ('enggak tahu', 'enggak tahu', SHA2('enggak tahu', 256), 1, NOW(), NOW()),
+    ('g tahu', 'g tahu', SHA2('g tahu', 256), 1, NOW(), NOW()),
+    ('kurang tahu', 'kurang tahu', SHA2('kurang tahu', 256), 1, NOW(), NOW()),
+    ('entah', 'entah', SHA2('entah', 256), 1, NOW(), NOW()),
+    ('terserah', 'terserah', SHA2('terserah', 256), 1, NOW(), NOW()),
+    ('skip', 'skip', SHA2('skip', 256), 1, NOW(), NOW()),
+    ('lewati', 'lewati', SHA2('lewati', 256), 1, NOW(), NOW()),
+    ('pass', 'pass', SHA2('pass', 256), 1, NOW(), NOW()),
+    ('none', 'none', SHA2('none', 256), 1, NOW(), NOW()),
+    ('nothing', 'nothing', SHA2('nothing', 256), 1, NOW(), NOW()),
+    ('nil', 'nil', SHA2('nil', 256), 1, NOW(), NOW()),
+    ('n a', 'n a', SHA2('n a', 256), 1, NOW(), NOW()),
+    ('na', 'na', SHA2('na', 256), 1, NOW(), NOW()),
+    ('no comment', 'no comment', SHA2('no comment', 256), 1, NOW(), NOW()),
+    ('no comments', 'no comments', SHA2('no comments', 256), 1, NOW(), NOW()),
+    ('no suggestion', 'no suggestion', SHA2('no suggestion', 256), 1, NOW(), NOW()),
+    ('no suggestions', 'no suggestions', SHA2('no suggestions', 256), 1, NOW(), NOW()),
+    ('no complaint', 'no complaint', SHA2('no complaint', 256), 1, NOW(), NOW()),
+    ('no complaints', 'no complaints', SHA2('no complaints', 256), 1, NOW(), NOW()),
+    ('no idea', 'no idea', SHA2('no idea', 256), 1, NOW(), NOW()),
+    ('nothing to say', 'nothing to say', SHA2('nothing to say', 256), 1, NOW(), NOW())
+ON DUPLICATE KEY UPDATE
+    `phrase` = VALUES(`phrase`),
+    `normalized_phrase` = VALUES(`normalized_phrase`),
+    `is_active` = VALUES(`is_active`),
+    `updated_at` = NOW();

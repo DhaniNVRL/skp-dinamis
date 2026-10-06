@@ -38,6 +38,7 @@
             data-form-id="{{ $form->id }}"
             data-form-name="{{ $form->name }}"
             data-form-type-id="{{ $form->formtype_id }}"
+            data-template-file-name="template-pertanyaan-form-{{ $form->id }}.xlsx"
             data-action="{{ route('question.import', [
                 'formId' => $form->id,
             ]) }}"

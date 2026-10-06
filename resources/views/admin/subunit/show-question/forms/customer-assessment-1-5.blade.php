@@ -129,7 +129,7 @@
                             for="reason_{{ $questionScope }}"
                             class="mb-2 block text-sm font-semibold text-gray-700"
                         >
-                            Alasan
+                            {{ $question->reason_prompt ?: 'Komen/saran untuk perbaikan' }}
                         </label>
 
                         <p class="mb-3 text-xs text-gray-500">

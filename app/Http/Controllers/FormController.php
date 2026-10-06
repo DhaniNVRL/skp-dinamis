@@ -145,6 +145,8 @@ class FormController extends Controller
                 'required',
                 'exists:form_types,id',
             ],
+
+            'merge_parent_id' => ['nullable', 'integer', 'exists:forms,id'],
         ]);
 
         $form = Form::findOrFail($id);
@@ -154,6 +156,25 @@ class FormController extends Controller
             422,
             'Group form tidak dapat diubah melalui proses ini.'
         );
+
+        $mergeParent = null;
+        if (!empty($validated['merge_parent_id'])) {
+            $mergeParent = Form::query()->findOrFail($validated['merge_parent_id']);
+            if ((int) $mergeParent->id === (int) $form->id
+                || (int) $mergeParent->group_id !== (int) $form->group_id
+                || $mergeParent->merge_parent_id !== null
+                || (int) $mergeParent->no_urut >= (int) $form->no_urut) {
+                throw ValidationException::withMessages([
+                    'merge_parent_id' => 'Pilih form utama dengan nomor urut lebih kecil dalam group yang sama.',
+                ]);
+            }
+
+            if ($form->mergedForms()->exists()) {
+                throw ValidationException::withMessages([
+                    'merge_parent_id' => 'Form utama yang sudah memiliki anggota tidak dapat dijadikan anggota form lain.',
+                ]);
+            }
+        }
 
         $form->update([
             'group_id' =>
@@ -167,6 +188,8 @@ class FormController extends Controller
 
             'formtype_id' =>
                 $validated['formtype_id'],
+
+            'merge_parent_id' => $mergeParent?->id,
         ]);
 
         return redirect()

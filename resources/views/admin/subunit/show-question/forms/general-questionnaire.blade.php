@@ -357,6 +357,44 @@
                 @endif
             </div>
 
+        {{-- TYPE 11: SKALA DINAMIS --}}
+        @elseif ($questionTypeId === 11)
+            @php
+                $scaleMinimum = (int) ($question->scale_min ?? 1);
+                $scaleMaximum = (int) ($question->scale_max ?? 10);
+            @endphp
+
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+                <div class="mb-4 flex items-start gap-3">
+                    @include(
+                        'admin.subunit.show-question.forms.partials.question-number',
+                        ['question' => $question]
+                    )
+                    <h3 class="font-semibold text-gray-800">{{ $question->name }}</h3>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-violet-200 bg-violet-50/50 px-4 py-5">
+                    <div class="flex min-w-max items-center justify-center gap-4">
+                        @if (filled($question->scale_left_label))
+                            <span class="text-sm font-medium text-gray-700">({{ $question->scale_left_label }})</span>
+                        @endif
+                        <div class="flex items-center gap-2">
+                            @foreach (range($scaleMinimum, $scaleMaximum) as $value)
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="general_answers[{{ $question->id }}][{{ $scopeId }}]" value="{{ $value }}" class="peer sr-only">
+                                    <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-full border border-violet-300 bg-white px-2 text-sm font-semibold text-violet-700 peer-checked:bg-violet-600 peer-checked:text-white">
+                                        {{ $value }}
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                        @if (filled($question->scale_right_label))
+                            <span class="text-sm font-medium text-gray-700">({{ $question->scale_right_label }})</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
 
         {{-- TYPE 7: DATE --}}
         @elseif ($questionTypeId === 7)

@@ -47,6 +47,18 @@
 
                     @endif
 
+                    @if ($form->merge_parent_id)
+                        <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">
+                            <i class="fa-solid fa-link"></i>
+                            Digabung dengan form {{ $form->mergeParent?->no_urut }} — {{ $form->mergeParent?->name }}
+                        </div>
+                    @elseif ($form->mergedForms->isNotEmpty())
+                        <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">
+                            <i class="fa-solid fa-layer-group"></i>
+                            Form utama gabungan ({{ $form->mergedForms->count() + 1 }} form)
+                        </div>
+                    @endif
+
                 </div>
 
 
@@ -106,6 +118,15 @@
 
                         @break
 
+                    @case(17)
+
+                        @include(
+                            'admin.units.question.partials.forms.customer-assessment-1-7.index',
+                            ['form' => $form, 'questions' => $form->questions]
+                        )
+
+                        @break
+
 
                     @case(4)
 
@@ -128,6 +149,15 @@
                                 'form' => $form,
                                 'questions' => $form->questions
                             ]
+                        )
+
+                        @break
+
+                    @case(18)
+
+                        @include(
+                            'admin.units.question.partials.forms.engagement-assessment-1-7.index',
+                            ['form' => $form, 'questions' => $form->questions]
                         )
 
                         @break

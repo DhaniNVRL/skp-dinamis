@@ -82,12 +82,22 @@ document.addEventListener("DOMContentLoaded", function () {
                     "customerAssessment17WithoutZeroTypeOptions"
                 );
 
+            case 17:
+                return document.getElementById(
+                    "customerAssessment17TypeOptions"
+                );
+
             case 4:
                 return document.getElementById(
                     "engagementAssessment15TypeOptions"
                 );
 
             case 5:
+                return document.getElementById(
+                    "engagementAssessment17TypeOptions"
+                );
+
+            case 18:
                 return document.getElementById(
                     "engagementAssessment17TypeOptions"
                 );
@@ -219,6 +229,38 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Tampilkan konfigurasi hanya ketika tipe Skala Dinamis dipilih.
+    function updateCreateScaleConfig(row) {
+        const select = row?.querySelector("[data-question-type-select]");
+        const config = row?.querySelector("[data-scale-config]");
+
+        if (!select || !config) return;
+
+        const enabled = Number(select.value) === 11;
+        config.classList.toggle("hidden", !enabled);
+        config.querySelectorAll("input").forEach(function (input) {
+            input.disabled = !enabled;
+        });
+        const maximum = config.querySelector('[data-question-field="scale_max"]');
+        if (maximum) maximum.required = enabled;
+    }
+
+    // Narasi alasan hanya berlaku pada tipe 3 milik Penilaian Pelanggan.
+    function updateCreateReasonPromptConfig(row) {
+        const select = row?.querySelector("[data-question-type-select]");
+        const config = row?.querySelector("[data-reason-prompt-config]");
+        if (!select || !config) return;
+
+        const customerTypes = [2, 3, 15, 16, 17];
+        const enabled = customerTypes.includes(Number(formTypeInput?.value))
+            && Number(select.value) === 3;
+
+        config.classList.toggle("hidden", !enabled);
+        config.querySelectorAll("textarea").forEach(function (input) {
+            input.disabled = !enabled;
+        });
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Tambah baris
@@ -272,6 +314,9 @@ document.addEventListener("DOMContentLoaded", function () {
             typeSelect,
             formTypeInput.value
         );
+
+        updateCreateScaleConfig(row);
+        updateCreateReasonPromptConfig(row);
 
         createBody.appendChild(fragment);
 
@@ -497,6 +542,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             help.textContent =
                 selectedOption?.dataset.description || "";
+
+            updateCreateScaleConfig(row);
+            updateCreateReasonPromptConfig(row);
         }
     );
 
@@ -587,6 +635,35 @@ document.addEventListener("DOMContentLoaded", function () {
         "edit_question_type_warning"
     );
 
+    const scaleConfig = document.getElementById("edit_scale_config");
+    const scaleMin = document.getElementById("edit_scale_min");
+    const scaleMax = document.getElementById("edit_scale_max");
+    const scaleLeftLabel = document.getElementById("edit_scale_left_label");
+    const scaleRightLabel = document.getElementById("edit_scale_right_label");
+    const reasonPromptConfig = document.getElementById("edit_reason_prompt_config");
+    const reasonPrompt = document.getElementById("edit_reason_prompt");
+
+    // Sinkronkan field konfigurasi skala pada modal edit.
+    function updateEditScaleConfig() {
+        const enabled = Number(typeInput?.value) === 11;
+        scaleConfig?.classList.toggle("hidden", !enabled);
+
+        [scaleMin, scaleMax, scaleLeftLabel, scaleRightLabel].forEach(function (input) {
+            if (input) input.disabled = !enabled;
+        });
+        if (scaleMax) scaleMax.required = enabled;
+    }
+
+    // Sinkronkan field narasi alasan pada modal edit.
+    function updateEditReasonPromptConfig() {
+        const customerTypes = [2, 3, 15, 16, 17];
+        const enabled = customerTypes.includes(Number(formTypeInput?.value))
+            && Number(typeInput?.value) === 3;
+
+        reasonPromptConfig?.classList.toggle("hidden", !enabled);
+        if (reasonPrompt) reasonPrompt.disabled = !enabled;
+    }
+
     const comparisonConfig = document.getElementById("edit_comparison_config");
     const comparisonEnabled = document.getElementById("edit_comparison_enabled");
     const comparisonFields = document.getElementById("edit_comparison_fields");
@@ -625,12 +702,22 @@ document.addEventListener("DOMContentLoaded", function () {
                     "customerAssessment17WithoutZeroTypeOptions"
                 );
 
+            case 17:
+                return document.getElementById(
+                    "customerAssessment17TypeOptions"
+                );
+
             case 4:
                 return document.getElementById(
                     "engagementAssessment15TypeOptions"
                 );
 
             case 5:
+                return document.getElementById(
+                    "engagementAssessment17TypeOptions"
+                );
+
+            case 18:
                 return document.getElementById(
                     "engagementAssessment17TypeOptions"
                 );
@@ -847,7 +934,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 editQuestionTrigger.dataset.questionTypeId
             );
 
-            const supportsComparison = [2, 3, 15, 16].includes(Number(formTypeInput.value));
+            if (scaleMin) scaleMin.value = editQuestionTrigger.dataset.scaleMin || "1";
+            if (scaleMax) scaleMax.value = editQuestionTrigger.dataset.scaleMax || "10";
+            if (scaleLeftLabel) scaleLeftLabel.value = editQuestionTrigger.dataset.scaleLeftLabel || "";
+            if (scaleRightLabel) scaleRightLabel.value = editQuestionTrigger.dataset.scaleRightLabel || "";
+            updateEditScaleConfig();
+            if (reasonPrompt) {
+                reasonPrompt.value = editQuestionTrigger.dataset.reasonPrompt || "";
+            }
+            updateEditReasonPromptConfig();
+
+            const supportsComparison = [2, 3, 15, 16, 17].includes(Number(formTypeInput.value));
             comparisonConfig?.classList.remove("hidden");
 
             if (comparisonEnabled) {
@@ -887,6 +984,8 @@ document.addEventListener("DOMContentLoaded", function () {
         "change",
         function () {
             updateQuestionTypeHelp();
+            updateEditScaleConfig();
+            updateEditReasonPromptConfig();
 
             const originalValue = String(
                 typeInput.dataset.originalValue || ""
@@ -1654,6 +1753,10 @@ document.addEventListener("click", function (event) {
         "importQuestionFormName"
     );
 
+    const templateFileName = document.getElementById(
+        "importQuestionTemplateFileName"
+    );
+
     const fileInput = document.getElementById(
         "importQuestionFile"
     );
@@ -1677,6 +1780,12 @@ document.addEventListener("click", function (event) {
     if (formName) {
         formName.textContent =
             button.dataset.formName || "-";
+    }
+
+    if (templateFileName) {
+        templateFileName.textContent =
+            button.dataset.templateFileName
+            || `template-pertanyaan-form-${button.dataset.formId}.xlsx`;
     }
 
     if (fileInput) {

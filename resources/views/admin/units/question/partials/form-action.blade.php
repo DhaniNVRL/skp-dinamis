@@ -9,6 +9,7 @@
         data-no-urut="{{ $form->no_urut }}"
         data-name="{{ $form->name }}"
         data-formtype-id="{{ $form->formtype_id }}"
+        data-merge-parent-id="{{ $form->merge_parent_id }}"
         data-action="{{ route('forms.update', ['id' => $form->id]) }}"
         class="flex h-8 w-8 items-center justify-center
             rounded-lg bg-amber-50 text-amber-600

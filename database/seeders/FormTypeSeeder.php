@@ -122,6 +122,20 @@ class FormTypeSeeder extends Seeder
                 'description' => 'Skala 1-7 Tanpa Nilai 0',
                 'created_at' => now(),
                 'updated_at' => now(),
+            ],
+            [
+                'id' => 17,
+                'name' => 'Form Penilaian Pelanggan',
+                'description' => 'Skala 1-10 dengan Nilai 0',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 18,
+                'name' => 'Form Keterikatan',
+                'description' => 'Skala 1-10',
+                'created_at' => now(),
+                'updated_at' => now(),
             ]
         ], ['id'], ['name', 'description', 'updated_at']);
     }

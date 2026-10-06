@@ -10,6 +10,10 @@
             value="{{ $question->id }}"
             form="questionBulkDeleteForm-{{ $form->id }}"
             data-question-bulk-checkbox
+            data-question-id="{{ $question->id }}"
+            data-question-header="{{ $question->no_header }}"
+            data-question-no="{{ $question->no }}"
+            data-question-name="{{ $question->name }}"
             class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
             aria-label="Pilih pertanyaan {{ $question->name }}"
         >
@@ -27,11 +31,16 @@
         data-header="{{ $question->no_header }}"
         data-no="{{ $question->no }}"
         data-name="{{ $question->name }}"
+        data-reason-prompt="{{ $question->reason_prompt }}"
 
         data-question-type-id="{{
             $question->questiontype_id
             ?? $question->id_questiontypes
         }}"
+        data-scale-min="{{ $question->scale_min ?? 1 }}"
+        data-scale-max="{{ $question->scale_max ?? 10 }}"
+        data-scale-left-label="{{ $question->scale_left_label }}"
+        data-scale-right-label="{{ $question->scale_right_label }}"
 
         data-action="{{ route('question.update', $question->id) }}"
 

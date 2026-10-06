@@ -187,6 +187,32 @@
                             @enderror
                         </div>
 
+                        <div id="edit_scale_config" class="hidden md:col-span-12 rounded-lg border border-violet-200 bg-violet-50 p-4">
+                            <p class="mb-3 text-sm font-semibold text-violet-800">Konfigurasi Skala Dinamis</p>
+                            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                <label class="text-sm text-gray-700">Nilai awal
+                                    <input id="edit_scale_min" name="scale_min" type="number" min="0" max="999" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+                                </label>
+                                <label class="text-sm text-gray-700">Nilai akhir
+                                    <input id="edit_scale_max" name="scale_max" type="number" min="1" max="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+                                </label>
+                                <label class="text-sm text-gray-700">Label kiri
+                                    <input id="edit_scale_left_label" name="scale_left_label" type="text" maxlength="255" placeholder="Tidak Bersedia" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+                                </label>
+                                <label class="text-sm text-gray-700">Label kanan
+                                    <input id="edit_scale_right_label" name="scale_right_label" type="text" maxlength="255" placeholder="Bersedia" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="edit_reason_prompt_config" class="hidden md:col-span-12 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                            <label for="edit_reason_prompt" class="mb-2 block text-sm font-semibold text-amber-800">
+                                Narasi Alasan
+                            </label>
+                            <textarea id="edit_reason_prompt" name="reason_prompt" rows="4" maxlength="5000" placeholder="Contoh: Alasan apa yang membuat Bapak/Ibu memberikan penilaian kinerja tersebut?" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"></textarea>
+                            <p class="mt-1 text-xs text-amber-700">Berlaku untuk tipe Kepentingan &amp; Kinerja dengan Alasan.</p>
+                        </div>
+
                     </div>
 
                     {{-- Peringatan perubahan tipe --}}

@@ -13,6 +13,7 @@ class Form extends Model
         'no_urut',
         'name',
         'formtype_id',
+        'merge_parent_id',
     ];
 
     public function formtype()
@@ -74,5 +75,15 @@ class Form extends Model
     public function unitVisibilities()
     {
         return $this->hasMany(UnitFormVisibility::class);
+    }
+
+    public function mergeParent()
+    {
+        return $this->belongsTo(self::class, 'merge_parent_id');
+    }
+
+    public function mergedForms()
+    {
+        return $this->hasMany(self::class, 'merge_parent_id')->orderBy('no_urut')->orderBy('id');
     }
 }

@@ -71,6 +71,12 @@ class QuestionTypeSeeder extends Seeder
                 'description' => 'Menampilkan judul atau pemisah bagian tanpa kolom jawaban.',
                 'created_at' => now(),
                 'updated_at' => now(),
+            ],[
+                'id'=>11,
+                'name' => 'Skala Dinamis',
+                'description' => 'Pilihan skala horizontal dengan nilai akhir dan label kiri/kanan yang dapat diatur.',
+                'created_at' => now(),
+                'updated_at' => now(),
             ]
         ], ['id'], ['name', 'description', 'updated_at']);
     }

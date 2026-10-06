@@ -87,6 +87,7 @@ class QuestionTemplateSpreadsheet
             'tipe_pertanyaan',
             'pembanding_aktif',
             'pertanyaan_pembanding',
+            'narasi_alasan',
         ];
 
         $sheet->fromArray(
@@ -205,14 +206,18 @@ class QuestionTemplateSpreadsheet
             'Wajib diisi jika pembanding_aktif bernilai 1 - Iya.'
         );
 
+        $sheet->getComment('I1')->getText()->createTextRun(
+            'Opsional. Diisi untuk tipe Kepentingan & Kinerja dengan Alasan.'
+        );
+
         $this->styleHeader(
             $sheet,
-            'A1:H1',
+            'A1:I1',
             '2563EB'
         );
 
         $sheet->freezePane('A2');
-        $sheet->setAutoFilter('A1:H'.$lastRow);
+        $sheet->setAutoFilter('A1:I'.$lastRow);
 
         $sheet->getColumnDimension('A')->setWidth(22);
         $sheet->getColumnDimension('B')->setWidth(42);
@@ -222,6 +227,7 @@ class QuestionTemplateSpreadsheet
         $sheet->getColumnDimension('F')->setWidth(55);
         $sheet->getColumnDimension('G')->setWidth(24);
         $sheet->getColumnDimension('H')->setWidth(65);
+        $sheet->getColumnDimension('I')->setWidth(75);
 
         $sheet->getStyle('A2:A'.$lastRow)
             ->getFill()
@@ -229,13 +235,13 @@ class QuestionTemplateSpreadsheet
             ->getStartColor()
             ->setRGB('FEF3C7');
 
-        $sheet->getStyle('C2:H'.$lastRow)
+        $sheet->getStyle('C2:I'.$lastRow)
             ->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()
             ->setRGB('FEFCE8');
 
-        $sheet->getStyle('E2:H'.$lastRow)
+        $sheet->getStyle('E2:I'.$lastRow)
             ->getAlignment()
             ->setWrapText(true);
 
@@ -246,7 +252,7 @@ class QuestionTemplateSpreadsheet
 
         $this->addBorders(
             $sheet,
-            'A1:H'.$lastRow
+            'A1:I'.$lastRow
         );
     }
 

@@ -45,6 +45,7 @@
                     ['label'=>'Form Type','icon'=>'fa-bars-staggered','route'=>'admin.formtype'],
                     ['label'=>'Question','icon'=>'fa-bars-staggered','route'=>'question.masterdata'],
                     ['label'=>'Question Types','icon'=>'fa-bars-staggered','route'=>'admin.questtype'],
+                    ['label'=>'Kata Terlarang','icon'=>'fa-ban','route'=>'admin.blocked-feedback-phrases.index'],
                 ],
             ];
         @endphp
@@ -105,6 +106,5 @@ document.addEventListener('keydown', function(e){ if((e.ctrlKey||e.metaKey)&&e.k
 @stack('scripts')
 </body>
 </html>
-
 
 

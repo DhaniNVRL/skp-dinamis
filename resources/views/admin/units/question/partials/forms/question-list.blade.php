@@ -20,6 +20,18 @@
                     <span data-question-selected-count>0</span> pertanyaan dipilih
                 </span>
 
+                <button
+                    type="button"
+                    data-question-bulk-edit
+                    data-modal-open="bulkEditQuestionModal"
+                    data-form-id="{{ $form->id }}"
+                    data-action="{{ route('questions.bulk-update') }}"
+                    class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+                >
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    Edit yang Dipilih
+                </button>
+
                 <form
                     id="questionBulkDeleteForm-{{ $form->id }}"
                     action="{{ route('questions.bulk-delete') }}"

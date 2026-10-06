@@ -12,6 +12,7 @@ use App\Models\SubUnitQuestion;
 use App\Models\SurveySession;
 use App\Models\SurveyDraft;
 use App\Models\UserProfile;
+use App\Services\BlockedFeedbackPhraseService;
 use App\Services\UnitCompetitorVisibilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,6 +33,7 @@ class AnswerController extends Controller
         10,
         15,
         16,
+        17,
     ];
 
     private const FEEDBACK_TYPES = [
@@ -50,6 +52,7 @@ class AnswerController extends Controller
         3,
         15,
         16,
+        17,
     ];
 
     private const MEANINGFUL_ANSWER_ROLE_IDS = [
@@ -134,6 +137,23 @@ class AnswerController extends Controller
         Request $request,
         Form $form
     ): RedirectResponse {
+        $mergeService = app(\App\Services\FormMergeService::class);
+        $forms = $mergeService->members($form);
+
+        DB::transaction(function () use ($request, $forms): void {
+            foreach ($forms as $member) {
+                $this->saveSingleFormAnswers($request, $member, false);
+            }
+        });
+
+        return $this->goToNextForm($forms->last());
+    }
+
+    private function saveSingleFormAnswers(
+        Request $request,
+        Form $form,
+        bool $navigate = true
+    ): ?RedirectResponse {
         $profile = UserProfile::query()
             ->where(
                 'user_id',
@@ -183,16 +203,14 @@ class AnswerController extends Controller
         $branching = app(\App\Services\SurveyBranchingService::class);
 
         if ($branching->shouldSkipForm($form, (int) Auth::id())) {
-            return $this->goToNextForm($form);
+            return $navigate ? $this->goToNextForm($form) : null;
         }
 
         if (
             (int) $form->formtype_id
             === 12
         ) {
-            return $this->goToNextForm(
-                $form
-            );
+            return $navigate ? $this->goToNextForm($form) : null;
         }
 
         $form->load([
@@ -317,7 +335,8 @@ class AnswerController extends Controller
                     $form,
                     $profile,
                     $questions,
-                    $answers
+                    $answers,
+                    $navigate
                 );
         }
 
@@ -498,9 +517,7 @@ class AnswerController extends Controller
             }
         );
 
-        return $this->goToNextForm(
-            $form
-        );
+        return $navigate ? $this->goToNextForm($form) : null;
     }
 
     private function rankingPayloadForStorage(array $payload): array
@@ -599,6 +616,22 @@ class AnswerController extends Controller
                     "{$label} untuk pertanyaan {$question->name} wajib diisi.";
 
                 continue;
+            }
+
+            if (
+                (int) $form->formtype_id === 9
+                && in_array($field, ['complaint', 'suggestion'], true)
+            ) {
+                $blockedPhrase = app(BlockedFeedbackPhraseService::class)
+                    ->findMatch($value);
+
+                if ($blockedPhrase !== null) {
+                    $errors[$errorKey] =
+                        'Jawaban mengandung kata atau kalimat yang tidak diperbolehkan: "'
+                        .$blockedPhrase.'".';
+
+                    continue;
+                }
             }
 
             if (
@@ -1172,10 +1205,11 @@ class AnswerController extends Controller
                     'performance'
                 );
 
-            $maximumScale =
-                in_array((int) $form->formtype_id, [2, 15], true)
-                    ? 5
-                    : 7;
+            $maximumScale = match ((int) $form->formtype_id) {
+                2, 15 => 5,
+                17 => 10,
+                default => 7,
+            };
 
             $allowedValues = range(1, $maximumScale);
 
@@ -1213,10 +1247,11 @@ class AnswerController extends Controller
                     "Nilai Kinerja {$question->name} wajib dipilih.";
             }
 
-            $reasonMaximum =
-                in_array((int) $form->formtype_id, [2, 15], true)
-                    ? 3
-                    : 4;
+            $reasonMaximum = match ((int) $form->formtype_id) {
+                2, 15 => 3,
+                17 => 5,
+                default => 4,
+            };
 
             $needsReason =
                 filled($performance)
@@ -1406,6 +1441,42 @@ class AnswerController extends Controller
                 "answers.{$question->id}.value"
             ] =
                 "Pertanyaan {$question->name} wajib diisi.";
+
+            return;
+        }
+
+        if ($questionTypeId === 11) {
+            $minimum = (int) ($question->scale_min ?? 1);
+            $maximum = (int) ($question->scale_max ?? 10);
+
+            if (
+                filter_var($value, FILTER_VALIDATE_INT) === false
+                || (int) $value < $minimum
+                || (int) $value > $maximum
+            ) {
+                $errors[
+                    "answers.{$question->id}.value"
+                ] = "Pilih nilai skala {$minimum} sampai {$maximum} untuk {$question->name}.";
+            }
+
+            return;
+        }
+
+        if (
+            $questionTypeId === 2
+            && in_array((int) $question->form?->formtype_id, [4, 5, 18], true)
+        ) {
+            $maximum = (int) $question->form->formtype_id === 4 ? 5
+                : ((int) $question->form->formtype_id === 5 ? 7 : 10);
+
+            if (
+                filter_var($value, FILTER_VALIDATE_INT) === false
+                || (int) $value < 1
+                || (int) $value > $maximum
+            ) {
+                $errors["answers.{$question->id}.value"] =
+                    "Pilih nilai 1 sampai {$maximum} untuk {$question->name}.";
+            }
 
             return;
         }
@@ -1673,8 +1744,9 @@ class AnswerController extends Controller
         Form $form,
         UserProfile $profile,
         Collection $questions,
-        array $answers
-    ): RedirectResponse {
+        array $answers,
+        bool $navigate = true
+    ): ?RedirectResponse {
         $rows =
             collect(
                 (array) $request
@@ -1970,10 +2042,7 @@ class AnswerController extends Controller
             }
         );
 
-        return $this
-            ->goToNextForm(
-                $form
-            );
+        return $navigate ? $this->goToNextForm($form) : null;
     }
 
 
@@ -1981,9 +2050,12 @@ class AnswerController extends Controller
         Form $form
     ): RedirectResponse {
         if (Schema::hasTable('survey_drafts')) {
+            $mergedFormIds = app(\App\Services\FormMergeService::class)
+                ->members($form)
+                ->pluck('id');
             SurveyDraft::query()
                 ->where('user_id', Auth::id())
-                ->where('form_id', $form->id)
+                ->whereIn('form_id', $mergedFormIds)
                 ->delete();
         }
 
@@ -1995,6 +2067,10 @@ class AnswerController extends Controller
                     $form,
                     (int) Auth::id()
                 );
+
+        if ($nextForm?->merge_parent_id) {
+            $nextForm = app(\App\Services\FormMergeService::class)->root($nextForm);
+        }
 
         SurveySession::query()
             ->where(

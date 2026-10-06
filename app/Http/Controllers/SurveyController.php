@@ -11,6 +11,7 @@ use App\Models\SubUnitQuestion;
 use App\Models\SurveySession;
 use App\Models\SurveyDraft;
 use App\Models\UserProfile;
+use App\Services\BlockedFeedbackPhraseService;
 use App\Services\UnitCompetitorVisibilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ use Illuminate\View\View;
 
 class SurveyController extends Controller
 {
-    private const PER_SUBUNIT_TYPES = [2, 3, 8, 9, 10, 15, 16];
+    private const PER_SUBUNIT_TYPES = [2, 3, 8, 9, 10, 15, 16, 17];
 
     private const COMPETITOR_TYPES = [11, 13];
 
@@ -69,6 +70,12 @@ class SurveyController extends Controller
         $profile = $this->completeProfile();
 
         abort_unless((int) $form->group_id === (int) $profile->group_id, 403);
+        $mergeService = app(\App\Services\FormMergeService::class);
+        $rootForm = $mergeService->root($form);
+        if (! $form->is($rootForm)) {
+            return redirect()->route('survey.show', $rootForm);
+        }
+        $form = $rootForm;
 
         $session = SurveySession::where('user_id', Auth::id())->first();
         if ($session?->status === 'completed') {
@@ -77,7 +84,11 @@ class SurveyController extends Controller
         }
 
         $branching = app(\App\Services\SurveyBranchingService::class);
-        if ($branching->shouldSkipForm($form, (int) Auth::id())) {
+        $mergedForms = $mergeService->members($form)
+            ->reject(fn (Form $member) => $branching->shouldSkipForm($member, (int) Auth::id()))
+            ->values();
+
+        if ($mergedForms->isEmpty()) {
             $nextVisibleForm = $branching->nextVisibleForm($form, (int) Auth::id());
 
             return $nextVisibleForm
@@ -85,85 +96,25 @@ class SurveyController extends Controller
                 : redirect()->route('survey.finish.page');
         }
 
-        $form->load([
-            'description',
-            'formtype',
-
-            'questions',
-
-            'questions.questiontype',
-
-            'questions.options' => function ($query) {
-                $query
-                    ->orderByRaw(
-                        'CAST(no AS UNSIGNED) ASC'
-                    )
-                    ->orderBy('id');
-            },
-        ]);
-
         $forms = Form::where('group_id', $profile->group_id)
             ->orderBy('no_urut')
             ->orderBy('id')
             ->get();
 
-        $currentIndex = $forms->search(fn (Form $item) => $item->is($form));
-        abort_if($currentIndex === false, 404);
-        $visibleForms = $forms
-            ->reject(fn (Form $item) => $branching->shouldSkipForm($item, (int) Auth::id()))
+        $visibleForms = $mergeService->pages($forms)
+            ->filter(function (Form $page) use ($mergeService, $branching): bool {
+                return $mergeService->members($page)
+                    ->contains(fn (Form $member) => ! $branching->shouldSkipForm($member, (int) Auth::id()));
+            })
             ->values();
         $visibleCurrentIndex = $visibleForms->search(fn (Form $item) => $item->is($form));
         abort_if($visibleCurrentIndex === false, 404);
 
-        $subunits = SubUnit::where('unit_id', $profile->unit_id)
-            ->orderBy('name')
-            ->get();
-
-        $subunitIds = $subunits->pluck('id');
-        $activeRows = SubUnitQuestion::where('form_id', $form->id)
-            ->whereIn('subunit_id', $subunitIds)
-            ->get();
-
-        $activeMapSubUnit = $activeRows
-            ->groupBy(fn ($row) => $row->form_id.'-'.$row->question_id)
-            ->map(fn ($rows) => $rows->pluck('subunit_id')->map(fn ($id) => (int) $id)->unique()->values()->all())
-            ->all();
-
-        if ((int) $form->formtype_id !== 12) {
-            $activeQuestionIds = $activeRows->pluck('question_id')->unique();
-            $form->setRelation(
-                'questions',
-                $form->questions->whereIn('id', $activeQuestionIds)->values()
-            );
-        }
-
-        $questions = $form->questions;
-        $competitors = app(UnitCompetitorVisibilityService::class)->filterForUnit(
-            Competitor::where('group_id', $profile->group_id)
-                ->orderBy('name')
-                ->get(),
-            $profile->unit_id ? (int) $profile->unit_id : null
+        $surveyForms = $mergedForms->map(
+            fn (Form $member) => $this->surveyFormContext($member, $profile, $branching)
         );
-        // Database lama dapat belum memiliki tabel untuk form pembanding
-        // dinamis. Jangan biarkan seluruh halaman survei berakhir 500.
-        $respondentCompetitors = Schema::hasTable('respondent_competitors')
-            ? RespondentCompetitor::query()
-                ->where('user_id', Auth::id())
-                ->where('form_id', $form->id)
-                ->orderBy('position')
-                ->get()
-            : collect();
-
-        $answerMap = [];
-        Answer::where('user_id', Auth::id())
-            ->where('form_id', $form->id)
-            ->get()
-            ->each(function (Answer $answer) use (&$answerMap): void {
-                $value = $answer->answer;
-                $targetId = $answer->respondent_competitor_id ?? $answer->competitor_id ?? 0;
-                $answerMap[$answer->question_id][$answer->subunit_id ?? 0][$targetId]
-                    = is_array($value) ? $value : ['value' => $answer->answer];
-            });
+        $primaryContext = $surveyForms->first();
+        $form = $primaryContext['form'];
 
         $surveyDraft = Schema::hasTable('survey_drafts')
             ? SurveyDraft::query()
@@ -187,25 +138,73 @@ class SurveyController extends Controller
 
         return view('user.survey.index', [
             'form' => $form,
-            'questions' => $questions,
-            'subunits' => $subunits,
-            'activeMapSubUnit' => $activeMapSubUnit,
-            'competitors' => $competitors,
-            'respondentCompetitors' => $respondentCompetitors,
-            'answerMap' => $answerMap,
+            'surveyForms' => $surveyForms,
+            'questions' => $primaryContext['questions'],
+            'subunits' => $primaryContext['subunits'],
+            'activeMapSubUnit' => $primaryContext['activeMapSubUnit'],
+            'competitors' => $primaryContext['competitors'],
+            'respondentCompetitors' => $primaryContext['respondentCompetitors'],
+            'answerMap' => $primaryContext['answerMap'],
             'surveyDraftPayload' => $surveyDraft?->payload ?? [],
-            'conditionalBranches' => $branching->definitions($form),
+            'blockedFeedbackPhrases' => app(BlockedFeedbackPhraseService::class)->active(),
+            'conditionalBranches' => $primaryContext['conditionalBranches'],
             'previousForm' => $visibleCurrentIndex > 0 ? $visibleForms[$visibleCurrentIndex - 1] : null,
             'nextForm' => $visibleCurrentIndex < $visibleForms->count() - 1 ? $visibleForms[$visibleCurrentIndex + 1] : null,
             'firstQuestionForm' => $visibleForms->first(
-                fn (Form $item) => (int) $item->formtype_id !== 12
+                fn (Form $item) => $mergeService->members($item)
+                    ->contains(fn (Form $member) => (int) $member->formtype_id !== self::DESCRIPTION_TYPE)
             ),
+            'pageHasQuestions' => $mergedForms
+                ->contains(fn (Form $member) => (int) $member->formtype_id !== self::DESCRIPTION_TYPE),
             'isLastForm' => $visibleCurrentIndex === $visibleForms->count() - 1,
             // Nomor tampilan mengikuti no_urut asli. Form yang dilewati tidak
             // membuat form setelahnya dinomori ulang (mis. 6 langsung 8).
-            'currentPosition' => (int) $form->no_urut,
-            'totalForms' => max((int) $forms->max('no_urut'), $forms->count()),
+            'currentPosition' => $visibleCurrentIndex + 1,
+            'totalForms' => $visibleForms->count(),
         ]);
+    }
+
+    private function surveyFormContext(Form $form, UserProfile $profile, $branching): array
+    {
+        $form->load([
+            'description', 'formtype', 'questions', 'questions.questiontype',
+            'questions.options' => fn ($query) => $query->orderByRaw('CAST(no AS UNSIGNED) ASC')->orderBy('id'),
+        ]);
+        $subunits = SubUnit::query()->where('unit_id', $profile->unit_id)->orderBy('name')->get();
+        $activeRows = SubUnitQuestion::query()
+            ->where('form_id', $form->id)
+            ->whereIn('subunit_id', $subunits->pluck('id'))
+            ->get();
+        $activeMapSubUnit = $activeRows
+            ->groupBy(fn ($row) => $row->form_id.'-'.$row->question_id)
+            ->map(fn ($rows) => $rows->pluck('subunit_id')->map(fn ($id) => (int) $id)->unique()->values()->all())
+            ->all();
+        if ((int) $form->formtype_id !== self::DESCRIPTION_TYPE) {
+            $form->setRelation('questions', $form->questions->whereIn('id', $activeRows->pluck('question_id')->unique())->values());
+        }
+        $answerMap = [];
+        Answer::query()->where('user_id', Auth::id())->where('form_id', $form->id)->get()
+            ->each(function (Answer $answer) use (&$answerMap): void {
+                $targetId = $answer->respondent_competitor_id ?? $answer->competitor_id ?? 0;
+                $answerMap[$answer->question_id][$answer->subunit_id ?? 0][$targetId]
+                    = is_array($answer->answer) ? $answer->answer : ['value' => $answer->answer];
+            });
+
+        return [
+            'form' => $form,
+            'questions' => $form->questions,
+            'subunits' => $subunits,
+            'activeMapSubUnit' => $activeMapSubUnit,
+            'competitors' => app(UnitCompetitorVisibilityService::class)->filterForUnit(
+                Competitor::query()->where('group_id', $profile->group_id)->orderBy('name')->get(),
+                $profile->unit_id ? (int) $profile->unit_id : null
+            ),
+            'respondentCompetitors' => Schema::hasTable('respondent_competitors')
+                ? RespondentCompetitor::query()->where('user_id', Auth::id())->where('form_id', $form->id)->orderBy('position')->get()
+                : collect(),
+            'answerMap' => $answerMap,
+            'conditionalBranches' => $branching->definitions($form),
+        ];
     }
 
     public function finishPage(): View|RedirectResponse

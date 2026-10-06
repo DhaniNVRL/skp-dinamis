@@ -278,6 +278,19 @@
     const DUPLICATE_FEEDBACK_MESSAGE =
         "Berikan masukan yang berbeda dan relevan untuk setiap Sub Unit agar jawaban dapat dianalisa.";
 
+    const BLOCKED_FEEDBACK_PHRASES = (() => {
+        const payload = document.getElementById("blockedFeedbackPhrases");
+
+        if (!payload) return [];
+
+        try {
+            const values = JSON.parse(payload.textContent || "[]");
+            return Array.isArray(values) ? values : [];
+        } catch (_) {
+            return [];
+        }
+    })();
+
 
     /*
     |--------------------------------------------------------------------------
@@ -341,6 +354,36 @@
         return MEANINGLESS_ANSWERS.includes(
             normalized
         );
+    }
+
+    function findBlockedFeedbackPhrase(field, value) {
+        const form = field?.closest("[data-form-type]");
+
+        if (form?.dataset.formType !== "9") {
+            return null;
+        }
+
+        if (!field?.matches('[data-feedback-field="complaint"], [data-feedback-field="suggestion"]')) {
+            return null;
+        }
+
+        const answer = normalizeMeaningfulAnswer(value);
+
+        if (!answer) return null;
+
+        for (const item of BLOCKED_FEEDBACK_PHRASES) {
+            const blocked = String(item.normalized || "").trim();
+
+            if (!blocked) continue;
+
+            const matches = blocked.includes(" ")
+                ? ` ${answer} `.includes(` ${blocked} `)
+                : answer.split(" ").includes(blocked);
+
+            if (matches) return String(item.phrase || blocked);
+        }
+
+        return null;
     }
 
 
@@ -1965,6 +2008,16 @@
                 continue;
             }
 
+            const blockedPhrase = findBlockedFeedbackPhrase(field, value);
+
+            if (blockedPhrase) {
+                return {
+                    valid: false,
+                    field,
+                    message: `Jawaban mengandung kata atau kalimat yang tidak diperbolehkan: "${blockedPhrase}".`,
+                };
+            }
+
             if (
                 isMeaninglessAnswer(
                     value
@@ -2168,9 +2221,15 @@
 
         // Validasi jawaban bermakna yang sudah ada.
         if (field.matches("[data-meaningful-answer]")) {
+            const blockedPhrase = findBlockedFeedbackPhrase(field, field.value);
+
             if (
                 !String(field.value ?? "").trim() ||
-                !isMeaninglessAnswer(field.value)
+                (
+                    !isMeaninglessAnswer(field.value)
+                    &&
+                    !blockedPhrase
+                )
             ) {
                 clearMeaningfulFieldValidation(field);
             }

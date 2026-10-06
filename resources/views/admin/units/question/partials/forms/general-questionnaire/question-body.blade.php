@@ -101,6 +101,15 @@
 
         @break
 
+    @case(11)
+
+        @include(
+            'admin.units.question.partials.forms.general-questionnaire.options.scale',
+            ['question' => $question]
+        )
+
+        @break
+
 
     @default
 

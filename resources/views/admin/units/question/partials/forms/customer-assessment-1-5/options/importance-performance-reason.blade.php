@@ -97,7 +97,7 @@
         {{-- Alasan --}}
         <div class="mt-5">
             <label class="mb-2 block text-sm font-semibold text-gray-700">
-                Alasan penilaian
+                {{ $question->reason_prompt ?: 'Komen/saran untuk perbaikan' }}
             </label>
 
             <textarea

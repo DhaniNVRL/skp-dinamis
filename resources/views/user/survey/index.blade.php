@@ -40,6 +40,7 @@
         method="POST"
         novalidate
         data-draft-url="{{ route('survey.draft.store', $form) }}"
+        data-form-type="{{ (int) $form->formtype_id }}"
         data-has-validation-errors="{{ $errors->any() ? '1' : '0' }}"
         data-server-invalid-question-ids='@json($serverInvalidQuestionIds)'
         class="space-y-6 pb-4"
@@ -48,89 +49,12 @@
 
         <div id="surveyDraftStatus" class="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-lg border bg-white px-4 py-2.5 text-sm font-medium shadow-lg" role="status" aria-live="polite"></div>
         <script id="surveyDraftPayload" type="application/json">{!! json_encode($surveyDraftPayload ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
+        <script id="blockedFeedbackPhrases" type="application/json">{!! json_encode($blockedFeedbackPhrases ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 
         <div class="space-y-6">
-
-    {{-- Dipakai bersama oleh Responden dan Surveyor; Form Description (type 12) dirender terpisah. --}}
-    @include('user.survey.forms.partials.form-description')
-    {{-- FORM QUESTIONS --}}
-    <div
-        class="rounded-xl border border-gray-200
-               bg-white p-5 shadow-sm md:p-7"
-            >
-                @switch((int) $form->formtype_id)
-
-                    @case(1)
-                        @include('user.survey.forms.general-questionnaire')
-                        @break
-
-                    @case(2)
-                        @include('user.survey.forms.customer-assessment-1-5')
-                        @break
-
-                    @case(3)
-                        @include('user.survey.forms.customer-assessment-1-7')
-                        @break
-
-                    @case(15)
-                        @include('user.survey.forms.customer-assessment-1-5-without-zero')
-                        @break
-
-                    @case(16)
-                        @include('user.survey.forms.customer-assessment-1-7-without-zero')
-                        @break
-
-                    @case(4)
-                        @include('user.survey.forms.engagement-assessment-1-5')
-                        @break
-
-                    @case(5)
-                        @include('user.survey.forms.engagement-assessment-1-7')
-                        @break
-
-                    @case(6)
-                        @include('user.survey.forms.ranking-1-3')
-                        @break
-
-                    @case(7)
-                        @include('user.survey.forms.ranking-1-5')
-                        @break
-
-                    @case(8)
-                        @include('user.survey.forms.strength-complaint-suggestion')
-                        @break
-
-                    @case(9)
-                        @include('user.survey.forms.complaint-suggestion')
-                        @break
-
-                    @case(10)
-                        @include('user.survey.forms.suggestion')
-                        @break
-
-                    @case(11)
-                        @include('user.survey.forms.competitor-assessment-1-5')
-                        @break
-
-                    @case(12)
-                        @include('user.survey.forms.description')
-                        @break
-
-                    @case(14)
-                        @include('user.survey.forms.respondent-competitor-assessment')
-                        @break
-
-                    @case(13)
-                        @include('user.survey.forms.competitor-assessment-1-7')
-                        @break
-
-                    @default
-                        @include('user.survey.partials.empty', [
-                            'message' => 'Jenis form belum didukung.',
-                        ])
-
-                @endswitch
-            </div>
+            @foreach ($surveyForms as $formContext)
+                @include('user.survey.partials.merged-form-section', $formContext)
+            @endforeach
         </div>
 
         @include('user.survey.partials.navigation')

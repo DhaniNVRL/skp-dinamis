@@ -6,13 +6,13 @@
     /*
      * Customer Assessment 1-7.
      */
-    $scaleMaximum = 7;
+    $scaleMaximum = (int) ($scaleMaximum ?? 7);
     $includeZero = (bool) ($includeZero ?? true);
 
     /*
      * Alasan hanya muncul jika nilai Kinerja 1-4.
      */
-    $reasonMaximumScore = 4;
+    $reasonMaximumScore = (int) ($reasonMaximumScore ?? 4);
 @endphp
 
 <div
@@ -90,7 +90,7 @@
             @elseif ($questionTypeId === 3)
                 <div
                     data-customer-question
-                    data-reason-maximum-score="4"
+                    data-reason-maximum-score="{{ $reasonMaximumScore }}"
                     class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
                 >
                     <div class="mb-5 flex items-start gap-3">
@@ -129,11 +129,11 @@
                             for="reason_{{ $questionScope }}"
                             class="mb-2 block text-sm font-semibold text-gray-700"
                         >
-                            Alasan
+                            {{ $question->reason_prompt ?: 'Komen/saran untuk perbaikan' }}
                         </label>
 
                         <p class="mb-3 text-xs text-gray-500">
-                            Alasan muncul karena nilai Kinerja berada pada rentang 1–4.
+                            Alasan muncul karena nilai Kinerja berada pada rentang 1–{{ $reasonMaximumScore }}.
                         </p>
 
                         <textarea
@@ -151,7 +151,7 @@
             @elseif ($questionTypeId === 4)
                 <div
                     data-customer-question
-                    data-reason-maximum-score="4"
+                    data-reason-maximum-score="{{ $reasonMaximumScore }}"
                     class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
                 >
                     <div class="mb-5 flex items-start gap-3">

@@ -101,11 +101,17 @@ class QuestionController extends Controller
                 'max:1000',
             ],
 
+            'questions.*.reason_prompt' => ['nullable', 'string', 'max:5000'],
+
             'questions.*.questiontype_id' => [
                 'required',
                 'integer',
                 // Validasi tipe dilakukan berdasarkan form melalui getQuestionTypesByForm().
             ],
+            'questions.*.scale_min' => ['nullable', 'integer', 'min:0', 'max:999'],
+            'questions.*.scale_max' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'questions.*.scale_left_label' => ['nullable', 'string', 'max:255'],
+            'questions.*.scale_right_label' => ['nullable', 'string', 'max:255'],
         ]);
 
         // Pastikan form sesuai dengan group
@@ -148,6 +154,17 @@ class QuestionController extends Controller
                     "questions.{$index}.questiontype_id" => 'Tipe pertanyaan tidak sesuai dengan tipe form yang dipilih.',
                 ]);
             }
+
+            if ((int) $questionData['questiontype_id'] === 11) {
+                $minimum = (int) ($questionData['scale_min'] ?? 1);
+                $maximum = (int) ($questionData['scale_max'] ?? 0);
+
+                if ($maximum <= $minimum) {
+                    throw ValidationException::withMessages([
+                        "questions.{$index}.scale_max" => 'Nilai akhir skala harus lebih besar dari nilai awal.',
+                    ]);
+                }
+            }
         }
 
         // Simpan pertanyaan
@@ -171,7 +188,23 @@ class QuestionController extends Controller
 
                     'name' => $questionData['name'],
 
+                    'reason_prompt' => (int) $questionData['questiontype_id'] === 3
+                        ? trim((string) ($questionData['reason_prompt'] ?? '')) ?: null
+                        : null,
+
                     'questiontype_id' => $questionData['questiontype_id'],
+                    'scale_min' => (int) $questionData['questiontype_id'] === 11
+                        ? (int) ($questionData['scale_min'] ?? 1)
+                        : null,
+                    'scale_max' => (int) $questionData['questiontype_id'] === 11
+                        ? (int) $questionData['scale_max']
+                        : null,
+                    'scale_left_label' => (int) $questionData['questiontype_id'] === 11
+                        ? trim((string) ($questionData['scale_left_label'] ?? '')) ?: null
+                        : null,
+                    'scale_right_label' => (int) $questionData['questiontype_id'] === 11
+                        ? trim((string) ($questionData['scale_right_label'] ?? '')) ?: null
+                        : null,
                 ]);
             }
         });
@@ -256,11 +289,17 @@ class QuestionController extends Controller
                 'max:1000',
             ],
 
+            'reason_prompt' => ['nullable', 'string', 'max:5000'],
+
             'questiontype_id' => [
                 'required',
                 'integer',
                 // Validasi tipe dilakukan berdasarkan form melalui getQuestionTypesByForm().
             ],
+            'scale_min' => ['nullable', 'integer', 'min:0', 'max:999'],
+            'scale_max' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'scale_left_label' => ['nullable', 'string', 'max:255'],
+            'scale_right_label' => ['nullable', 'string', 'max:255'],
         ]);
 
         $form = Form::query()
@@ -310,6 +349,17 @@ class QuestionController extends Controller
             ]);
         }
 
+        if ((int) $validated['questiontype_id'] === 11) {
+            $minimum = (int) ($validated['scale_min'] ?? 1);
+            $maximum = (int) ($validated['scale_max'] ?? 0);
+
+            if ($maximum <= $minimum) {
+                throw ValidationException::withMessages([
+                    'scale_max' => 'Nilai akhir skala harus lebih besar dari nilai awal.',
+                ]);
+            }
+        }
+
         // Ambil Question
         $question = Question::query()
             ->findOrFail($id);
@@ -346,7 +396,32 @@ class QuestionController extends Controller
 
                 'name' => $validated['name'],
 
+                'reason_prompt' => (int) $validated['questiontype_id'] === 3
+                    ? trim((string) ($validated['reason_prompt'] ?? '')) ?: null
+                    : null,
+
                 'questiontype_id' => $validated['questiontype_id'],
+                'scale_min' => (int) $validated['questiontype_id'] === 11
+                    ? (int) ($validated['scale_min'] ?? 1)
+                    : null,
+                'scale_max' => (int) $validated['questiontype_id'] === 11
+                    ? (int) $validated['scale_max']
+                    : null,
+                'scale_left_label' => (int) $validated['questiontype_id'] === 11
+                    ? trim((string) ($validated['scale_left_label'] ?? '')) ?: null
+                    : null,
+                'scale_right_label' => (int) $validated['questiontype_id'] === 11
+                    ? trim((string) ($validated['scale_right_label'] ?? '')) ?: null
+                    : null,
+                'comparison_enabled' => (int) $validated['questiontype_id'] === 1
+                    ? false
+                    : $question->comparison_enabled,
+                'comparison_prompt' => (int) $validated['questiontype_id'] === 1
+                    ? null
+                    : $question->comparison_prompt,
+                'comparison_options' => (int) $validated['questiontype_id'] === 1
+                    ? null
+                    : $question->comparison_options,
             ]);
         });
 
@@ -364,7 +439,12 @@ class QuestionController extends Controller
     public function updateComparison(Request $request, $id)
     {
         $question = Question::query()->with('form')->findOrFail($id);
-        abort_unless(in_array((int) $question->form->formtype_id, [2, 3, 15, 16], true), 422);
+        abort_unless(in_array((int) $question->form->formtype_id, [2, 3, 15, 16, 17], true), 422);
+        abort_if(
+            (int) $question->questiontype_id === 1,
+            422,
+            'Judul Pertanyaan tidak menggunakan Pembanding Tahun.'
+        );
 
         $validated = $request->validate([
             'comparison_enabled' => ['nullable', 'boolean'],
@@ -601,6 +681,58 @@ class QuestionController extends Controller
         }
     }
 
+    // Edit beberapa pertanyaan terpilih tanpa mengubah tipe dan konfigurasi jawabannya.
+    public function bulkUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            'form_id' => ['required', 'integer', 'exists:forms,id'],
+            'questions' => ['required', 'array', 'min:1'],
+            'questions.*.id' => ['required', 'integer', 'distinct', 'exists:questions,id'],
+            'questions.*.no_header' => ['nullable', 'string', 'max:20'],
+            'questions.*.no' => [
+                'required',
+                'string',
+                'max:20',
+                'regex:/^[\pL\pN]+(?:[.\-_\/][\pL\pN]+)*$/u',
+            ],
+            'questions.*.name' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $form = Form::query()->findOrFail($validated['form_id']);
+        abort_if((int) $form->formtype_id === 12, 422, 'Form Description tidak memiliki pertanyaan.');
+
+        $questionIds = collect($validated['questions'])
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        $questions = Question::query()
+            ->where('form_id', $form->id)
+            ->whereIn('id', $questionIds)
+            ->get()
+            ->keyBy('id');
+
+        if ($questions->count() !== $questionIds->count()) {
+            throw ValidationException::withMessages([
+                'questions' => 'Sebagian pertanyaan tidak berasal dari form yang dipilih.',
+            ]);
+        }
+
+        DB::transaction(function () use ($validated, $questions): void {
+            foreach ($validated['questions'] as $data) {
+                $questions->get((int) $data['id'])->update([
+                    'no_header' => trim((string) ($data['no_header'] ?? '')) ?: null,
+                    'no' => (string) $data['no'],
+                    'name' => $data['name'],
+                ]);
+            }
+        });
+
+        return redirect()
+            ->route('admin.units', ['id' => $form->group_id, 'tab' => 'question'])
+            ->with('success', $questionIds->count().' pertanyaan berhasil diperbarui sekaligus.');
+    }
+
     // Question Type berdasarkan Form Type.
     private function getQuestionTypesByForm(
         Form $form
@@ -671,7 +803,7 @@ class QuestionController extends Controller
         }
 
         // 3. Customer Assessment 1-7
-        elseif (in_array($formTypeId, [3, 16], true)) {
+        elseif (in_array($formTypeId, [3, 16, 17], true)) {
             return collect([
                 [
                     'id' => 1,
@@ -681,7 +813,7 @@ class QuestionController extends Controller
                 [
                     'id' => 2,
                     'name' => 'Kepentingan & Kinerja',
-                    'description' => 'Penilaian Kepentingan dan Kinerja skala 1 sampai 7.',
+                    'description' => 'Penilaian Kepentingan dan Kinerja sesuai skala form.',
                 ],
                 [
                     'id' => 3,
@@ -696,7 +828,7 @@ class QuestionController extends Controller
                 [
                     'id' => 5,
                     'name' => 'Satu Indikator',
-                    'description' => 'Penilaian menggunakan satu indikator skala 1 sampai 7.',
+                    'description' => 'Penilaian menggunakan satu indikator sesuai skala form.',
                 ],
                 [
                     'id' => 6,
@@ -733,7 +865,7 @@ class QuestionController extends Controller
         }
 
         // 5. Engagement Assessment 1-7
-        elseif ($formTypeId === 5) {
+        elseif (in_array($formTypeId, [5, 18], true)) {
             return collect([
                 [
                     'id' => 1,
@@ -743,7 +875,7 @@ class QuestionController extends Controller
                 [
                     'id' => 2,
                     'name' => 'Pertanyaan',
-                    'description' => 'Pertanyaan penilaian keterikatan skala 1 sampai 7.',
+                    'description' => 'Pertanyaan penilaian keterikatan sesuai skala form.',
                 ],
             ]);
         }
@@ -1068,6 +1200,13 @@ class QuestionController extends Controller
                 $questionRows
             );
 
+            $questionHeaderMap = collect($questionRows[0] ?? [])
+                ->mapWithKeys(fn ($header, $column) => [
+                    strtolower(trim((string) $header)) => $column,
+                ]);
+            $reasonPromptColumn = $questionHeaderMap->get('narasi_alasan');
+            $legacyComparisonOptionsColumn = $questionHeaderMap->get('pilihan_pembanding');
+
             $this->validateOptionHeaders(
                 $optionRows
             );
@@ -1126,7 +1265,12 @@ class QuestionController extends Controller
 
                 $comparisonEnabledValue = trim((string) ($row[6] ?? ''));
                 $comparisonPrompt = trim((string) ($row[7] ?? ''));
-                $comparisonOptionsValue = trim((string) ($row[8] ?? ''));
+                $comparisonOptionsValue = $legacyComparisonOptionsColumn !== null
+                    ? trim((string) ($row[$legacyComparisonOptionsColumn] ?? ''))
+                    : '';
+                $reasonPrompt = $reasonPromptColumn !== null
+                    ? trim((string) ($row[$reasonPromptColumn] ?? ''))
+                    : '';
 
                 // Skip row kosong
                 $isEmpty =
@@ -1141,7 +1285,8 @@ class QuestionController extends Controller
                     $questionTypeValue === ''
                     && $comparisonEnabledValue === ''
                     && $comparisonPrompt === ''
-                    && $comparisonOptionsValue === '';
+                    && $comparisonOptionsValue === ''
+                    && $reasonPrompt === '';
 
                 if ($isEmpty) {
                     continue;
@@ -1207,6 +1352,12 @@ class QuestionController extends Controller
                     ]);
                 }
 
+                if (mb_strlen($reasonPrompt) > 5000) {
+                    throw ValidationException::withMessages([
+                        'file' => "Narasi alasan pada baris {$excelRow} maksimal 5000 karakter.",
+                    ]);
+                }
+
                 // Question Type
                 $questionTypeId =
                     $this->extractReferenceId(
@@ -1231,7 +1382,7 @@ class QuestionController extends Controller
                     ]);
                 }
 
-                $supportsComparison = in_array((int) $form->formtype_id, [2, 3, 15, 16], true);
+                $supportsComparison = in_array((int) $form->formtype_id, [2, 3, 15, 16, 17], true);
                 $comparisonEnabled = $comparisonEnabledValue === ''
                     ? 0
                     : $this->extractReferenceId($comparisonEnabledValue);
@@ -1245,6 +1396,12 @@ class QuestionController extends Controller
                 if (!$supportsComparison && $comparisonEnabled === 1) {
                     throw ValidationException::withMessages([
                         'file' => "Pembanding tahun pada baris {$excelRow} hanya berlaku untuk Form Penilaian Pelanggan.",
+                    ]);
+                }
+
+                if ($questionTypeId === 1 && $comparisonEnabled === 1) {
+                    throw ValidationException::withMessages([
+                        'file' => "Judul Pertanyaan pada baris {$excelRow} tidak menggunakan Pembanding Tahun.",
                     ]);
                 }
 
@@ -1294,6 +1451,9 @@ class QuestionController extends Controller
                     'name' => $name,
 
                     'questiontype_id' => $questionTypeId,
+                    'reason_prompt' => $questionTypeId === 3 && $reasonPrompt !== ''
+                        ? $reasonPrompt
+                        : null,
                     'comparison_enabled' => $comparisonEnabled === 1,
                     'comparison_prompt' => $comparisonEnabled === 1 ? $comparisonPrompt : null,
                     'comparison_options' => $comparisonEnabled === 1 ? $comparisonOptions : null,
@@ -1548,6 +1708,8 @@ class QuestionController extends Controller
                                         'questiontype_id'
                                     ],
 
+                                'reason_prompt' => $questionData['reason_prompt'],
+
                                 'comparison_enabled' => $questionData['comparison_enabled'],
                                 'comparison_prompt' => $questionData['comparison_prompt'],
                                 'comparison_options' => $questionData['comparison_options'],
@@ -1640,6 +1802,7 @@ class QuestionController extends Controller
             'tipe_pertanyaan',
             'pembanding_aktif',
             'pertanyaan_pembanding',
+            'narasi_alasan',
         ];
 
         $actualHeaders = array_map(
@@ -1659,14 +1822,16 @@ class QuestionController extends Controller
 
         // Template lama tanpa kolom pembanding tetap dapat digunakan.
         $legacyHeaders = array_slice($expectedHeaders, 0, 6);
-        $previousExtendedHeaders = [...$expectedHeaders, 'pilihan_pembanding'];
+        $previousHeaders = array_slice($expectedHeaders, 0, 8);
+        $previousExtendedHeaders = [...$previousHeaders, 'pilihan_pembanding'];
         $hasExtendedHeaders = collect(array_slice($actualHeaders, 6))
             ->contains(fn ($header) => $header !== '');
 
         if (
             array_slice($actualHeaders, 0, 6) !== $legacyHeaders
             || ($hasExtendedHeaders
-                && array_slice($actualHeaders, 0, 8) !== $expectedHeaders
+                && array_slice($actualHeaders, 0, 8) !== $previousHeaders
+                && $actualHeaders !== $expectedHeaders
                 && $actualHeaders !== $previousExtendedHeaders)
         ) {
             throw ValidationException::withMessages([

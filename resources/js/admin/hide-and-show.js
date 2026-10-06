@@ -181,6 +181,10 @@ function initializeHideAndShow() {
             }
         }
     );
+    page.querySelectorAll("[data-form-visibility-card]").forEach(function (card) {
+        syncFormQuestionToggles(card, card.dataset.formVisible === "1");
+    });
+
     page.addEventListener("click", async function (event) {
         const button = event.target.closest("[data-form-visibility-toggle]");
 
@@ -202,8 +206,13 @@ function initializeHideAndShow() {
             return;
         }
 
-        const nextVisible = button.dataset.active !== "1";
-        setToggleLoading(button, true);
+        const previousVisible = button.dataset.active === "1";
+        const nextVisible = !previousVisible;
+        const card = button.closest("[data-form-visibility-card]");
+
+        updateToggleState(button, nextVisible);
+        card?.setAttribute("data-form-visible", nextVisible ? "1" : "0");
+        syncFormQuestionToggles(card, nextVisible);
 
         try {
             const response = await fetch(formToggleUrl, {
@@ -229,8 +238,8 @@ function initializeHideAndShow() {
 
             const isVisible = Boolean(result.is_visible);
             updateToggleState(button, isVisible);
-            button.closest("[data-form-visibility-card]")
-                ?.setAttribute("data-form-visible", isVisible ? "1" : "0");
+            card?.setAttribute("data-form-visible", isVisible ? "1" : "0");
+            syncFormQuestionToggles(card, isVisible);
 
             showHideShowNotification(
                 result.message,
@@ -238,17 +247,29 @@ function initializeHideAndShow() {
                 isVisible ? "Form ditampilkan" : "Form disembunyikan"
             );
 
-            window.setTimeout(function () {
-                window.location.reload();
-            }, 350);
         } catch (error) {
             console.error(error);
+            updateToggleState(button, previousVisible);
+            card?.setAttribute("data-form-visible", previousVisible ? "1" : "0");
+            syncFormQuestionToggles(card, previousVisible);
             showHideShowNotification(
                 error.message || "Status form gagal diperbarui.",
                 "error"
             );
-            setToggleLoading(button, false);
         }
+    });
+}
+
+function syncFormQuestionToggles(card, isFormVisible) {
+    if (!card) {
+        return;
+    }
+
+    card.querySelectorAll("[data-hide-show-toggle]").forEach(function (toggle) {
+        toggle.disabled = !isFormVisible;
+        toggle.setAttribute("aria-disabled", isFormVisible ? "false" : "true");
+        toggle.classList.toggle("cursor-not-allowed", !isFormVisible);
+        toggle.classList.toggle("opacity-50", !isFormVisible);
     });
 }
 

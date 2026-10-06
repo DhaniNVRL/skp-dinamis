@@ -78,6 +78,16 @@
                         -
                     </div>
 
+                    <div class="mt-3 border-t border-blue-200 pt-3">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                            Nama file template yang tepat
+                        </div>
+                        <div class="mt-1 flex items-center gap-2 text-sm font-semibold text-blue-900">
+                            <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                            <code id="importQuestionTemplateFileName" class="break-all rounded bg-white/80 px-2 py-1">-</code>
+                        </div>
+                    </div>
+
                 </div>
 
 
@@ -254,6 +264,10 @@
                 "importQuestionFormName"
             );
 
+            const templateFileName = document.getElementById(
+                "importQuestionTemplateFileName"
+            );
+
             const fileInput = document.getElementById(
                 "importQuestionFile"
             );
@@ -284,6 +298,12 @@
             if (formName) {
                 formName.textContent =
                     button.dataset.formName || "-";
+            }
+
+            if (templateFileName) {
+                templateFileName.textContent =
+                    button.dataset.templateFileName
+                    || `template-pertanyaan-form-${button.dataset.formId}.xlsx`;
             }
 
             if (fileInput) {

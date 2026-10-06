@@ -727,7 +727,11 @@
                                                 class="font-semibold
                                                     text-gray-900"
                                             >
-                                                komen/saran untuk perbaikan
+                                                {{
+                                                    $questionTypeId === 3
+                                                        ? ($question->reason_prompt ?: 'Komen/saran untuk perbaikan')
+                                                        : 'Komen/saran untuk perbaikan'
+                                                }}
                                             </h4>
 
                                         </div>

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AnswerController;
+use App\Http\Controllers\BlockedFeedbackPhraseController;
 use App\Http\Controllers\CompetitorController;
 use App\Http\Controllers\CompleteProfileController;
 use App\Http\Controllers\DataUserController;
@@ -95,6 +96,12 @@ Route::get(
     });
 
     Route::middleware('role:Admin')->group(function () {
+
+        Route::resource(
+            'blocked-feedback-phrases',
+            BlockedFeedbackPhraseController::class
+        )->only(['index', 'store', 'update', 'destroy'])
+            ->names('admin.blocked-feedback-phrases');
 
         Route::get('/raw-data', [RawDataController::class, 'index'])
             ->name('admin.raw-data.index');
@@ -405,6 +412,11 @@ Route::delete('/groups/{group}/branch-rules/{rule}', [SurveyBranchRuleController
                     '/questions/bulk-delete',
                     'bulkDelete'
                 )->name('questions.bulk-delete');
+
+                Route::put(
+                    '/questions/bulk-update',
+                    'bulkUpdate'
+                )->name('questions.bulk-update');
 
                 Route::get('/question/{id}/edit', 'edit')
                     ->name('question.edit');

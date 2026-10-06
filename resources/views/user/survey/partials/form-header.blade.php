@@ -6,6 +6,9 @@
             </span>
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">{{ $form->name }}</h1>
+                @if (($surveyForms ?? collect())->count() > 1)
+                    <p class="mt-1 text-sm font-medium text-indigo-600">{{ $surveyForms->count() }} form ditampilkan dan disimpan dalam satu tahap</p>
+                @endif
                 <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
                     <span class="rounded-full bg-indigo-100 px-3 py-1 text-indigo-700">
                         <i class="fa-solid fa-clipboard-list mr-1"></i>

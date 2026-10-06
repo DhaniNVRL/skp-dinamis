@@ -1,8 +1,12 @@
 @php
-    $assessmentScaleMaximum = in_array((int) $form->formtype_id, [3, 16], true) ? 7 : 5;
+    $assessmentScaleMaximum = match ((int) $form->formtype_id) {
+        3, 16 => 7,
+        17, 18 => 10,
+        default => 5,
+    };
     $assessmentScaleValues = range(1, $assessmentScaleMaximum);
 
-    if (! in_array((int) $form->formtype_id, [15, 16], true)) {
+    if (in_array((int) $form->formtype_id, [2, 3, 17], true)) {
         $assessmentScaleValues[] = 0;
     }
 
@@ -12,8 +16,10 @@
         3 => 'admin.units.question.partials.forms.customer-assessment-1-7.question-body',
         15 => 'admin.units.question.partials.forms.customer-assessment-1-5.question-body',
         16 => 'admin.units.question.partials.forms.customer-assessment-1-7.question-body',
+        17 => 'admin.units.question.partials.forms.customer-assessment-1-7.question-body',
         4 => 'admin.units.question.partials.forms.engagement-assessment-1-5.question-body',
         5 => 'admin.units.question.partials.forms.engagement-assessment-1-7.question-body',
+        18 => 'admin.units.question.partials.forms.engagement-assessment-1-7.question-body',
         6 => 'admin.units.question.partials.forms.ranking-1-3.question-body',
         7 => 'admin.units.question.partials.forms.ranking-1-5.question-body',
         8 => 'admin.units.question.partials.forms.strength-complaint-suggestion.question-body',
@@ -33,7 +39,10 @@
         'competitors' => $competitors ?? collect(),
         'assessmentScaleValues' => $assessmentScaleValues,
     ])
-    @if (in_array((int) $form->formtype_id, [2, 3, 15, 16], true))
+    @if (
+        in_array((int) $form->formtype_id, [2, 3, 15, 16, 17], true)
+        && (int) $question->questiontype_id !== 1
+    )
         @include('admin.units.question.partials.forms.annual-comparison', compact('question'))
     @endif
 @else

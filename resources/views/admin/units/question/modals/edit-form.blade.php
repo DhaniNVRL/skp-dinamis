@@ -145,6 +145,22 @@
                     </div>
                 </div>
 
+                <div>
+                    <label for="edit_form_merge_parent" class="mb-2 block text-sm font-medium text-gray-700">
+                        Penggabungan tampilan form
+                    </label>
+                    <select id="edit_form_merge_parent" name="merge_parent_id"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">Tidak digabung (form utama/mandiri)</option>
+                        @foreach ($forms->sortBy('no_urut') as $mergeCandidate)
+                            <option value="{{ $mergeCandidate->id }}" data-group-id="{{ $mergeCandidate->group_id }}" data-is-merge-child="{{ $mergeCandidate->merge_parent_id ? '1' : '0' }}">
+                                {{ $mergeCandidate->no_urut }}. {{ $mergeCandidate->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-2 text-xs text-gray-500">Pilih form utama. Di halaman responden, form ini akan tampil dan disimpan bersama form utama tersebut.</p>
+                </div>
+
             </div>
 
             {{-- Footer --}}

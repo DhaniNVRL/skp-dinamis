@@ -63,6 +63,26 @@
                 data-question-type-help
                 class="mt-1 text-xs leading-5 text-gray-500"
             ></p>
+
+            <div data-scale-config class="mt-3 hidden space-y-2 rounded-lg border border-violet-200 bg-violet-50 p-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="text-xs text-gray-600">Nilai awal
+                        <input type="number" min="0" max="999" value="1" data-question-field="scale_min" class="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm">
+                    </label>
+                    <label class="text-xs text-gray-600">Nilai akhir
+                        <input type="number" min="1" max="1000" value="10" data-question-field="scale_max" class="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm">
+                    </label>
+                </div>
+                <input type="text" maxlength="255" placeholder="Label kiri, contoh: Tidak Bersedia" data-question-field="scale_left_label" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm">
+                <input type="text" maxlength="255" placeholder="Label kanan, contoh: Bersedia" data-question-field="scale_right_label" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm">
+            </div>
+
+            <div data-reason-prompt-config class="mt-3 hidden rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <label class="text-xs font-medium text-amber-800">Narasi Alasan
+                    <textarea rows="3" maxlength="5000" data-question-field="reason_prompt" placeholder="Contoh: Alasan apa yang membuat Bapak/Ibu memberikan penilaian kinerja tersebut?" class="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-gray-700"></textarea>
+                </label>
+                <p class="mt-1 text-xs text-amber-700">Ditampilkan di atas textarea alasan responden.</p>
+            </div>
         </td>
 
         {{-- Aksi --}}

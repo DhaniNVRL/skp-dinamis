@@ -284,6 +284,10 @@ document.addEventListener(
             "#edit_form_type"
         );
 
+        const mergeParentInput = modal.querySelector(
+            "#edit_form_merge_parent"
+        );
+
         const warning = modal.querySelector(
             "#edit_form_type_warning"
         );
@@ -319,6 +323,16 @@ document.addEventListener(
 
             typeInput.value = formTypeId;
             typeInput.dataset.originalValue = formTypeId;
+        }
+
+        if (mergeParentInput) {
+            const currentId = editFormTrigger.dataset.id || "";
+            const groupId = editFormTrigger.dataset.groupId || "";
+            Array.from(mergeParentInput.options).forEach((option) => {
+                option.hidden = option.value !== "" && option.dataset.groupId !== groupId;
+                option.disabled = option.value === currentId || option.dataset.isMergeChild === "1";
+            });
+            mergeParentInput.value = editFormTrigger.dataset.mergeParentId || "";
         }
 
         if (warning) {

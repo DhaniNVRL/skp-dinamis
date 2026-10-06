@@ -190,6 +190,9 @@
 {{-- ========================= --}}
 @include('admin.units.question.modals.import-question')
 
+{{-- MODAL BULK EDIT QUESTION --}}
+@include('admin.units.question.modals.bulk-edit-question')
+
 @endsection
 
 @push('templates')
@@ -230,6 +233,6 @@
 @push('scripts')
     <script src="{{ asset('js/units-page-fixes.js') }}?v=20260806-2"></script>
     <script src="{{ asset('js/unit-question-crud-fixes.js') }}?v=20260806-1"></script>
-    <script src="{{ asset('js/question-bulk-selection.js') }}?v=20260806-1"></script>
+    <script src="{{ asset('js/question-bulk-selection.js') }}?v=20261004-1"></script>
 @endpush
 
