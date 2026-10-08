@@ -200,6 +200,7 @@ class MonitoringDashboardController extends Controller
     }
 
     public function respondentDetail(
+        Request $request,
         int $userId,
         AnswerReviewFormatter $formatter
     )
@@ -266,11 +267,31 @@ class MonitoringDashboardController extends Controller
             'answers_count' => $answers->count(),
         ];
 
+        $dashboardRouteName = strtolower((string) $request->user()?->role?->name) === 'pm'
+            ? 'pm.dashboard'
+            : 'admin.dashboard';
+        $dashboardReturnUrl = route($dashboardRouteName);
+        $requestedReturnUrl = (string) $request->query('return_to', '');
+
+        if ($requestedReturnUrl !== '') {
+            $returnParts = parse_url($requestedReturnUrl);
+            $expectedPath = parse_url(route($dashboardRouteName), PHP_URL_PATH);
+
+            if (is_array($returnParts)
+                && ! isset($returnParts['host'])
+                && ! isset($returnParts['scheme'])
+                && ($returnParts['path'] ?? null) === $expectedPath
+                && ! str_starts_with($requestedReturnUrl, '//')) {
+                $dashboardReturnUrl = $requestedReturnUrl;
+            }
+        }
+
         return view('admin.dashboard.respondent-detail', [
             'user' => $profile->user,
             'profile' => $profile,
             'answers' => $answers,
             'survey' => $survey,
+            'dashboardReturnUrl' => $dashboardReturnUrl,
         ]);
     }
 
@@ -342,5 +363,4 @@ class MonitoringDashboardController extends Controller
     }
 
 }
-
 

@@ -221,30 +221,6 @@ document.addEventListener(
     }
 );
 
-document.addEventListener(
-    "click",
-    (e)=>{
-
-
-        const button =
-            e.target.closest(
-                "[data-add-row]"
-            );
-
-
-        if(!button)
-            return;
-
-
-
-        DynamicTable.addRow(
-            "groupCreateTable"
-        );
-
-
-    }
-);
-
 function initializeGroupImport() {
     const fileInput =
         document.getElementById(

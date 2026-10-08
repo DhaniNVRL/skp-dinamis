@@ -203,6 +203,85 @@ class FormController extends Controller
             );
     }
 
+    public function updateMergeConfiguration(Request $request)
+    {
+        $validated = $request->validate([
+            'group_id' => ['required', 'integer', 'exists:groups,id'],
+            'merge_parent_ids' => ['required', 'array'],
+            'merge_parent_ids.*' => ['nullable', 'integer', 'exists:forms,id'],
+        ]);
+
+        $forms = Form::query()
+            ->where('group_id', $validated['group_id'])
+            ->orderBy('no_urut')
+            ->orderBy('id')
+            ->get()
+            ->keyBy('id');
+
+        $submitted = collect($validated['merge_parent_ids'])
+            ->mapWithKeys(fn ($parentId, $formId) => [
+                (int) $formId => filled($parentId) ? (int) $parentId : null,
+            ]);
+
+        if ($submitted->keys()->diff($forms->keys()->map(fn ($id) => (int) $id))->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'merge_parent_ids' => 'Terdapat form yang bukan bagian dari group ini.',
+            ]);
+        }
+
+        $normalizedParents = collect();
+
+        foreach ($forms as $form) {
+            $parentId = $submitted->get((int) $form->id);
+
+            if ($parentId === null) {
+                $normalizedParents->put((int) $form->id, null);
+                continue;
+            }
+
+            $current = $form;
+            $visited = [(int) $form->id];
+
+            while ($parentId !== null) {
+                $parent = $forms->get($parentId);
+
+                if (! $parent
+                    || in_array((int) $parent->id, $visited, true)
+                    || (int) $parent->no_urut >= (int) $current->no_urut) {
+                    throw ValidationException::withMessages([
+                        "merge_parent_ids.{$form->id}" => 'Pilih form dengan nomor urut lebih kecil dalam group yang sama.',
+                    ]);
+                }
+
+                $visited[] = (int) $parent->id;
+                $current = $parent;
+                $parentId = $submitted->get((int) $parent->id);
+            }
+
+            $normalizedParents->put((int) $form->id, (int) $current->id);
+        }
+
+        DB::transaction(function () use ($forms, $normalizedParents): void {
+            Form::query()
+                ->whereIn('id', $forms->keys())
+                ->update(['merge_parent_id' => null]);
+
+            foreach ($forms as $form) {
+                $parentId = $normalizedParents->get((int) $form->id);
+                if ($parentId !== null) {
+                    $form->update(['merge_parent_id' => $parentId]);
+                }
+            }
+        });
+
+        return redirect()
+            ->route('admin.units', [
+                'id' => $validated['group_id'],
+                'tab' => 'question',
+            ])
+            ->with('success', 'Konfigurasi penggabungan form berhasil disimpan.');
+    }
+
     // Remove the specified resource from storage.
 
 

@@ -12,10 +12,19 @@ class FormMergeConfigurationTest extends TestCase
     {
         $model = file_get_contents(app_path('Models/Form.php'));
         $modal = file_get_contents(resource_path('views/admin/units/question/modals/edit-form.blade.php'));
+        $page = file_get_contents(resource_path('views/admin/units/pages/question.blade.php'));
+        $panel = file_get_contents(resource_path('views/admin/units/question/partials/form-merge-configuration.blade.php'));
+        $controller = file_get_contents(app_path('Http/Controllers/FormController.php'));
 
         $this->assertStringContainsString("'merge_parent_id'", $model);
         $this->assertStringContainsString('function mergedForms()', $model);
         $this->assertStringContainsString('name="merge_parent_id"', $modal);
+        $this->assertStringContainsString('form-merge-configuration', $page);
+        $this->assertStringContainsString('Konfigurasi Penggabungan Form', $panel);
+        $this->assertStringContainsString('name="merge_parent_ids[{{ $mergeForm->id }}]"', $panel);
+        $this->assertStringContainsString('function updateMergeConfiguration', $controller);
+        $this->assertStringContainsString('$normalizedParents', $controller);
+        $this->assertStringContainsString('while ($parentId !== null)', $controller);
     }
 
     #[Test]

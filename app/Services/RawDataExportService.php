@@ -4,18 +4,21 @@ namespace App\Services;
 
 use App\Models\Activity;
 use App\Models\Answer;
+use App\Models\Competitor;
 use App\Models\Form;
 use App\Models\Group;
 use App\Models\Question;
 use App\Models\UserProfile;
 use App\Models\Unit;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipArchive;
 
 class RawDataExportService
 {
@@ -23,17 +26,192 @@ class RawDataExportService
     {
         abort_unless((int) $group->activity_id === (int) $activity->id, 422);
 
-        [$headers, $rows] = $this->build($activity, $group);
-        $spreadsheet = $this->spreadsheet($headers, $rows, $activity, $group);
-        $writer = new Xlsx($spreadsheet);
+        $path = $this->writeStreamingWorkbook($activity, $group);
         $filename = 'raw_data_'.str($activity->name.'_'.$group->name)->slug('_').'_'.now()->format('Ymd_His').'.xlsx';
 
-        return response()->streamDownload(function () use ($writer, $spreadsheet): void {
-            $writer->save('php://output');
-            $spreadsheet->disconnectWorksheets();
+        return response()->streamDownload(function () use ($path): void {
+            $stream = fopen($path, 'rb');
+            if ($stream !== false) {
+                fpassthru($stream);
+                fclose($stream);
+            }
+            @unlink($path);
         }, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0, no-cache, no-store, must-revalidate',
         ]);
+    }
+
+    private function writeStreamingWorkbook(Activity $activity, Group $group): string
+    {
+        $forms = Form::query()
+            ->where('group_id', $group->id)
+            ->with([
+                'questions.questiontype:id,name',
+                'questions.options:id,question_id,no,answer_text,answer_text2,has_child',
+                'competitors:id,group_id,form_id,name',
+            ])
+            ->orderBy('no_urut')->orderBy('id')->get();
+        $formIds = $forms->pluck('id');
+        $answeredCompetitorsByForm = $this->answeredCompetitorsByForm($formIds);
+
+        $slotCounts = Answer::query()
+            ->whereIn('form_id', $formIds)
+            ->whereNotNull('subunit_id')
+            ->selectRaw('user_id, COUNT(DISTINCT subunit_id) AS slot_count')
+            ->groupBy('user_id');
+        $answeredSlotCount = (int) DB::query()->fromSub($slotCounts, 'slot_counts')->max('slot_count');
+        $configuredSlot = DB::table('subunits')
+            ->join('units', 'units.id', '=', 'subunits.unit_id')
+            ->where('units.group_id', $group->id)
+            ->selectRaw('COUNT(subunits.id) AS slot_count')
+            ->groupBy('subunits.unit_id')
+            ->orderByDesc('slot_count')
+            ->first();
+        $configuredSlotCount = (int) ($configuredSlot->slot_count ?? 0);
+        $descriptors = $this->descriptors(
+            $forms,
+            max($answeredSlotCount, $configuredSlotCount),
+            $answeredCompetitorsByForm
+        );
+        $headers = collect($descriptors)->pluck('header')->all();
+        [$formHeaders, $headerMerges] = $this->headerLayout($descriptors);
+
+        $sheetPath = tempnam(sys_get_temp_dir(), 'skp_sheet_');
+        $xlsxPath = tempnam(sys_get_temp_dir(), 'skp_raw_');
+        if ($sheetPath === false || $xlsxPath === false) {
+            abort(500, 'File sementara export tidak dapat dibuat.');
+        }
+
+        $sheet = fopen($sheetPath, 'wb');
+        if ($sheet === false) {
+            abort(500, 'File sementara sheet tidak dapat dibuka.');
+        }
+
+        fwrite($sheet, '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>');
+        fwrite($sheet, '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane xSplit="4" ySplit="2" topLeftCell="E3" activePane="bottomRight" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><sheetData>');
+        $this->writeXlsxRow($sheet, 1, $formHeaders, true);
+        $this->writeXlsxRow($sheet, 2, $headers, true);
+
+        $profileQuery = UserProfile::query()
+            ->where('activity_id', $activity->id)
+            ->where('group_id', $group->id)
+            ->whereHas('user', function ($query) use ($formIds): void {
+                $query->whereHas('role', fn ($roleQuery) => $roleQuery->whereRaw('LOWER(name) = ?', ['user']))
+                    ->whereHas('answers', fn ($answerQuery) => $answerQuery->whereIn('form_id', $formIds));
+            })
+            ->with(['user:id,username', 'unit:id,name']);
+
+        $rowNumber = 2;
+        $profileNumber = 0;
+        $profileQuery->chunkById(250, function (Collection $profiles) use (
+            $formIds, $descriptors, $sheet, &$rowNumber, &$profileNumber
+        ): void {
+            $answersByUser = Answer::query()
+                ->whereIn('user_id', $profiles->pluck('user_id'))
+                ->whereIn('form_id', $formIds)
+                ->select([
+                    'id', 'user_id', 'form_id', 'question_id', 'subunit_id',
+                    'competitor_id', 'respondent_competitor_id', 'answer',
+                ])
+                ->with('subunit:id,name')
+                ->orderBy('id')->get()->groupBy('user_id');
+
+            foreach ($profiles as $profile) {
+                $profileNumber++;
+                $userAnswers = $answersByUser->get($profile->user_id, collect());
+                $subunitIds = $userAnswers->pluck('subunit_id')->filter()->unique()->values();
+                $subunitSlots = $subunitIds->flip()->map(fn ($position) => $position + 1);
+                $answerLookup = $userAnswers->mapWithKeys(function (Answer $answer): array {
+                    $key = implode(':', [
+                        $answer->question_id,
+                        $answer->subunit_id ?: 0,
+                        $answer->competitor_id ?: 0,
+                    ]);
+
+                    return [$key => [
+                        'answer' => $answer,
+                        'payload' => $answer->answer,
+                    ]];
+                });
+                $values = [];
+                foreach ($descriptors as $descriptor) {
+                    $values[] = $this->cellValue(
+                        $descriptor,
+                        $profile,
+                        $profileNumber - 1,
+                        $userAnswers,
+                        $answerLookup,
+                        $subunitIds,
+                        $subunitSlots
+                    );
+                }
+                $this->writeXlsxRow($sheet, ++$rowNumber, $values);
+            }
+
+            unset($answersByUser);
+        }, 'id');
+
+        fwrite($sheet, '</sheetData>');
+        if ($headers !== []) {
+            $lastColumn = Coordinate::stringFromColumnIndex(count($headers));
+            fwrite($sheet, '<autoFilter ref="A2:'.$lastColumn.$rowNumber.'"/>');
+        }
+        if ($headerMerges !== []) {
+            fwrite($sheet, '<mergeCells count="'.count($headerMerges).'">');
+            foreach ($headerMerges as $mergeReference) {
+                fwrite($sheet, '<mergeCell ref="'.$mergeReference.'"/>');
+            }
+            fwrite($sheet, '</mergeCells>');
+        }
+        fwrite($sheet, '</worksheet>');
+        fclose($sheet);
+
+        $this->packageXlsx($xlsxPath, $sheetPath, $activity, $group);
+        @unlink($sheetPath);
+
+        return $xlsxPath;
+    }
+
+    private function writeXlsxRow($stream, int $row, array $values, bool $header = false): void
+    {
+        $xml = '<row r="'.$row.'"'.($header ? ' ht="42" customHeight="1"' : '').'>';
+        foreach (array_values($values) as $offset => $value) {
+            $reference = Coordinate::stringFromColumnIndex($offset + 1).$row;
+            if ($value === null || $value === '') {
+                $xml .= '<c r="'.$reference.'"'.($header ? ' s="1"' : '').'/>';
+                continue;
+            }
+            if (! $header && (is_int($value) || is_float($value))) {
+                $xml .= '<c r="'.$reference.'"><v>'.$value.'</v></c>';
+                continue;
+            }
+            $text = mb_substr($this->cleanXmlText((string) $value), 0, 32767);
+            $xml .= '<c r="'.$reference.'" t="inlineStr"'.($header ? ' s="1"' : '').'><is><t xml:space="preserve">'.htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8').'</t></is></c>';
+        }
+        fwrite($stream, $xml.'</row>');
+    }
+
+    private function cleanXmlText(string $value): string
+    {
+        return preg_replace('/[^\x{0009}\x{000A}\x{000D}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]/u', '', $value) ?? '';
+    }
+
+    private function packageXlsx(string $xlsxPath, string $sheetPath, Activity $activity, Group $group): void
+    {
+        $zip = new ZipArchive();
+        if ($zip->open($xlsxPath, ZipArchive::OVERWRITE) !== true) {
+            abort(500, 'File Excel tidak dapat dibuat.');
+        }
+        $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>');
+        $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>');
+        $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Raw Data" sheetId="1" r:id="rId1"/></sheets></workbook>');
+        $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+        $zip->addFromString('xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2457D6"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf></cellXfs></styleSheet>');
+        $title = htmlspecialchars('Raw Data '.$activity->name.' - '.$group->name, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+        $zip->addFromString('docProps/core.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'.$title.'</dc:title><dc:creator>SKP Dinamis</dc:creator></cp:coreProperties>');
+        $zip->addFile($sheetPath, 'xl/worksheets/sheet1.xml');
+        $zip->close();
     }
 
     public function build(Activity $activity, Group $group): array
@@ -50,6 +228,7 @@ class RawDataExportService
             ->get();
 
         $formIds = $forms->pluck('id');
+        $answeredCompetitorsByForm = $this->answeredCompetitorsByForm($formIds);
         $profiles = UserProfile::query()
             ->where('activity_id', $activity->id)
             ->where('group_id', $group->id)
@@ -82,7 +261,7 @@ class RawDataExportService
             ->get()
             ->max('subunits_count');
         $slotCount = max($answeredSlotCount, $configuredSlotCount);
-        $descriptors = $this->descriptors($forms, $slotCount);
+        $descriptors = $this->descriptors($forms, $slotCount, $answeredCompetitorsByForm);
         $headers = collect($descriptors)->pluck('header')->all();
 
         $rows = $profiles->values()->map(function (UserProfile $profile, int $index) use (
@@ -112,13 +291,18 @@ class RawDataExportService
         return [$headers, $rows];
     }
 
-    private function descriptors(Collection $forms, int $slotCount): array
+    private function descriptors(
+        Collection $forms,
+        int $slotCount,
+        ?Collection $answeredCompetitorsByForm = null
+    ): array
     {
+        $answeredCompetitorsByForm ??= collect();
         $descriptors = [
-            ['header' => 'id_user', 'type' => 'profile', 'field' => 'user_id'],
-            ['header' => 'No', 'type' => 'profile', 'field' => 'number'],
-            ['header' => 'fullname', 'type' => 'profile', 'field' => 'username'],
-            ['header' => 'id_unit', 'type' => 'profile', 'field' => 'unit'],
+            ['header' => 'id_user', 'type' => 'profile', 'field' => 'user_id', 'section_key' => 'respondent', 'form_name' => 'DATA RESPONDEN'],
+            ['header' => 'No', 'type' => 'profile', 'field' => 'number', 'section_key' => 'respondent', 'form_name' => 'DATA RESPONDEN'],
+            ['header' => 'fullname', 'type' => 'profile', 'field' => 'username', 'section_key' => 'respondent', 'form_name' => 'DATA RESPONDEN'],
+            ['header' => 'id_unit', 'type' => 'profile', 'field' => 'unit', 'section_key' => 'respondent', 'form_name' => 'DATA RESPONDEN'],
         ];
 
         for ($slot = 1; $slot <= $slotCount; $slot++) {
@@ -126,6 +310,8 @@ class RawDataExportService
                 'header' => 'UNIT_YANG_DINILAI_'.$slot,
                 'type' => 'subunit_name',
                 'slot' => $slot,
+                'section_key' => 'respondent',
+                'form_name' => 'DATA RESPONDEN',
             ];
         }
 
@@ -136,6 +322,8 @@ class RawDataExportService
             if ((int) $form->formtype_id === 12) {
                 continue;
             }
+
+            $formDescriptorStart = count($descriptors);
 
             $numberCounts = $form->questions
                 ->reject(fn (Question $question) => $this->isTitle($form, $question))
@@ -152,7 +340,7 @@ class RawDataExportService
                 $code = $this->questionCode($form, $question, $firstGeneralFormId);
                 $type = (int) $form->formtype_id;
 
-                if (in_array($type, [2, 3, 15, 16, 17], true)
+                if (in_array($type, [2, 3, 15, 16, 17, 19], true)
                     && ($numberCounts[$numberKey] ?? 0) > 1) {
                     preg_match('/^\s*([A-Z])\s*[\.\)]/iu', $question->name, $match);
                     $suffix = isset($match[1])
@@ -161,7 +349,7 @@ class RawDataExportService
                     $code .= '.'.$suffix;
                 }
 
-                if (in_array($type, [2, 3, 15, 16, 17], true)) {
+                if (in_array($type, [2, 3, 15, 16, 17, 19], true)) {
                     foreach ($slots as $slot) {
                         foreach (['importance', 'performance', 'reason', 'children'] as $field) {
                             $descriptors[] = $this->answerDescriptor(
@@ -215,7 +403,12 @@ class RawDataExportService
                         continue;
                     }
 
-                    foreach ($form->competitors as $competitor) {
+                    $formCompetitors = $form->competitors
+                        ->concat($answeredCompetitorsByForm->get($form->id, collect()))
+                        ->unique('id')
+                        ->values();
+
+                    foreach ($formCompetitors as $competitor) {
                         $descriptors[] = [
                             'header' => $code.'_'.str($competitor->name)->upper()->toString(),
                             'type' => 'competitor',
@@ -264,9 +457,69 @@ class RawDataExportService
                     ];
                 }
             }
+
+            for ($index = $formDescriptorStart; $index < count($descriptors); $index++) {
+                $descriptors[$index]['section_key'] = 'form:'.$form->id;
+                $descriptors[$index]['form_name'] = $form->name;
+            }
         }
 
         return $descriptors;
+    }
+
+    private function answeredCompetitorsByForm(Collection $formIds): Collection
+    {
+        if ($formIds->isEmpty()) {
+            return collect();
+        }
+
+        $references = Answer::query()
+            ->whereIn('form_id', $formIds)
+            ->whereNotNull('competitor_id')
+            ->select(['form_id', 'competitor_id'])
+            ->distinct()
+            ->get();
+
+        $competitors = Competitor::query()
+            ->whereIn('id', $references->pluck('competitor_id')->unique())
+            ->get(['id', 'name'])
+            ->keyBy('id');
+
+        return $references
+            ->groupBy('form_id')
+            ->map(fn (Collection $items) => $items
+                ->map(fn (Answer $answer) => $competitors->get($answer->competitor_id))
+                ->filter()
+                ->unique('id')
+                ->values());
+    }
+
+    private function headerLayout(array $descriptors): array
+    {
+        $formHeaders = array_fill(0, count($descriptors), '');
+        $merges = [];
+        $start = 0;
+
+        while ($start < count($descriptors)) {
+            $sectionKey = $descriptors[$start]['section_key'] ?? 'column:'.$start;
+            $end = $start;
+
+            while ($end + 1 < count($descriptors)
+                && ($descriptors[$end + 1]['section_key'] ?? 'column:'.($end + 1)) === $sectionKey) {
+                $end++;
+            }
+
+            $formHeaders[$start] = $descriptors[$start]['form_name'] ?? '';
+            if ($end > $start) {
+                $startColumn = Coordinate::stringFromColumnIndex($start + 1);
+                $endColumn = Coordinate::stringFromColumnIndex($end + 1);
+                $merges[] = $startColumn.'1:'.$endColumn.'1';
+            }
+
+            $start = $end + 1;
+        }
+
+        return [$formHeaders, $merges];
     }
 
     private function answerDescriptor(string $header, Question $question, string $field, int $slot): array
@@ -310,12 +563,16 @@ class RawDataExportService
             $competitorId = (int) $descriptor['competitor_id'];
         }
 
-        $answer = $lookup->get(implode(':', [$question->id, $subunitId, $competitorId]));
-        if (! $answer) {
+        $answerData = $lookup->get(implode(':', [$question->id, $subunitId, $competitorId]));
+        if (! $answerData) {
             return null;
         }
 
-        return $this->answerField($answer->answer, $descriptor['field'], $question, $descriptor['rank'] ?? null);
+        $payload = is_array($answerData) && array_key_exists('payload', $answerData)
+            ? $answerData['payload']
+            : $answerData->answer;
+
+        return $this->answerField($payload, $descriptor['field'], $question, $descriptor['rank'] ?? null);
     }
 
     private function answerField(mixed $payload, string $field, Question $question, ?int $rank = null): mixed
@@ -404,7 +661,7 @@ class RawDataExportService
         $header = trim((string) $question->no_header);
         $number = trim((string) $question->no);
 
-        if (in_array((int) $form->formtype_id, [2, 3, 15, 16, 17], true)) {
+        if (in_array((int) $form->formtype_id, [2, 3, 15, 16, 17, 19], true)) {
             return 'B'.$header.$number;
         }
 

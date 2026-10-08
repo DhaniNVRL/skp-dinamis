@@ -9,7 +9,7 @@ class FormTypeSeeder extends Seeder
 {
     public function run(): void
     {
-      
+
         DB::table('form_types')->upsert([
             [
                 'id' => 1,
@@ -134,6 +134,13 @@ class FormTypeSeeder extends Seeder
                 'id' => 18,
                 'name' => 'Form Keterikatan',
                 'description' => 'Skala 1-10',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 19,
+                'name' => 'Form Penilaian Pelanggan',
+                'description' => 'Skala 1-10 Tanpa Nilai 0',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]

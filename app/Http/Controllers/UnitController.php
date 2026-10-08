@@ -33,6 +33,7 @@ class UnitController extends Controller
         $forms = Form::where('group_id', $id)
             ->with([
                 'formtype',
+                'mergeParent',
                 'description',
                 'questions.questiontype',
                 'questions.options' => function ($query) {

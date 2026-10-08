@@ -34,6 +34,7 @@ class AnswerController extends Controller
         15,
         16,
         17,
+        19,
     ];
 
     private const FEEDBACK_TYPES = [
@@ -53,6 +54,7 @@ class AnswerController extends Controller
         15,
         16,
         17,
+        19,
     ];
 
     private const MEANINGFUL_ANSWER_ROLE_IDS = [
@@ -1207,13 +1209,13 @@ class AnswerController extends Controller
 
             $maximumScale = match ((int) $form->formtype_id) {
                 2, 15 => 5,
-                17 => 10,
+                17, 19 => 10,
                 default => 7,
             };
 
             $allowedValues = range(1, $maximumScale);
 
-            if (!in_array((int) $form->formtype_id, [15, 16], true)) {
+            if (!in_array((int) $form->formtype_id, [15, 16, 19], true)) {
                 $allowedValues[] = 0;
             }
 
@@ -1249,7 +1251,7 @@ class AnswerController extends Controller
 
             $reasonMaximum = match ((int) $form->formtype_id) {
                 2, 15 => 3,
-                17 => 5,
+                17, 19 => 5,
                 default => 4,
             };
 
@@ -1407,10 +1409,14 @@ class AnswerController extends Controller
 
         if (
             $questionTypeId === 5
-            && in_array((int) $form->formtype_id, [15, 16], true)
+            && in_array((int) $form->formtype_id, [15, 16, 19], true)
             && !in_array(
                 (int) Arr::get($payload, 'value'),
-                range(1, (int) $form->formtype_id === 15 ? 5 : 7),
+                range(1, match ((int) $form->formtype_id) {
+                    15 => 5,
+                    16 => 7,
+                    19 => 10,
+                }),
                 true
             )
         ) {

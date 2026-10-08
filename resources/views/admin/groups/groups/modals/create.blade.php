@@ -52,6 +52,7 @@
                         id="groupCreateTable"
                         data-dynamic-table
                         data-template="createGroupRowTemplate"
+                        data-start-number="{{ $groups->count() + 1 }}"
                         class="w-full border-collapse"
                     >
 
@@ -100,7 +101,7 @@
 
                 <button
                     type="button"
-                    data-add-row="groupCreateBody"
+                    data-add-row="groupCreateTable"
                     class="inline-flex items-center gap-2 rounded-lg border border-green-600 px-4 py-2 text-green-600 transition hover:bg-green-50"
                 >
                     <i class="fa-solid fa-plus"></i>

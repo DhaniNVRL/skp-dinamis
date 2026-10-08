@@ -46,6 +46,7 @@
                         id="userCreateTable"
                         data-dynamic-table
                         data-template="createUserRowTemplate"
+                        data-start-number="{{ $userCreateStartNumber }}"
                         class="min-w-[1500px] w-full border-collapse"
                     >
 
@@ -119,7 +120,7 @@
 
                 <button
                     type="button"
-                    data-add-row="userCreateBody"
+                    data-add-row="userCreateTable"
                     class="inline-flex items-center gap-2 rounded-lg border border-green-600 px-4 py-2 text-green-600 transition hover:bg-green-50"
                 >
                     <i class="fa-solid fa-plus"></i>

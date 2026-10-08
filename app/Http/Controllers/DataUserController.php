@@ -192,6 +192,10 @@ class DataUserController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        $userCreateStartNumber = UserProfile::query()
+            ->whereHas('user')
+            ->count() + 1;
+
         // Return View
 
         return view('admin.users.index', compact(
@@ -199,7 +203,8 @@ class DataUserController extends Controller
             'roles',
             'activities',
             'groups',
-            'units'
+            'units',
+            'userCreateStartNumber'
         ));
     }
 
@@ -1148,6 +1153,230 @@ class DataUserController extends Controller
         return redirect()->back()->with(
             'successdelete',
             $result[0].' akun beserta '.$result[1].' data jawaban berhasil dihapus.'
+        );
+    }
+
+    public function bulkResetAccount(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:users,id'],
+        ]);
+
+        $ids = array_map('intval', $validated['ids']);
+        $result = DB::transaction(function () use ($ids): array {
+            User::query()->whereIn('id', $ids)->lockForUpdate()->get(['id']);
+
+            $answerCount = Answer::query()->whereIn('user_id', $ids)->count();
+            Answer::query()->whereIn('user_id', $ids)->delete();
+
+            if (Schema::hasTable('survey_drafts')) {
+                SurveyDraft::query()->whereIn('user_id', $ids)->delete();
+            }
+
+            if (Schema::hasTable('respondent_competitors')) {
+                RespondentCompetitor::query()->whereIn('user_id', $ids)->delete();
+            }
+
+            $sessionCount = 0;
+            if (Schema::hasTable('survey_sessions')) {
+                $sessionCount = DB::table('survey_sessions')->whereIn('user_id', $ids)->count();
+                DB::table('survey_sessions')->whereIn('user_id', $ids)->delete();
+            }
+
+            return [count($ids), $answerCount, $sessionCount];
+        });
+
+        return redirect()->back()->with(
+            'successdelete',
+            $result[0].' akun berhasil di-reset. '.$result[1].' jawaban dan '.$result[2].' progres survey dihapus; profil serta penempatan user tetap dipertahankan.'
+        );
+    }
+
+    public function bulkUnlockSubmit(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:users,id'],
+        ]);
+
+        $ids = array_map('intval', $validated['ids']);
+        $result = DB::transaction(function () use ($ids): array {
+            $users = User::query()
+                ->with(['profile', 'surveySession'])
+                ->whereIn('id', $ids)
+                ->lockForUpdate()
+                ->get();
+            $firstForms = [];
+            $unlocked = 0;
+            $skipped = 0;
+
+            foreach ($users as $user) {
+                $profile = $user->profile;
+                $session = $user->surveySession;
+                if (! $profile?->activity_id || ! $profile?->group_id || ! $profile?->unit_id || ! $session || $session->status !== 'completed') {
+                    $skipped++;
+                    continue;
+                }
+
+                if (! array_key_exists($profile->group_id, $firstForms)) {
+                    $firstForms[$profile->group_id] = Form::query()
+                        ->where('group_id', $profile->group_id)
+                        ->orderBy('no_urut')
+                        ->orderBy('id')
+                        ->value('id');
+                }
+
+                $firstFormId = $firstForms[$profile->group_id];
+                if (! $firstFormId) {
+                    $skipped++;
+                    continue;
+                }
+
+                $session->update([
+                    'activity_id' => $profile->activity_id,
+                    'group_id' => $profile->group_id,
+                    'unit_id' => $profile->unit_id,
+                    'current_form_id' => $firstFormId,
+                    'status' => 'in_progress',
+                    'finished_at' => null,
+                    'reopened_at' => now(),
+                ]);
+                $unlocked++;
+            }
+
+            return [$unlocked, $skipped];
+        });
+
+        if ($result[0] === 0) {
+            return redirect()->back()->with(
+                'error',
+                'Tidak ada akun yang dapat di-unlock. Pastikan survey sudah selesai dan Activity, Group, Unit, serta form tersedia.'
+            );
+        }
+
+        $message = $result[0].' akun berhasil dibuka kembali. Jawaban tetap dipertahankan.';
+        if ($result[1] > 0) {
+            $message .= ' '.$result[1].' akun dilewati karena belum selesai atau konfigurasi survey belum lengkap.';
+        }
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    public function bulkUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:users,id'],
+            'apply_role' => ['nullable', 'boolean'],
+            'role_id' => ['nullable', 'integer', 'exists:roles,id'],
+            'apply_activity' => ['nullable', 'boolean'],
+            'activity_id' => ['nullable', 'integer', 'exists:activities,id'],
+            'apply_group' => ['nullable', 'boolean'],
+            'group_id' => ['nullable', 'integer', 'exists:groups,id'],
+            'apply_unit' => ['nullable', 'boolean'],
+            'unit_id' => ['nullable', 'integer', 'exists:units,id'],
+        ]);
+
+        $changes = collect(['role', 'activity', 'group', 'unit'])
+            ->filter(fn (string $field) => $request->boolean('apply_'.$field));
+
+        if ($changes->isEmpty()) {
+            throw ValidationException::withMessages([
+                'bulk_edit' => 'Centang minimal satu field yang ingin diubah.',
+            ]);
+        }
+
+        if ($request->boolean('apply_role') && empty($validated['role_id'])) {
+            throw ValidationException::withMessages([
+                'role_id' => 'Role wajib dipilih ketika perubahan Role diaktifkan.',
+            ]);
+        }
+
+        $users = User::query()
+            ->with('profile')
+            ->whereIn('id', $validated['ids'])
+            ->get();
+
+        DB::transaction(function () use ($request, $validated, $users): void {
+            foreach ($users as $user) {
+                $profile = $user->profile ?: new UserProfile(['user_id' => $user->id]);
+                $roleId = $request->boolean('apply_role')
+                    ? (int) $validated['role_id']
+                    : (int) $user->role_id;
+                $activityId = $request->boolean('apply_activity')
+                    ? ($validated['activity_id'] ?? null)
+                    : $profile->activity_id;
+                $groupId = $request->boolean('apply_group')
+                    ? ($validated['group_id'] ?? null)
+                    : $profile->group_id;
+                $unitId = $request->boolean('apply_unit')
+                    ? ($validated['unit_id'] ?? null)
+                    : $profile->unit_id;
+
+                if ((int) $user->id === (int) auth()->id()
+                    && $roleId !== (int) $user->role_id) {
+                    throw ValidationException::withMessages([
+                        'role_id' => 'Role akun yang sedang digunakan tidak dapat diubah.',
+                    ]);
+                }
+
+                if (! in_array($roleId, [1, 2], true) && empty($activityId)) {
+                    throw ValidationException::withMessages([
+                        'activity_id' => 'Activity wajib tersedia untuk seluruh role akun yang dipilih.',
+                    ]);
+                }
+
+                if ($roleId === 1) {
+                    $activityId = null;
+                }
+
+                if (! in_array($roleId, [2, 4], true)) {
+                    $groupId = null;
+                    $unitId = null;
+                }
+
+                if ($activityId === null) {
+                    $groupId = null;
+                    $unitId = null;
+                }
+
+                if ($groupId !== null && ! Group::query()
+                    ->whereKey($groupId)
+                    ->where('activity_id', $activityId)
+                    ->exists()) {
+                    throw ValidationException::withMessages([
+                        'group_id' => 'Group tidak sesuai dengan Activity untuk salah satu akun terpilih.',
+                    ]);
+                }
+
+                if ($groupId === null) {
+                    $unitId = null;
+                }
+
+                if ($unitId !== null && ! Unit::query()
+                    ->whereKey($unitId)
+                    ->where('group_id', $groupId)
+                    ->exists()) {
+                    throw ValidationException::withMessages([
+                        'unit_id' => 'Unit tidak sesuai dengan Group untuk salah satu akun terpilih.',
+                    ]);
+                }
+
+                if ($request->boolean('apply_role')) {
+                    $user->update(['role_id' => $roleId]);
+                }
+
+                $profile->activity_id = $activityId;
+                $profile->group_id = $groupId;
+                $profile->unit_id = $unitId;
+                $profile->save();
+            }
+        });
+
+        return back()->with(
+            'success',
+            $users->count().' akun berhasil diperbarui secara massal.'
         );
     }
     private function templateReferenceId(mixed $value): ?int

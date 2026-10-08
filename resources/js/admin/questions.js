@@ -83,6 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
             case 17:
+            case 19:
                 return document.getElementById(
                     "customerAssessment17TypeOptions"
                 );
@@ -251,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const config = row?.querySelector("[data-reason-prompt-config]");
         if (!select || !config) return;
 
-        const customerTypes = [2, 3, 15, 16, 17];
+        const customerTypes = [2, 3, 15, 16, 17, 19];
         const enabled = customerTypes.includes(Number(formTypeInput?.value))
             && Number(select.value) === 3;
 
@@ -656,7 +657,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Sinkronkan field narasi alasan pada modal edit.
     function updateEditReasonPromptConfig() {
-        const customerTypes = [2, 3, 15, 16, 17];
+        const customerTypes = [2, 3, 15, 16, 17, 19];
         const enabled = customerTypes.includes(Number(formTypeInput?.value))
             && Number(typeInput?.value) === 3;
 
@@ -703,6 +704,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
             case 17:
+            case 19:
                 return document.getElementById(
                     "customerAssessment17TypeOptions"
                 );
@@ -944,7 +946,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             updateEditReasonPromptConfig();
 
-            const supportsComparison = [2, 3, 15, 16, 17].includes(Number(formTypeInput.value));
+            const supportsComparison = [2, 3, 15, 16, 17, 19].includes(Number(formTypeInput.value));
             comparisonConfig?.classList.remove("hidden");
 
             if (comparisonEnabled) {

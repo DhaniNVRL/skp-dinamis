@@ -113,7 +113,7 @@
     */
     $usesSingleHeaderToggle =
         $isHeader
-        && in_array($formTypeId, [2, 3, 15, 16, 17], true);
+        && in_array($formTypeId, [2, 3, 15, 16, 17, 19], true);
 
     $usesPerSubUnitToggle =
         $isPerSubUnit

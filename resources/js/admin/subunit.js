@@ -306,6 +306,11 @@ function initializeCreateSubUnit() {
     }
 
     function refreshRows() {
+        const startNumber = Number.parseInt(
+            tableBody.dataset.startNumber || "1",
+            10
+        );
+
         rows().forEach(function (row, index) {
             const number = row.querySelector(
                 "[data-row-number]"
@@ -316,7 +321,7 @@ function initializeCreateSubUnit() {
             );
 
             if (number) {
-                number.textContent = index + 1;
+                number.textContent = startNumber + index;
             }
 
             if (input) {

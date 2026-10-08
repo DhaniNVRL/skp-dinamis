@@ -22,7 +22,7 @@ use Illuminate\View\View;
 
 class SurveyController extends Controller
 {
-    private const PER_SUBUNIT_TYPES = [2, 3, 8, 9, 10, 15, 16, 17];
+    private const PER_SUBUNIT_TYPES = [2, 3, 8, 9, 10, 15, 16, 17, 19];
 
     private const COMPETITOR_TYPES = [11, 13];
 

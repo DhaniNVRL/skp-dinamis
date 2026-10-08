@@ -67,17 +67,17 @@ class Question extends Model
                     WHEN EXISTS (
                         SELECT 1 FROM forms
                         WHERE forms.id = questions.form_id
-                          AND forms.formtype_id IN (2, 3, 15, 16, 17)
+                          AND forms.formtype_id IN (2, 3, 15, 16, 17, 19)
                     ) AND questions.questiontype_id IN (2, 3, 4, 7, 8) THEN 0
                     WHEN EXISTS (
                         SELECT 1 FROM forms
                         WHERE forms.id = questions.form_id
-                          AND forms.formtype_id IN (2, 3, 15, 16, 17)
+                          AND forms.formtype_id IN (2, 3, 15, 16, 17, 19)
                     ) AND questions.questiontype_id = 5 THEN 1
                     WHEN EXISTS (
                         SELECT 1 FROM forms
                         WHERE forms.id = questions.form_id
-                          AND forms.formtype_id IN (2, 3, 15, 16, 17)
+                          AND forms.formtype_id IN (2, 3, 15, 16, 17, 19)
                     ) AND questions.questiontype_id = 6 THEN 2
                     ELSE 0
                 END'
@@ -114,7 +114,7 @@ class Question extends Model
         int $formTypeId,
         int $questionTypeId
     ): int {
-        if (! in_array($formTypeId, [2, 3, 15, 16, 17], true)) {
+        if (! in_array($formTypeId, [2, 3, 15, 16, 17, 19], true)) {
             return 0;
         }
 

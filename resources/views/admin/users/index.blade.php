@@ -60,6 +60,9 @@
 </div>
 
 @include('admin.users.modals.bulk-deleted')
+@include('admin.users.modals.bulk-edit')
+@include('admin.users.modals.bulk-reset-account')
+@include('admin.users.modals.bulk-unlock-submit')
 @include('admin.users.modals.create')
 @include('admin.users.modals.delete')
 @include('admin.users.modals.edit')

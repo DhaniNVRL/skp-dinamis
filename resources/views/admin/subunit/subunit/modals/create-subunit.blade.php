@@ -59,6 +59,7 @@
 
                         <tbody
                             id="createSubUnitBody"
+                            data-start-number="{{ $allSubunits->count() + 1 }}"
                             class="divide-y divide-gray-200 bg-white"
                         ></tbody>
                     </table>

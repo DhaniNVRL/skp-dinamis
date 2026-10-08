@@ -93,8 +93,8 @@ function initializeCreateUnit() {
         "createUnitRowTemplate"
     );
 
-    const addButton = document.querySelector(
-        '[data-add-row="createUnitBody"]'
+    const addButton = document.getElementById(
+        "addUnitRow"
     );
 
     if (!modal) {
@@ -121,12 +121,17 @@ function initializeCreateUnit() {
     function getRows() {
         return Array.from(
             tableBody.querySelectorAll(
-                ".create-unit-row"
+                "[data-create-unit-row]"
             )
         );
     }
 
     function refreshRows() {
+        const startNumber = Number.parseInt(
+            tableBody.dataset.startNumber || "1",
+            10
+        );
+
         getRows().forEach(function (row, index) {
             const number = row.querySelector(
                 "[data-row-number]"
@@ -137,7 +142,7 @@ function initializeCreateUnit() {
             );
 
             if (number) {
-                number.textContent = index + 1;
+                number.textContent = startNumber + index;
             }
 
             if (input) {
@@ -202,7 +207,7 @@ function initializeCreateUnit() {
             }
 
             const row = removeButton.closest(
-                ".create-unit-row"
+                "[data-create-unit-row]"
             );
 
             if (!row) {

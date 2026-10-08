@@ -14,7 +14,7 @@
                 data-row-number
                 class="text-sm font-medium text-gray-700"
             >
-                1
+                {{ $units->count() + 1 }}
             </span>
         </td>
 

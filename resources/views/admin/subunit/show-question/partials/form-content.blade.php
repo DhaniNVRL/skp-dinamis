@@ -219,6 +219,23 @@
         )
         @break
 
+    {{-- CUSTOMER ASSESSMENT 1-10 WITHOUT ZERO --}}
+    @case(19)
+        @include(
+            'admin.subunit.show-question.forms.customer-assessment-1-7',
+            [
+                'form' => $form,
+                'questions' => $questions,
+                'subunits' => $subunits,
+                'subunitIds' => $subunitIds,
+                'activeMapSubUnit' => $activeMapSubUnit,
+                'scaleMaximum' => 10,
+                'reasonMaximumScore' => 5,
+                'includeZero' => false,
+            ]
+        )
+        @break
+
     {{-- ENGAGEMENT ASSESSMENT 1-10 --}}
     @case(18)
         @include(

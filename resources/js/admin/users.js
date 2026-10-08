@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
     UserPage.init();
+    initializeBulkUserEdit();
+    initializeBulkSurveyActions();
 });
 
 /* =========================
@@ -279,31 +281,6 @@ function clearError(field){
    ADD ROW TABLE
 ========================= */
 
-document.addEventListener(
-    "click",
-    (e)=>{
-
-
-        const button =
-            e.target.closest(
-                "[data-add-row]"
-            );
-
-
-        if(!button)
-            return;
-
-
-
-        DynamicTable.addRow(
-            "userCreateTable"
-        );
-
-
-    }
-);
-
-
 /* =========================
    EDIT USER MODAL
 ========================= */
@@ -533,6 +510,163 @@ document.addEventListener("modal:opened", (event) => {
     name.textContent = activeModalButton.dataset.name || "user ini";
     form.action = activeModalButton.dataset.action;
 });
+
+function initializeBulkUserEdit() {
+    const button = document.getElementById("btnBulkEditUser");
+    const form = document.getElementById("bulkEditUserForm");
+    const idsContainer = document.getElementById("bulkEditUserIds");
+    const count = document.getElementById("bulkEditUserCount");
+    const activity = document.getElementById("bulkActivityId");
+    const group = document.getElementById("bulkGroupId");
+    const unit = document.getElementById("bulkUnitId");
+
+    if (!button || !form || !idsContainer || !count || !activity || !group || !unit) return;
+
+    const selected = () => Array.from(
+        document.querySelectorAll("#userTable .bulk-checkbox:checked")
+    );
+    const syncButton = () => {
+        button.disabled = selected().length === 0;
+    };
+    const syncGroupOptions = () => {
+        const appliesActivity = form.querySelector('[name="apply_activity"]')?.checked;
+        Array.from(group.options).forEach((option, index) => {
+            if (index === 0) return;
+            const visible = !appliesActivity || !activity.value
+                || String(option.dataset.activityId) === String(activity.value);
+            option.hidden = !visible;
+            option.disabled = !visible;
+        });
+        if (group.selectedOptions[0]?.disabled) group.value = "";
+    };
+    const syncUnitOptions = () => {
+        const appliesGroup = form.querySelector('[name="apply_group"]')?.checked;
+        Array.from(unit.options).forEach((option, index) => {
+            if (index === 0) return;
+            const visible = !appliesGroup || !group.value
+                || String(option.dataset.groupId) === String(group.value);
+            option.hidden = !visible;
+            option.disabled = !visible;
+        });
+        if (unit.selectedOptions[0]?.disabled) unit.value = "";
+    };
+
+    document.addEventListener("change", (event) => {
+        if (event.target.matches("#userTable .bulk-checkbox, .bulk-select-all")) {
+            window.setTimeout(syncButton, 0);
+        }
+    });
+
+    form.querySelectorAll("[data-bulk-apply]").forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+            const field = document.getElementById(checkbox.dataset.bulkApply);
+            if (field) field.disabled = !checkbox.checked;
+            syncGroupOptions();
+            syncUnitOptions();
+        });
+    });
+
+    activity.addEventListener("change", () => {
+        group.value = "";
+        unit.value = "";
+        syncGroupOptions();
+        syncUnitOptions();
+    });
+    group.addEventListener("change", () => {
+        unit.value = "";
+        syncUnitOptions();
+    });
+
+    button.addEventListener("click", () => {
+        const checked = selected();
+        if (checked.length === 0) {
+            window.alert("Pilih minimal satu user.");
+            return;
+        }
+
+        form.reset();
+        form.querySelectorAll("[data-bulk-apply]").forEach((checkbox) => {
+            const field = document.getElementById(checkbox.dataset.bulkApply);
+            if (field) field.disabled = true;
+        });
+        idsContainer.replaceChildren();
+        checked.forEach((checkbox) => {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = "ids[]";
+            input.value = checkbox.value;
+            idsContainer.appendChild(input);
+        });
+        count.textContent = String(checked.length);
+        syncGroupOptions();
+        syncUnitOptions();
+        Modal.open("bulkEditUserModal");
+    });
+
+    syncButton();
+}
+
+function initializeBulkSurveyActions() {
+    const actions = [
+        {
+            buttonId: "btnBulkResetAccount",
+            modalId: "bulkResetAccountModal",
+            idsId: "bulkResetAccountIds",
+            countId: "bulkResetAccountCount"
+        },
+        {
+            buttonId: "btnBulkUnlockSubmit",
+            modalId: "bulkUnlockSubmitModal",
+            idsId: "bulkUnlockSubmitIds",
+            countId: "bulkUnlockSubmitCount"
+        }
+    ];
+
+    const selected = () => Array.from(
+        document.querySelectorAll("#userTable .bulk-checkbox:checked")
+    );
+    const syncButtons = () => {
+        const disabled = selected().length === 0;
+        actions.forEach(({ buttonId }) => {
+            const button = document.getElementById(buttonId);
+            if (button) button.disabled = disabled;
+        });
+    };
+
+    actions.forEach(({ buttonId, modalId, idsId, countId }) => {
+        const button = document.getElementById(buttonId);
+        const idsContainer = document.getElementById(idsId);
+        const count = document.getElementById(countId);
+        if (!button || !idsContainer || !count) return;
+
+        button.addEventListener("click", () => {
+            const checked = selected();
+            if (checked.length === 0) {
+                window.alert("Pilih minimal satu user.");
+                return;
+            }
+
+            idsContainer.replaceChildren();
+            checked.forEach((checkbox) => {
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "ids[]";
+                input.value = checkbox.value;
+                idsContainer.appendChild(input);
+            });
+            count.textContent = String(checked.length);
+            Modal.open(modalId);
+        });
+    });
+
+    document.addEventListener("change", (event) => {
+        if (event.target.matches("#userTable .bulk-checkbox, .bulk-select-all")) {
+            window.setTimeout(syncButtons, 0);
+        }
+    });
+
+    syncButtons();
+}
 
 /* =========================
    Bulk Selected

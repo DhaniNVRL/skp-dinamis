@@ -123,6 +123,15 @@ Route::get(
             Route::delete('/bulk-delete', 'bulkDelete')
                 ->name('admin.datauser.bulk-delete');
 
+            Route::put('/datauser/bulk-update', 'bulkUpdate')
+                ->name('admin.datauser.bulk-update');
+
+            Route::post('/datauser/bulk-reset-account', 'bulkResetAccount')
+                ->name('admin.datauser.bulk-reset-account');
+
+            Route::post('/datauser/bulk-unlock-submit', 'bulkUnlockSubmit')
+                ->name('admin.datauser.bulk-unlock-submit');
+
             Route::get('/datauseredit/{id}/edit', 'edit')
                 ->name('admin.datauser.edit');
 
@@ -293,6 +302,9 @@ Route::delete('/groups/{group}/branch-rules/{rule}', [SurveyBranchRuleController
 
             Route::delete('/forms/bulkDelete', 'bulkDelete')
                 ->name('forms.bulkDelete');
+
+            Route::put('/forms/merge-configuration', 'updateMergeConfiguration')
+                ->name('forms.merge-configuration.update');
 
             Route::post('/forms/{id}/copy', 'copy')
                 ->name('forms.copy');

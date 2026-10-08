@@ -6,6 +6,14 @@
             <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-gray-200">
                 <div class="min-w-0">
                     <div class="flex items-center gap-3">
+                        {{-- ID Form --}}
+                        <span
+                            class="inline-flex h-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-600"
+                            title="ID database form"
+                        >
+                            ID={{ $form->id }}
+                        </span>
+
                         {{-- Nomor urut --}}
                         <span
                             class="flex items-center justify-center
@@ -119,6 +127,8 @@
                         @break
 
                     @case(17)
+
+                    @case(19)
 
                         @include(
                             'admin.units.question.partials.forms.customer-assessment-1-7.index',

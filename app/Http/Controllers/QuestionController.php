@@ -439,7 +439,7 @@ class QuestionController extends Controller
     public function updateComparison(Request $request, $id)
     {
         $question = Question::query()->with('form')->findOrFail($id);
-        abort_unless(in_array((int) $question->form->formtype_id, [2, 3, 15, 16, 17], true), 422);
+        abort_unless(in_array((int) $question->form->formtype_id, [2, 3, 15, 16, 17, 19], true), 422);
         abort_if(
             (int) $question->questiontype_id === 1,
             422,
@@ -803,7 +803,7 @@ class QuestionController extends Controller
         }
 
         // 3. Customer Assessment 1-7
-        elseif (in_array($formTypeId, [3, 16, 17], true)) {
+        elseif (in_array($formTypeId, [3, 16, 17, 19], true)) {
             return collect([
                 [
                     'id' => 1,
@@ -1382,7 +1382,7 @@ class QuestionController extends Controller
                     ]);
                 }
 
-                $supportsComparison = in_array((int) $form->formtype_id, [2, 3, 15, 16, 17], true);
+                $supportsComparison = in_array((int) $form->formtype_id, [2, 3, 15, 16, 17, 19], true);
                 $comparisonEnabled = $comparisonEnabledValue === ''
                     ? 0
                     : $this->extractReferenceId($comparisonEnabledValue);

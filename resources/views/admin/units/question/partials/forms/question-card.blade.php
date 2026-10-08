@@ -1,7 +1,7 @@
 @php
     $assessmentScaleMaximum = match ((int) $form->formtype_id) {
         3, 16 => 7,
-        17, 18 => 10,
+        17, 18, 19 => 10,
         default => 5,
     };
     $assessmentScaleValues = range(1, $assessmentScaleMaximum);
@@ -17,6 +17,7 @@
         15 => 'admin.units.question.partials.forms.customer-assessment-1-5.question-body',
         16 => 'admin.units.question.partials.forms.customer-assessment-1-7.question-body',
         17 => 'admin.units.question.partials.forms.customer-assessment-1-7.question-body',
+        19 => 'admin.units.question.partials.forms.customer-assessment-1-7.question-body',
         4 => 'admin.units.question.partials.forms.engagement-assessment-1-5.question-body',
         5 => 'admin.units.question.partials.forms.engagement-assessment-1-7.question-body',
         18 => 'admin.units.question.partials.forms.engagement-assessment-1-7.question-body',
@@ -40,7 +41,7 @@
         'assessmentScaleValues' => $assessmentScaleValues,
     ])
     @if (
-        in_array((int) $form->formtype_id, [2, 3, 15, 16, 17], true)
+        in_array((int) $form->formtype_id, [2, 3, 15, 16, 17, 19], true)
         && (int) $question->questiontype_id !== 1
     )
         @include('admin.units.question.partials.forms.annual-comparison', compact('question'))

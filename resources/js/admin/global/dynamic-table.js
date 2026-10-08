@@ -130,6 +130,10 @@ class DynamicTable {
 
     updateNumber(table) {
 
+        const startNumber = Number.parseInt(
+            table.dataset.startNumber || "1",
+            10
+        );
 
         table
         .querySelectorAll("tbody tr")
@@ -143,7 +147,7 @@ class DynamicTable {
             if(number){
 
                 number.textContent =
-                    index + 1;
+                    startNumber + index;
 
             }
 

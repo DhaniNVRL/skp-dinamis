@@ -13,6 +13,10 @@
     )
 
     @include(
+        'admin.units.question.partials.form-merge-configuration'
+    )
+
+    @include(
         'admin.units.question.partials.form-card'
     )
 
