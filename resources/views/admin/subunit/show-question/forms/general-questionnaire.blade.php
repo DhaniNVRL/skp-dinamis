@@ -391,8 +391,19 @@
                         @if (filled($question->scale_right_label))
                             <span class="text-sm font-medium text-gray-700">({{ $question->scale_right_label }})</span>
                         @endif
+
+                        @if ($question->scale_include_zero && $scaleMinimum > 0)
+                            <span class="text-lg text-violet-300" aria-hidden="true">|</span>
+                            <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-full border border-violet-300 bg-white px-2 text-sm font-semibold text-violet-700">0</span>
+                        @endif
                     </div>
                 </div>
+                @if (! empty($question->scale_child_values))
+                    <div class="mt-3 rounded-xl border border-violet-200 bg-violet-50/30 p-4">
+                        <p class="mb-2 text-xs font-medium text-violet-700">Textarea muncul saat memilih skala: {{ implode(', ', $question->scale_child_values) }}</p>
+                        <textarea rows="2" disabled placeholder="Tulis alasan atau keterangan tambahan..." class="w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm"></textarea>
+                    </div>
+                @endif
             </div>
 
 

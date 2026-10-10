@@ -219,6 +219,8 @@ class DataUserController extends Controller
         $sheet->setCellValue('D1','id_activity');
         $sheet->setCellValue('E1','id_group (opsional)');
         $sheet->setCellValue('F1','id_unit (opsional)');
+        $sheet->getComment('E1')->getText()->createTextRun('Boleh dikosongkan. Jika diisi, Group harus sesuai dengan Activity.');
+        $sheet->getComment('F1')->getText()->createTextRun('Boleh dikosongkan. Jika diisi, Unit harus sesuai dengan Group.');
         $master = $spreadsheet->createSheet();
         $master->setTitle('Master Data');
         $master->setCellValue('A1','ROLE');
@@ -435,21 +437,7 @@ class DataUserController extends Controller
                     'unit_id' => $this->templateReferenceId($row[5] ?? null),
                 ];
 
-                $validator = Validator::make($item, [
-                    'username' => ['required', 'string', 'max:191', 'unique:users,username'],
-                    'password' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
-                    'role_id' => ['required', 'integer', 'exists:roles,id'],
-                    'activity_id' => ['nullable', 'integer', 'exists:activities,id'],
-                    'group_id' => ['nullable', 'integer', 'exists:groups,id'],
-                    'unit_id' => ['nullable', 'integer', 'exists:units,id'],
-                ]);
-
                 $roleId = (int) $item['role_id'];
-                $normalizedUsername = strtolower($item['username']);
-                $invalid = $validator->fails()
-                    || (! in_array($roleId, [1, 2], true) && empty($item['activity_id']))
-                    || isset($seenUsernames[$normalizedUsername]);
-
                 if (! in_array($roleId, [2, 4], true)) {
                     $item['group_id'] = null;
                     $item['unit_id'] = null;
@@ -458,16 +446,52 @@ class DataUserController extends Controller
                     $item['activity_id'] = null;
                 }
 
-                if ($item['group_id'] && (! $item['activity_id'] || ! Group::query()->whereKey($item['group_id'])->where('activity_id', $item['activity_id'])->exists())) {
-                    $invalid = true;
-                }
-                if ($item['unit_id'] && (! $item['group_id'] || ! Unit::query()->whereKey($item['unit_id'])->where('group_id', $item['group_id'])->exists())) {
-                    $invalid = true;
+                $validator = Validator::make($item, [
+                    'username' => ['required', 'string', 'max:191', 'unique:users,username'],
+                    'password' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
+                    'role_id' => ['required', 'integer', 'exists:roles,id'],
+                    'activity_id' => ['nullable', 'integer', 'exists:activities,id'],
+                    'group_id' => ['nullable', 'integer', 'exists:groups,id'],
+                    'unit_id' => ['nullable', 'integer', 'exists:units,id'],
+                ], [
+                    'username.required' => 'Username wajib diisi.',
+                    'username.unique' => 'Username sudah digunakan.',
+                    'password.required' => 'Password wajib diisi.',
+                    'password.*' => 'Password minimal 10 karakter serta harus memiliki huruf besar, huruf kecil, angka, dan simbol.',
+                    'role_id.required' => 'Role wajib dipilih.',
+                    'role_id.exists' => 'Role tidak ditemukan.',
+                    'activity_id.exists' => 'Activity tidak ditemukan.',
+                    'group_id.exists' => 'Group tidak ditemukan.',
+                    'unit_id.exists' => 'Unit tidak ditemukan.',
+                ]);
+
+                $normalizedUsername = strtolower($item['username']);
+                if ($validator->fails()) {
+                    throw ValidationException::withMessages([
+                        'file' => 'Data user pada baris '.($index + 1).' tidak valid: '.$validator->errors()->first(),
+                    ]);
                 }
 
-                if ($invalid) {
+                if (! in_array($roleId, [1, 2], true) && empty($item['activity_id'])) {
                     throw ValidationException::withMessages([
-                        'file' => 'Data user pada baris '.($index + 1).' tidak valid. Pastikan Activity, Group, dan Unit saling sesuai.',
+                        'file' => 'Data user pada baris '.($index + 1).' tidak valid: Activity wajib diisi untuk role ini. Group dan Unit tetap opsional.',
+                    ]);
+                }
+
+                if (isset($seenUsernames[$normalizedUsername])) {
+                    throw ValidationException::withMessages([
+                        'file' => 'Data user pada baris '.($index + 1).' tidak valid: Username duplikat di dalam file Excel.',
+                    ]);
+                }
+
+                if ($item['group_id'] && (! $item['activity_id'] || ! Group::query()->whereKey($item['group_id'])->where('activity_id', $item['activity_id'])->exists())) {
+                    throw ValidationException::withMessages([
+                        'file' => 'Data user pada baris '.($index + 1).' tidak valid: Group tidak sesuai dengan Activity. Group boleh dikosongkan.',
+                    ]);
+                }
+                if ($item['unit_id'] && (! $item['group_id'] || ! Unit::query()->whereKey($item['unit_id'])->where('group_id', $item['group_id'])->exists())) {
+                    throw ValidationException::withMessages([
+                        'file' => 'Data user pada baris '.($index + 1).' tidak valid: Unit tidak sesuai dengan Group. Unit boleh dikosongkan.',
                     ]);
                 }
 

@@ -14,6 +14,7 @@
             }
 
             initializeChildOptions(page);
+            initializeDynamicScaleChildren(page);
             initializeConditionalQuestions(page);
             initializeCustomerAssessment(page);
             initializeSurveyValidation(form);
@@ -1024,6 +1025,31 @@
                 }
             }
         );
+    }
+
+    function initializeDynamicScaleChildren(page) {
+        const refresh = function (group) {
+            let triggers = [];
+            try {
+                triggers = JSON.parse(group.dataset.triggerValues || "[]").map(String);
+            } catch (_) {
+                triggers = [];
+            }
+
+            const selected = group.querySelector("[data-dynamic-scale-input]:checked");
+            const child = group.querySelector("[data-dynamic-scale-child]");
+            if (!child) return;
+
+            toggleChildContainer(child, Boolean(selected) && triggers.includes(String(selected.value)));
+        };
+
+        page.querySelectorAll("[data-dynamic-scale]").forEach(refresh);
+        page.addEventListener("change", function (event) {
+            const input = event.target.closest("[data-dynamic-scale-input]");
+            if (!input) return;
+            const group = input.closest("[data-dynamic-scale]");
+            if (group) refresh(group);
+        });
     }
 
 

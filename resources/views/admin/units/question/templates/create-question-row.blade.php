@@ -75,6 +75,15 @@
                 </div>
                 <input type="text" maxlength="255" placeholder="Label kiri, contoh: Tidak Bersedia" data-question-field="scale_left_label" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm">
                 <input type="text" maxlength="255" placeholder="Label kanan, contoh: Bersedia" data-question-field="scale_right_label" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm">
+                <label class="flex items-center gap-2 text-xs font-medium text-violet-800">
+                    <input type="checkbox" value="1" data-question-field="scale_include_zero" class="rounded border-violet-300 text-violet-600 focus:ring-violet-500">
+                    Sertakan nilai 0 di paling kanan (0)
+                </label>
+                <label class="block text-xs font-medium text-violet-800">
+                    Nilai pemicu textarea
+                    <input type="text" data-question-field="scale_child_values" placeholder="Contoh: 1, 2, 3" class="mt-1 w-full rounded border border-violet-300 bg-white px-2 py-1.5 text-sm text-gray-700">
+                    <span class="mt-1 block font-normal text-violet-600">Pisahkan beberapa nilai dengan koma. Kosongkan jika tidak memerlukan textarea.</span>
+                </label>
             </div>
 
             <div data-reason-prompt-config class="mt-3 hidden rounded-lg border border-amber-200 bg-amber-50 p-3">

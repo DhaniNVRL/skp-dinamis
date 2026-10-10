@@ -110,6 +110,8 @@ class QuestionController extends Controller
             ],
             'questions.*.scale_min' => ['nullable', 'integer', 'min:0', 'max:999'],
             'questions.*.scale_max' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'questions.*.scale_include_zero' => ['nullable', 'boolean'],
+            'questions.*.scale_child_values' => ['nullable', 'string', 'max:1000', 'regex:/^\s*\d+(?:\s*,\s*\d+)*\s*$/'],
             'questions.*.scale_left_label' => ['nullable', 'string', 'max:255'],
             'questions.*.scale_right_label' => ['nullable', 'string', 'max:255'],
         ]);
@@ -158,11 +160,21 @@ class QuestionController extends Controller
             if ((int) $questionData['questiontype_id'] === 11) {
                 $minimum = (int) ($questionData['scale_min'] ?? 1);
                 $maximum = (int) ($questionData['scale_max'] ?? 0);
+                $includeZero = ! empty($questionData['scale_include_zero']);
 
                 if ($maximum <= $minimum) {
                     throw ValidationException::withMessages([
                         "questions.{$index}.scale_max" => 'Nilai akhir skala harus lebih besar dari nilai awal.',
                     ]);
+                }
+
+                foreach ($this->parseScaleChildValues($questionData['scale_child_values'] ?? null) as $triggerValue) {
+                    if (($triggerValue < $minimum || $triggerValue > $maximum)
+                        && ! ($includeZero && $triggerValue === 0)) {
+                        throw ValidationException::withMessages([
+                            "questions.{$index}.scale_child_values" => "Nilai pemicu {$triggerValue} tidak tersedia pada skala yang dipilih.",
+                        ]);
+                    }
                 }
             }
         }
@@ -198,6 +210,12 @@ class QuestionController extends Controller
                         : null,
                     'scale_max' => (int) $questionData['questiontype_id'] === 11
                         ? (int) $questionData['scale_max']
+                        : null,
+                    'scale_include_zero' => (int) $questionData['questiontype_id'] === 11
+                        ? ! empty($questionData['scale_include_zero'])
+                        : false,
+                    'scale_child_values' => (int) $questionData['questiontype_id'] === 11
+                        ? $this->parseScaleChildValues($questionData['scale_child_values'] ?? null)
                         : null,
                     'scale_left_label' => (int) $questionData['questiontype_id'] === 11
                         ? trim((string) ($questionData['scale_left_label'] ?? '')) ?: null
@@ -298,6 +316,8 @@ class QuestionController extends Controller
             ],
             'scale_min' => ['nullable', 'integer', 'min:0', 'max:999'],
             'scale_max' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'scale_include_zero' => ['nullable', 'boolean'],
+            'scale_child_values' => ['nullable', 'string', 'max:1000', 'regex:/^\s*\d+(?:\s*,\s*\d+)*\s*$/'],
             'scale_left_label' => ['nullable', 'string', 'max:255'],
             'scale_right_label' => ['nullable', 'string', 'max:255'],
         ]);
@@ -352,11 +372,21 @@ class QuestionController extends Controller
         if ((int) $validated['questiontype_id'] === 11) {
             $minimum = (int) ($validated['scale_min'] ?? 1);
             $maximum = (int) ($validated['scale_max'] ?? 0);
+            $includeZero = ! empty($validated['scale_include_zero']);
 
             if ($maximum <= $minimum) {
                 throw ValidationException::withMessages([
                     'scale_max' => 'Nilai akhir skala harus lebih besar dari nilai awal.',
                 ]);
+            }
+
+            foreach ($this->parseScaleChildValues($validated['scale_child_values'] ?? null) as $triggerValue) {
+                if (($triggerValue < $minimum || $triggerValue > $maximum)
+                    && ! ($includeZero && $triggerValue === 0)) {
+                    throw ValidationException::withMessages([
+                        'scale_child_values' => "Nilai pemicu {$triggerValue} tidak tersedia pada skala yang dipilih.",
+                    ]);
+                }
             }
         }
 
@@ -406,6 +436,12 @@ class QuestionController extends Controller
                     : null,
                 'scale_max' => (int) $validated['questiontype_id'] === 11
                     ? (int) $validated['scale_max']
+                    : null,
+                'scale_include_zero' => (int) $validated['questiontype_id'] === 11
+                    ? ! empty($validated['scale_include_zero'])
+                    : false,
+                'scale_child_values' => (int) $validated['questiontype_id'] === 11
+                    ? $this->parseScaleChildValues($validated['scale_child_values'] ?? null)
                     : null,
                 'scale_left_label' => (int) $validated['questiontype_id'] === 11
                     ? trim((string) ($validated['scale_left_label'] ?? '')) ?: null
@@ -1890,6 +1926,20 @@ class QuestionController extends Controller
                 'file' => 'Judul kolom pada sheet INPUT_PEMBANDING tidak sesuai template.',
             ]);
         }
+    }
+
+    private function parseScaleChildValues(mixed $values): array
+    {
+        if (! is_string($values) || trim($values) === '') {
+            return [];
+        }
+
+        return collect(explode(',', $values))
+            ->map(fn (string $value) => (int) trim($value))
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
     }
 
     // Ambil ID dari:

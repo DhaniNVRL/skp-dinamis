@@ -448,7 +448,8 @@ class RawDataExportService
                     'field' => 'value',
                 ];
 
-                if ($question->options->contains(fn ($option) => (int) $option->has_child === 1)) {
+                if ($question->options->contains(fn ($option) => (int) $option->has_child === 1)
+                    || ((int) $question->questiontype_id === 11 && ! empty($question->scale_child_values))) {
                     $descriptors[] = [
                         'header' => 'ALASAN.'.$code,
                         'type' => 'global',

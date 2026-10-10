@@ -202,6 +202,14 @@
                                 <label class="text-sm text-gray-700">Label kanan
                                     <input id="edit_scale_right_label" name="scale_right_label" type="text" maxlength="255" placeholder="Bersedia" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
                                 </label>
+                                <label class="flex items-center gap-2 text-sm font-medium text-violet-800 md:col-span-2">
+                                    <input id="edit_scale_include_zero" name="scale_include_zero" type="checkbox" value="1" class="rounded border-violet-300 text-violet-600 focus:ring-violet-500">
+                                    Sertakan nilai 0 di paling kanan (0)
+                                </label>
+                                <label class="text-sm text-gray-700 md:col-span-2">Nilai pemicu textarea
+                                    <input id="edit_scale_child_values" name="scale_child_values" type="text" placeholder="Contoh: 1, 2, 3" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">
+                                    <span class="mt-1 block text-xs text-gray-500">Textarea muncul ketika salah satu nilai ini dipilih. Pisahkan dengan koma.</span>
+                                </label>
                             </div>
                         </div>
 

@@ -1454,15 +1454,32 @@ class AnswerController extends Controller
         if ($questionTypeId === 11) {
             $minimum = (int) ($question->scale_min ?? 1);
             $maximum = (int) ($question->scale_max ?? 10);
+            $isAdditionalZero = (bool) $question->scale_include_zero && (int) $value === 0;
 
             if (
                 filter_var($value, FILTER_VALIDATE_INT) === false
-                || (int) $value < $minimum
-                || (int) $value > $maximum
+                || (! $isAdditionalZero && ((int) $value < $minimum || (int) $value > $maximum))
             ) {
                 $errors[
                     "answers.{$question->id}.value"
-                ] = "Pilih nilai skala {$minimum} sampai {$maximum} untuk {$question->name}.";
+                ] = 'Pilih nilai skala '.$minimum.' sampai '.$maximum
+                    .($question->scale_include_zero ? ' atau 0' : '')
+                    ." untuk {$question->name}.";
+            }
+
+            $triggerValues = collect($question->scale_child_values ?? [])
+                ->map(fn ($triggerValue) => (int) $triggerValue);
+            if ($triggerValues->contains((int) $value)) {
+                $childValue = Arr::get($payload, 'child.scale');
+                $childErrorKey = "answers.{$question->id}.child.scale";
+
+                if (! filled($childValue)) {
+                    $errors[$childErrorKey] = "Jawaban tambahan untuk {$question->name} wajib diisi.";
+                } elseif (mb_strlen((string) $childValue) > 5000) {
+                    $errors[$childErrorKey] = 'Jawaban tambahan maksimal 5000 karakter.';
+                } elseif ($this->shouldValidateMeaningfulAnswers() && $this->isMeaninglessAnswer($childValue)) {
+                    $errors[$childErrorKey] = 'Berikan pendapat agar masukan Anda dapat dianalisa.';
+                }
             }
 
             return;

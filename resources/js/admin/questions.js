@@ -639,6 +639,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const scaleConfig = document.getElementById("edit_scale_config");
     const scaleMin = document.getElementById("edit_scale_min");
     const scaleMax = document.getElementById("edit_scale_max");
+    const scaleIncludeZero = document.getElementById("edit_scale_include_zero");
+    const scaleChildValues = document.getElementById("edit_scale_child_values");
     const scaleLeftLabel = document.getElementById("edit_scale_left_label");
     const scaleRightLabel = document.getElementById("edit_scale_right_label");
     const reasonPromptConfig = document.getElementById("edit_reason_prompt_config");
@@ -649,7 +651,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const enabled = Number(typeInput?.value) === 11;
         scaleConfig?.classList.toggle("hidden", !enabled);
 
-        [scaleMin, scaleMax, scaleLeftLabel, scaleRightLabel].forEach(function (input) {
+        [scaleMin, scaleMax, scaleIncludeZero, scaleChildValues, scaleLeftLabel, scaleRightLabel].forEach(function (input) {
             if (input) input.disabled = !enabled;
         });
         if (scaleMax) scaleMax.required = enabled;
@@ -938,6 +940,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (scaleMin) scaleMin.value = editQuestionTrigger.dataset.scaleMin || "1";
             if (scaleMax) scaleMax.value = editQuestionTrigger.dataset.scaleMax || "10";
+            if (scaleIncludeZero) {
+                scaleIncludeZero.checked = editQuestionTrigger.dataset.scaleIncludeZero === "1";
+            }
+            if (scaleChildValues) {
+                scaleChildValues.value = editQuestionTrigger.dataset.scaleChildValues || "";
+            }
             if (scaleLeftLabel) scaleLeftLabel.value = editQuestionTrigger.dataset.scaleLeftLabel || "";
             if (scaleRightLabel) scaleRightLabel.value = editQuestionTrigger.dataset.scaleRightLabel || "";
             updateEditScaleConfig();

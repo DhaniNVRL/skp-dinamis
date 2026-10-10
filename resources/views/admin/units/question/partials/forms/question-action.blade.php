@@ -39,6 +39,8 @@
         }}"
         data-scale-min="{{ $question->scale_min ?? 1 }}"
         data-scale-max="{{ $question->scale_max ?? 10 }}"
+        data-scale-include-zero="{{ $question->scale_include_zero ? 1 : 0 }}"
+        data-scale-child-values="{{ implode(',', $question->scale_child_values ?? []) }}"
         data-scale-left-label="{{ $question->scale_left_label }}"
         data-scale-right-label="{{ $question->scale_right_label }}"
 

@@ -17,6 +17,8 @@ class Question extends Model
         'questiontype_id',
         'scale_min',
         'scale_max',
+        'scale_include_zero',
+        'scale_child_values',
         'scale_left_label',
         'scale_right_label',
         'comparison_enabled',
@@ -29,6 +31,8 @@ class Question extends Model
         'comparison_options' => 'array',
         'scale_min' => 'integer',
         'scale_max' => 'integer',
+        'scale_include_zero' => 'boolean',
+        'scale_child_values' => 'array',
     ];
 
     // Urutan baku pertanyaan pada seluruh halaman admin dan survei.

@@ -1,6 +1,6 @@
 @php
     $assessmentScaleMaximum = match ((int) $form->formtype_id) {
-        3, 16 => 7,
+        3, 5, 16 => 7,
         17, 18, 19 => 10,
         default => 5,
     };

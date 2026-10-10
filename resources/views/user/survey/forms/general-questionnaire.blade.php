@@ -1118,8 +1118,21 @@
                     @php
                         $scaleMinimum = (int) ($question->scale_min ?? 1);
                         $scaleMaximum = (int) ($question->scale_max ?? 10);
+                        $scaleChildValues = collect($question->scale_child_values ?? [])
+                            ->map(fn ($value) => (string) $value)
+                            ->values();
+                        $scaleChildValue = old(
+                            "answers.{$question->id}.child.scale",
+                            data_get($storedChildren, 'scale', '')
+                        );
+                        $showScaleChild = $scaleChildValues->contains((string) $storedValue);
                     @endphp
 
+                    <div
+                        data-dynamic-scale
+                        data-trigger-values="{{ $scaleChildValues->toJson() }}"
+                        class="space-y-3"
+                    >
                     <div class="overflow-x-auto rounded-xl border border-violet-200 bg-violet-50/50 px-4 py-5">
                         <div class="flex min-w-max items-center justify-center gap-4">
                             @if (filled($question->scale_left_label))
@@ -1135,6 +1148,7 @@
                                             type="radio"
                                             name="answers[{{ $question->id }}][value]"
                                             value="{{ $value }}"
+                                            data-dynamic-scale-input
                                             required
                                             @checked((string) $storedValue === (string) $value)
                                             class="peer sr-only"
@@ -1151,7 +1165,55 @@
                                     ({{ $question->scale_right_label }})
                                 </span>
                             @endif
+
+                            @if ($question->scale_include_zero && $scaleMinimum > 0)
+                                <span class="text-xl text-violet-300" aria-hidden="true">|</span>
+                                <label class="cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="answers[{{ $question->id }}][value]"
+                                        value="0"
+                                        data-dynamic-scale-input
+                                        required
+                                        @checked((string) $storedValue === '0')
+                                        class="peer sr-only"
+                                    >
+                                    <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-full border border-violet-300 bg-white px-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 peer-checked:border-violet-600 peer-checked:bg-violet-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-violet-300">0</span>
+                                </label>
+                            @endif
                         </div>
+                    </div>
+
+                    @if ($scaleChildValues->isNotEmpty())
+                        <div
+                            data-dynamic-scale-child
+                            data-child-container
+                            class="{{ $showScaleChild ? '' : 'hidden' }} rounded-xl border border-violet-200 bg-white p-4"
+                        >
+                            <label for="scale-child-{{ $question->id }}" class="mb-2 block text-sm font-medium text-gray-700">
+                                Tuliskan alasan atau keterangan tambahan
+                            </label>
+                            <textarea
+                                id="scale-child-{{ $question->id }}"
+                                name="answers[{{ $question->id }}][child][scale]"
+                                rows="3"
+                                maxlength="5000"
+                                data-child-input
+                                @if ($useMeaningfulValidation)
+                                    data-meaningful-answer
+                                    data-answer-type="child"
+                                    data-answer-label="Jawaban tambahan"
+                                @endif
+                                @required($showScaleChild)
+                                @disabled(!$showScaleChild)
+                                placeholder="Tulis alasan atau keterangan tambahan..."
+                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                            >{{ $scaleChildValue }}</textarea>
+                            @error("answers.{$question->id}.child.scale")
+                                <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    @endif
                     </div>
 
 
