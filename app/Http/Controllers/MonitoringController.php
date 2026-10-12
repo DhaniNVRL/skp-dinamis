@@ -6,6 +6,7 @@ use App\Models\Activity;
 use App\Models\Answer;
 use App\Models\Group;
 use App\Models\Unit;
+use App\Models\User;
 use App\Models\UserProfile;
 use App\Services\AnswerReviewFormatter;
 use Illuminate\Database\Eloquent\Builder;
@@ -105,6 +106,16 @@ class MonitoringController extends Controller
             'status' => [
                 'nullable',
                 Rule::in(['completed', 'in_progress', 'not_started']),
+            ],
+
+            'sort_by' => [
+                'nullable',
+                Rule::in(['id', 'username']),
+            ],
+
+            'sort_direction' => [
+                'nullable',
+                Rule::in(['asc', 'desc']),
             ],
         ]);
 
@@ -230,10 +241,26 @@ class MonitoringController extends Controller
             $filters['status'] ?? null
         );
 
+        $sortBy = $filters['sort_by'] ?? 'id';
+        $sortDirection = $filters['sort_direction'] ?? 'desc';
+
+        if ($sortBy === 'username') {
+            $respondentsQuery->orderBy(
+                User::query()
+                    ->select('users.username')
+                    ->whereColumn('users.id', 'user_profiles.user_id')
+                    ->limit(1),
+                $sortDirection
+            );
+        } else {
+            $respondentsQuery->orderBy('user_profiles.user_id', $sortDirection);
+        }
+
+        $respondentsQuery->orderBy('user_profiles.id');
+
         // Pagination
 
         $respondents = $respondentsQuery
-            ->latest('id')
             ->paginate(20)
             ->withQueryString();
 

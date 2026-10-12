@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\UserImportReadFilter;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
@@ -32,10 +33,48 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class DataUserController extends Controller
 {
+    private const FILTER_SESSION_KEY = 'admin.datauser.filters';
 
 
     public function index(Request $request)
     {
+        $filterKeys = [
+            'search',
+            'activity',
+            'role',
+            'group',
+            'unit',
+            'sort_by',
+            'sort_direction',
+            'page',
+        ];
+
+        if ($request->boolean('reset_filters')) {
+            $request->session()->forget(self::FILTER_SESSION_KEY);
+
+            return redirect()->route('admin.datauser');
+        }
+
+        $hasFilterQuery = collect($filterKeys)
+            ->contains(fn (string $key): bool => $request->query->has($key));
+
+        if ($hasFilterQuery) {
+            $activeFilters = collect($request->only($filterKeys))
+                ->reject(fn ($value): bool => $value === null || $value === '')
+                ->all();
+
+            if ($activeFilters === []) {
+                $request->session()->forget(self::FILTER_SESSION_KEY);
+            } else {
+                $request->session()->put(self::FILTER_SESSION_KEY, $activeFilters);
+            }
+        } elseif ($request->session()->has(self::FILTER_SESSION_KEY)) {
+            return redirect()->route(
+                'admin.datauser',
+                $request->session()->get(self::FILTER_SESSION_KEY, [])
+            );
+        }
+
         // Query User Profile
 
         $query = UserProfile::query()
@@ -418,10 +457,35 @@ class DataUserController extends Controller
         $request->validate(['file' => ['required', 'file', 'mimes:xlsx,xls', 'max:10240']]);
 
         try {
-            $spreadsheet = IOFactory::load($request->file('file')->getRealPath());
-            $rows = $spreadsheet->getSheet(0)->toArray();
+            $reader = IOFactory::createReaderForFile($request->file('file')->getRealPath());
+            $reader->setReadDataOnly(true);
+            $reader->setLoadSheetsOnly(['Template Import']);
+            $reader->setReadFilter(new UserImportReadFilter());
+            $spreadsheet = $reader->load($request->file('file')->getRealPath());
+            $sheet = $spreadsheet->getSheetByName('Template Import') ?? $spreadsheet->getSheet(0);
+            $lastRow = min(1002, max(1, $sheet->getHighestDataRow()));
+            $rows = $sheet->rangeToArray('A1:F'.$lastRow, null, true, false);
             $data = [];
             $seenUsernames = [];
+            $candidateUsernames = collect($rows)
+                ->skip(1)
+                ->pluck(0)
+                ->map(fn ($username) => trim((string) $username))
+                ->filter()
+                ->values();
+            $existingUsernames = User::query()
+                ->whereIn('username', $candidateUsernames)
+                ->pluck('username')
+                ->mapWithKeys(fn (string $username) => [mb_strtolower($username) => true])
+                ->all();
+            $validRoleIds = Role::query()->pluck('id')->mapWithKeys(fn ($id) => [(int) $id => true])->all();
+            $validActivityIds = Activity::query()->pluck('id')->mapWithKeys(fn ($id) => [(int) $id => true])->all();
+            $groupActivities = Group::query()->pluck('activity_id', 'id')->mapWithKeys(
+                fn ($activityId, $groupId) => [(int) $groupId => (int) $activityId]
+            )->all();
+            $unitGroups = Unit::query()->pluck('group_id', 'id')->mapWithKeys(
+                fn ($groupId, $unitId) => [(int) $unitId => (int) $groupId]
+            )->all();
 
             foreach ($rows as $index => $row) {
                 if ($index === 0 || empty(array_filter($row, fn ($value) => $value !== null && $value !== ''))) {
@@ -447,17 +511,15 @@ class DataUserController extends Controller
                 }
 
                 $validator = Validator::make($item, [
-                    'username' => ['required', 'string', 'max:191', 'unique:users,username'],
-                    'password' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
-                    'role_id' => ['required', 'integer', 'exists:roles,id'],
-                    'activity_id' => ['nullable', 'integer', 'exists:activities,id'],
-                    'group_id' => ['nullable', 'integer', 'exists:groups,id'],
-                    'unit_id' => ['nullable', 'integer', 'exists:units,id'],
+                    'username' => ['required', 'string', 'max:191'],
+                    'password' => ['required', 'string', 'max:255'],
+                    'role_id' => ['required', 'integer'],
+                    'activity_id' => ['nullable', 'integer'],
+                    'group_id' => ['nullable', 'integer'],
+                    'unit_id' => ['nullable', 'integer'],
                 ], [
                     'username.required' => 'Username wajib diisi.',
-                    'username.unique' => 'Username sudah digunakan.',
                     'password.required' => 'Password wajib diisi.',
-                    'password.*' => 'Password minimal 10 karakter serta harus memiliki huruf besar, huruf kecil, angka, dan simbol.',
                     'role_id.required' => 'Role wajib dipilih.',
                     'role_id.exists' => 'Role tidak ditemukan.',
                     'activity_id.exists' => 'Activity tidak ditemukan.',
@@ -469,6 +531,37 @@ class DataUserController extends Controller
                 if ($validator->fails()) {
                     throw ValidationException::withMessages([
                         'file' => 'Data user pada baris '.($index + 1).' tidak valid: '.$validator->errors()->first(),
+                    ]);
+                }
+
+                if (isset($existingUsernames[$normalizedUsername])) {
+                    throw ValidationException::withMessages([
+                        'file' => 'Data user pada baris '.($index + 1).' tidak valid: Username sudah digunakan.',
+                    ]);
+                }
+
+                if (! isset($validRoleIds[$roleId])) {
+                    throw ValidationException::withMessages([
+                        'file' => 'Data user pada baris '.($index + 1).' tidak valid: Role tidak ditemukan.',
+                    ]);
+                }
+
+                if (in_array($roleId, [1, 3], true)) {
+                    $passwordValidator = Validator::make(
+                        ['password' => $item['password']],
+                        ['password' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()]]
+                    );
+
+                    if ($passwordValidator->fails()) {
+                        throw ValidationException::withMessages([
+                            'file' => 'Data user pada baris '.($index + 1).' tidak valid: Password akun Admin dan Monitoring minimal 10 karakter serta harus memiliki huruf besar, huruf kecil, angka, dan simbol.',
+                        ]);
+                    }
+                }
+
+                if ($item['activity_id'] && ! isset($validActivityIds[$item['activity_id']])) {
+                    throw ValidationException::withMessages([
+                        'file' => 'Data user pada baris '.($index + 1).' tidak valid: Activity tidak ditemukan.',
                     ]);
                 }
 
@@ -484,12 +577,16 @@ class DataUserController extends Controller
                     ]);
                 }
 
-                if ($item['group_id'] && (! $item['activity_id'] || ! Group::query()->whereKey($item['group_id'])->where('activity_id', $item['activity_id'])->exists())) {
+                if ($item['group_id'] && (! isset($groupActivities[$item['group_id']])
+                    || ! $item['activity_id']
+                    || $groupActivities[$item['group_id']] !== (int) $item['activity_id'])) {
                     throw ValidationException::withMessages([
                         'file' => 'Data user pada baris '.($index + 1).' tidak valid: Group tidak sesuai dengan Activity. Group boleh dikosongkan.',
                     ]);
                 }
-                if ($item['unit_id'] && (! $item['group_id'] || ! Unit::query()->whereKey($item['unit_id'])->where('group_id', $item['group_id'])->exists())) {
+                if ($item['unit_id'] && (! isset($unitGroups[$item['unit_id']])
+                    || ! $item['group_id']
+                    || $unitGroups[$item['unit_id']] !== (int) $item['group_id'])) {
                     throw ValidationException::withMessages([
                         'file' => 'Data user pada baris '.($index + 1).' tidak valid: Unit tidak sesuai dengan Group. Unit boleh dikosongkan.',
                     ]);
@@ -503,26 +600,55 @@ class DataUserController extends Controller
                 throw ValidationException::withMessages(['file' => 'Tidak ada data user yang dapat diimport.']);
             }
 
-            DB::transaction(function () use ($data): void {
-                foreach ($data as $item) {
-                    $user = User::create([
-                        'username' => $item['username'],
-                        'password' => Hash::make($item['password']),
-                        'role_id' => $item['role_id'],
-                    ]);
-                    UserProfile::create([
-                        'user_id' => $user->id,
+            if (count($data) > 1000) {
+                throw ValidationException::withMessages([
+                    'file' => 'Maksimal 1.000 user dalam satu file import.',
+                ]);
+            }
+
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet, $rows);
+            gc_collect_cycles();
+
+            set_time_limit(180);
+            $now = now();
+            $userRows = collect($data)->map(function (array $item) use ($now): array {
+                return [
+                    'username' => $item['username'],
+                    'password' => Hash::make($item['password'], ['rounds' => 9]),
+                    'role_id' => $item['role_id'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            });
+
+            DB::transaction(function () use ($data, $userRows, $now): void {
+
+                $userRows->chunk(200)->each(fn ($chunk) => User::query()->insert($chunk->all()));
+
+                $userIds = User::query()
+                    ->whereIn('username', $userRows->pluck('username'))
+                    ->get(['id', 'username'])
+                    ->mapWithKeys(fn (User $user) => [mb_strtolower($user->username) => $user->id]);
+                $profileRows = collect($data)->map(function (array $item) use ($userIds, $now): array {
+                    $userId = $userIds->get(mb_strtolower($item['username']));
+
+                    return [
+                        'user_id' => $userId,
                         'group_id' => $item['group_id'],
                         'unit_id' => $item['unit_id'],
                         'fullname' => null,
                         'no_handphone' => null,
-                        'email' => 'pending-user-'.$user->id.'@invalid.local',
+                        'email' => 'pending-user-'.$userId.'@invalid.local',
                         'activity_id' => $item['activity_id'],
-                    ]);
-                }
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                });
+
+                $profileRows->chunk(200)->each(fn ($chunk) => UserProfile::query()->insert($chunk->all()));
             });
 
-            $spreadsheet->disconnectWorksheets();
             return redirect()->back()->with('success', count($data).' user berhasil diimport.');
         } catch (ValidationException $error) {
             throw $error;
@@ -538,7 +664,7 @@ class DataUserController extends Controller
             'username' => ['required', 'array', 'min:1'],
             'username.*' => ['required', 'string', 'max:191', 'distinct', 'unique:users,username'],
             'password' => ['required', 'array', 'min:1'],
-            'password.*' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
+            'password.*' => ['required', 'string', 'max:255'],
             'role_id' => ['required', 'array', 'min:1'],
             'role_id.*' => ['required', 'exists:roles,id'],
             'activity_id' => ['nullable', 'array'],
@@ -552,6 +678,23 @@ class DataUserController extends Controller
         $rowCount = count($request->username);
         if (count($request->password) !== $rowCount || count($request->role_id) !== $rowCount) {
             throw ValidationException::withMessages(['username' => 'Jumlah username, password, dan role harus sama.']);
+        }
+
+        foreach ($request->role_id as $index => $roleId) {
+            if (! in_array((int) $roleId, [1, 3], true)) {
+                continue;
+            }
+
+            $passwordValidator = Validator::make(
+                ['password' => $request->password[$index] ?? null],
+                ['password' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()]]
+            );
+
+            if ($passwordValidator->fails()) {
+                throw ValidationException::withMessages([
+                    "password.{$index}" => 'Password akun Admin dan Monitoring minimal 10 karakter serta harus memiliki huruf besar, huruf kecil, angka, dan simbol.',
+                ]);
+            }
         }
 
         $activities = array_pad($request->input('activity_id', []), $rowCount, null);
@@ -760,7 +903,7 @@ class DataUserController extends Controller
                 'max:191',
                 Rule::unique('users', 'username')->ignore($id),
             ],
-            'password' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'string', 'max:255'],
         ]);
 
         $user = User::query()->findOrFail($id);
@@ -790,7 +933,7 @@ class DataUserController extends Controller
             'password' => [
                 'nullable',
                 'string',
-                Password::min(10)->mixedCase()->numbers()->symbols(),
+                'max:255',
             ],
 
             'role_id' => [

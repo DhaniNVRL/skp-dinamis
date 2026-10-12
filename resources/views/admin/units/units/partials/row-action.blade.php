@@ -17,6 +17,10 @@
         {{ $number }}
     </td>
 
+    <td class="px-4 py-3 text-sm font-medium text-gray-600">
+        {{ $unit->id }}
+    </td>
+
     <td class="px-4 py-3">
         <span class="text-sm font-medium text-gray-800">
             {{ $unit->name }}

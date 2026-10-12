@@ -27,6 +27,14 @@
                     </th>
 
                     <th
+                        class="w-24 px-4 py-3 text-left
+                            text-xs font-semibold uppercase
+                            tracking-wider text-gray-600"
+                    >
+                        ID
+                    </th>
+
+                    <th
                         class="px-4 py-3 text-left
                             text-xs font-semibold uppercase
                             tracking-wider text-gray-600"
@@ -59,7 +67,7 @@
                 @empty
                     <tr id="unitEmptyRow">
                         <td
-                            colspan="4"
+                            colspan="5"
                             class="px-4 py-12 text-center text-sm text-gray-500"
                         >
                             <i
@@ -74,7 +82,7 @@
 
                 <tr id="unitSearchEmptyRow" class="hidden">
                     <td
-                        colspan="4"
+                        colspan="5"
                         class="px-4 py-12 text-center text-sm text-gray-500"
                     >
                         Data Unit tidak ditemukan.

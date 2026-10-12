@@ -3,6 +3,10 @@
         @if (!empty($filters['status']))
             <input type="hidden" name="status" value="{{ $filters['status'] }}">
         @endif
+        @if (!empty($filters['sort_by']))
+            <input type="hidden" name="sort_by" value="{{ $filters['sort_by'] }}">
+            <input type="hidden" name="sort_direction" value="{{ $filters['sort_direction'] ?? 'asc' }}">
+        @endif
         <div>
             <label for="monitoringUsername" class="mb-1 block text-sm font-medium text-gray-700">Username</label>
             <input id="monitoringUsername" name="username" type="search" value="{{ $filters['username'] ?? '' }}"

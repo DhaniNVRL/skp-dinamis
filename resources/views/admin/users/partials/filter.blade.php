@@ -31,7 +31,7 @@
 
             <div class="flex gap-2 xl:col-span-3">
                 <button type="submit" class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-magnifying-glass"></i>Cari</button>
-                <a href="{{ route('admin.datauser') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"><i class="fa-solid fa-rotate-left"></i>Reset</a>
+                <a href="{{ route('admin.datauser', ['reset_filters' => 1]) }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"><i class="fa-solid fa-rotate-left"></i>Reset</a>
             </div>
         </div>
     </form>

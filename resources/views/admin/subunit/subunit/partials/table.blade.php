@@ -18,6 +18,10 @@
                         No
                     </th>
 
+                    <th class="w-24 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        ID
+                    </th>
+
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                         Nama Sub Unit
                     </th>
@@ -43,6 +47,10 @@
                             {{ $subunits->firstItem() + $loop->index }}
                         </td>
 
+                        <td class="px-4 py-3 text-sm font-medium text-gray-600">
+                            {{ $subunit->id }}
+                        </td>
+
                         <td class="px-4 py-3 text-sm font-medium text-gray-800">
                             {{ $subunit->name }}
                         </td>
@@ -56,7 +64,7 @@
                 @empty
                     <tr>
                         <td
-                            colspan="4"
+                            colspan="5"
                             class="px-6 py-12 text-center"
                         >
                             <div class="text-4xl text-gray-300">
