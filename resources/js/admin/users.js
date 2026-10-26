@@ -121,6 +121,37 @@ function syncUserRow(row, reset = false) {
     filterProfileOptions(row, reset, reset);
 }
 
+document.addEventListener('dynamic-table:row-added', (event) => {
+    const { table, row, previousRow } = event.detail || {};
+    if (table?.id !== 'userCreateTable' || !row) return;
+
+    syncUserRow(row);
+
+    if (!previousRow) return;
+
+    const previousRole = previousRow.querySelector('.role-select');
+    const previousActivity = previousRow.querySelector('.activity-select');
+    const previousGroup = previousRow.querySelector('.group-select');
+    const previousUnit = previousRow.querySelector('.unit-select');
+    const role = row.querySelector('.role-select');
+    const activity = row.querySelector('.activity-select');
+    const group = row.querySelector('.group-select');
+    const unit = row.querySelector('.unit-select');
+
+    if (!role || !activity || !group || !unit) return;
+
+    role.value = previousRole?.value || '';
+    syncUserRow(row);
+
+    activity.value = previousActivity?.value || '';
+    filterProfileOptions(row);
+
+    group.value = previousGroup?.value || '';
+    filterProfileOptions(row);
+
+    unit.value = previousUnit?.value || '';
+});
+
 document.addEventListener('change', (event) => {
     const row = event.target.closest('tr') || event.target.closest('form');
     if (!row) return;

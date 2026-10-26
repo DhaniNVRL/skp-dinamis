@@ -351,6 +351,28 @@ class RawDataExportService
 
                 if (in_array($type, [2, 3, 15, 16, 17, 19], true)) {
                     foreach ($slots as $slot) {
+                        if ((int) $question->questiontype_id === 5) {
+                            $descriptors[] = $this->answerDescriptor(
+                                '1INDIKATOR.'.$code.'_'.$slot,
+                                $question,
+                                'value',
+                                $slot
+                            );
+
+                            continue;
+                        }
+
+                        if ((int) $question->questiontype_id === 6) {
+                            $descriptors[] = $this->answerDescriptor(
+                                'TEXTBEBAS.'.$code.'_'.$slot,
+                                $question,
+                                'value',
+                                $slot
+                            );
+
+                            continue;
+                        }
+
                         foreach (['importance', 'performance', 'reason', 'children'] as $field) {
                             $descriptors[] = $this->answerDescriptor(
                                 $this->assessmentHeader($field, $code, $slot),
@@ -581,7 +603,17 @@ class RawDataExportService
         $payload = $this->normalizePayload($payload);
         $payload = is_array($payload) ? $payload : ['value' => $payload];
         $value = match ($field) {
-            'importance' => data_get($payload, 'importance', data_get($payload, 'kepentingan')),
+            'importance' => data_get(
+                $payload,
+                'importance',
+                data_get(
+                    $payload,
+                    'kepentingan',
+                    (int) $question->questiontype_id === 5
+                        ? data_get($payload, 'value')
+                        : null
+                )
+            ),
             'performance' => data_get($payload, 'performance', data_get($payload, 'kinerja')),
             'reason' => data_get($payload, 'reason', data_get($payload, 'alasan', data_get($payload, 'essay'))),
             'children' => data_get($payload, 'children', data_get($payload, 'child', data_get($payload, 'alasan_lainnya', []))),

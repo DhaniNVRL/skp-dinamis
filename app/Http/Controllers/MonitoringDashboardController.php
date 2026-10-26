@@ -22,6 +22,7 @@ class MonitoringDashboardController extends Controller
             'status'         => ['nullable', 'in:completed,in_progress,not_started'],
             'sort_by'        => ['nullable', 'in:username'],
             'sort_direction' => ['nullable', 'in:asc,desc'],
+            'per_page'       => ['nullable', 'in:10,20,50,100,all'],
         ]);
 
         // Query Dasar Responden
@@ -137,8 +138,13 @@ class MonitoringDashboardController extends Controller
 
         // Pagination
 
+        $perPageOption = $filters['per_page'] ?? '20';
+        $perPage = $perPageOption === 'all'
+            ? max(1, (clone $respondentsQuery)->count())
+            : (int) $perPageOption;
+
         $respondents = $respondentsQuery
-            ->paginate(20)
+            ->paginate($perPage)
             ->withQueryString();
 
         // Tentukan Status Setiap Responden

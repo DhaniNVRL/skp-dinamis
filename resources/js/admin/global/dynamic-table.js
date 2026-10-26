@@ -116,13 +116,33 @@ class DynamicTable {
         const row =
             template.content.cloneNode(true);
 
+        const tableBody =
+            table.querySelector("tbody");
 
-        table
-            .querySelector("tbody")
-            .appendChild(row);
+        const previousRow =
+            tableBody.lastElementChild;
+
+        const newRow =
+            row.firstElementChild;
+
+        tableBody.appendChild(row);
 
 
         this.updateNumber(table);
+
+        table.dispatchEvent(
+            new CustomEvent(
+                "dynamic-table:row-added",
+                {
+                    bubbles: true,
+                    detail: {
+                        table,
+                        row: newRow,
+                        previousRow
+                    }
+                }
+            )
+        );
 
     }
 

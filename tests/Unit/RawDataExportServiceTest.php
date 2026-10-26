@@ -155,6 +155,78 @@ class RawDataExportServiceTest extends TestCase
         );
     }
 
+    public function test_single_indicator_value_remains_readable_from_legacy_importance_descriptor(): void
+    {
+        $method = new ReflectionMethod(RawDataExportService::class, 'answerField');
+        $service = new RawDataExportService();
+        $question = new Question(['questiontype_id' => 5]);
+        $question->setRelation('options', collect());
+
+        $this->assertSame(
+            7,
+            $method->invoke($service, ['value' => '7'], 'importance', $question)
+        );
+        $this->assertNull(
+            $method->invoke($service, ['value' => '7'], 'performance', $question)
+        );
+    }
+
+    public function test_single_indicator_uses_one_dedicated_raw_data_column(): void
+    {
+        $method = new ReflectionMethod(RawDataExportService::class, 'descriptors');
+        $service = new RawDataExportService();
+
+        $form = new Form(['name' => 'INDEKS KEPEDULIAN', 'formtype_id' => 3]);
+        $form->id = 103;
+        $question = new Question([
+            'no_header' => 'L',
+            'no' => '1',
+            'name' => 'Seberapa bangga menggunakan layanan',
+            'questiontype_id' => 5,
+        ]);
+        $question->id = 1357;
+        $question->setRelation('options', collect());
+        $form->setRelation('questions', collect([$question]));
+        $form->setRelation('competitors', collect());
+
+        $descriptors = collect($method->invoke($service, collect([$form]), 1));
+        $questionDescriptors = $descriptors->filter(
+            fn (array $descriptor) => ($descriptor['question']->id ?? null) === 1357
+        )->values();
+
+        $this->assertCount(1, $questionDescriptors);
+        $this->assertSame('1INDIKATOR.BL1_1', $questionDescriptors->first()['header']);
+        $this->assertSame('value', $questionDescriptors->first()['field']);
+    }
+
+    public function test_customer_assessment_textarea_uses_one_free_text_raw_data_column(): void
+    {
+        $method = new ReflectionMethod(RawDataExportService::class, 'descriptors');
+        $service = new RawDataExportService();
+
+        $form = new Form(['name' => 'INDEKS KEPEDULIAN', 'formtype_id' => 3]);
+        $form->id = 103;
+        $question = new Question([
+            'no_header' => 'L',
+            'no' => '3',
+            'name' => 'Tuliskan pendapat Anda',
+            'questiontype_id' => 6,
+        ]);
+        $question->id = 1359;
+        $question->setRelation('options', collect());
+        $form->setRelation('questions', collect([$question]));
+        $form->setRelation('competitors', collect());
+
+        $descriptors = collect($method->invoke($service, collect([$form]), 1));
+        $questionDescriptors = $descriptors->filter(
+            fn (array $descriptor) => ($descriptor['question']->id ?? null) === 1359
+        )->values();
+
+        $this->assertCount(1, $questionDescriptors);
+        $this->assertSame('TEXTBEBAS.BL3_1', $questionDescriptors->first()['header']);
+        $this->assertSame('value', $questionDescriptors->first()['field']);
+    }
+
     public function test_current_ranking_payload_exports_option_text_and_child_reason(): void
     {
         $method = new ReflectionMethod(RawDataExportService::class, 'answerField');

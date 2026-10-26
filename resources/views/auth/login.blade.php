@@ -87,11 +87,9 @@
 
             @if ($errors->any())
                 <div data-alert class="text-center mb-4 text-red-600">
-                    <ul class="list-disc pl-5">
-                        @foreach ($errors->all() as $error)
-                            {{ $error }}
-                        @endforeach
-                    </ul>
+                    @foreach ($errors->all() as $error)
+                        {{ $error }}
+                    @endforeach
                 </div>
             @endif
 
@@ -104,13 +102,27 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-gray-700">Password</label>
-                    <input type="password" name="password" required class="w-full px-4 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300">
-                </div>
-
-                <div class="mb-4 flex items-center">
-                    <input type="checkbox" name="remember" class="mr-2">
-                    <label class="text-gray-700">Ingat saya</label>
+                    <label for="loginPassword" class="block text-gray-700">Password</label>
+                    <div class="relative">
+                        <input
+                            id="loginPassword"
+                            type="password"
+                            name="password"
+                            required
+                            autocomplete="current-password"
+                            class="w-full rounded border px-4 py-2 pr-12 focus:border-blue-300 focus:outline-none focus:ring"
+                        >
+                        <button
+                            id="toggleLoginPassword"
+                            type="button"
+                            aria-label="Tampilkan password"
+                            aria-pressed="false"
+                            title="Tampilkan password"
+                            class="absolute inset-y-0 right-0 inline-flex w-11 items-center justify-center text-gray-500 transition hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-300"
+                        >
+                            <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
@@ -124,5 +136,25 @@
         </div>
     </div>
     <script src="{{ asset('js/global-alerts.js') }}?v=20260806-4"></script>
+    <script>
+        (() => {
+            const password = document.getElementById('loginPassword');
+            const toggle = document.getElementById('toggleLoginPassword');
+            const icon = toggle?.querySelector('i');
+
+            if (!password || !toggle || !icon) return;
+
+            toggle.addEventListener('click', () => {
+                const willShow = password.type === 'password';
+                password.type = willShow ? 'text' : 'password';
+                icon.classList.toggle('fa-eye', !willShow);
+                icon.classList.toggle('fa-eye-slash', willShow);
+                toggle.setAttribute('aria-pressed', String(willShow));
+                toggle.setAttribute('aria-label', willShow ? 'Sembunyikan password' : 'Tampilkan password');
+                toggle.title = willShow ? 'Sembunyikan password' : 'Tampilkan password';
+                password.focus({ preventScroll: true });
+            });
+        })();
+    </script>
 </body>
 </html>

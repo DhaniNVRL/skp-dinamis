@@ -67,9 +67,21 @@
                 </div>
             </div>
 
-            <div class="mt-4 flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4">
-                <a href="{{ url()->current() }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"><i class="fa-solid fa-rotate-left"></i>Reset</a>
-                <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-filter"></i>Terapkan Filter</button>
+            <div class="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-gray-100 pt-4">
+                <div>
+                    <label for="perPageFilter" class="mb-1 block text-sm font-medium text-gray-700">Tampilkan data</label>
+                    <select id="perPageFilter" name="per_page" onchange="this.form.requestSubmit()" class="h-10 min-w-36 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-blue-500">
+                        @foreach ([10, 20, 50, 100] as $pageSize)
+                            <option value="{{ $pageSize }}" @selected((string) ($filters['per_page'] ?? '20') === (string) $pageSize)>{{ $pageSize }} data</option>
+                        @endforeach
+                        <option value="all" @selected(($filters['per_page'] ?? '20') === 'all')>Semua data</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-wrap justify-end gap-2">
+                    <a href="{{ url()->current() }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"><i class="fa-solid fa-rotate-left"></i>Reset</a>
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-filter"></i>Terapkan Filter</button>
+                </div>
             </div>
         </form>
     </div>

@@ -81,6 +81,8 @@
                 <thead class="bg-gray-100">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">No</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">ID Form</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">ID Question</th>
                         <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Form</th>
                         <th class="min-w-[280px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Pertanyaan</th>
                         <th class="min-w-[190px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Objek Penilaian</th>
@@ -93,6 +95,8 @@
                         @php($questionNumber = trim(($answer->question?->no_header ?? '').($answer->question?->no ?? '')))
                         <tr class="align-top hover:bg-gray-50">
                             <td class="px-4 py-4 text-sm text-gray-500">{{ $loop->iteration }}</td>
+                            <td class="whitespace-nowrap px-4 py-4 text-sm font-medium text-gray-600">{{ $answer->form_id ?: '-' }}</td>
+                            <td class="whitespace-nowrap px-4 py-4 text-sm font-medium text-gray-600">{{ $answer->question_id ?: '-' }}</td>
                             <td class="px-4 py-4 text-sm font-medium text-gray-800">{{ $answer->form?->name ?: '-' }}</td>
                             <td class="px-4 py-4 text-sm text-gray-700">
                                 @if ($questionNumber)<span class="mr-2 inline-flex rounded bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">{{ $questionNumber }}</span>@endif
@@ -118,7 +122,7 @@
                             <td class="px-4 py-4 text-sm text-gray-500">{{ $answer->updated_at?->format('d-m-Y H:i') ?: '-' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="px-4 py-12 text-center text-sm text-gray-500"><i class="fa-regular fa-folder-open mb-2 block text-2xl text-gray-400"></i>Responden belum memiliki jawaban.</td></tr>
+                        <tr><td colspan="8" class="px-4 py-12 text-center text-sm text-gray-500"><i class="fa-regular fa-folder-open mb-2 block text-2xl text-gray-400"></i>Responden belum memiliki jawaban.</td></tr>
                     @endforelse
                 </tbody>
             </table>

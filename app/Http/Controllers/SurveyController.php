@@ -157,6 +157,8 @@ class SurveyController extends Controller
             'pageHasQuestions' => $mergedForms
                 ->contains(fn (Form $member) => (int) $member->formtype_id !== self::DESCRIPTION_TYPE),
             'isLastForm' => $visibleCurrentIndex === $visibleForms->count() - 1,
+            'canUseUnlockedAutofill' => Auth::user()?->hasRole('user')
+                && $session?->reopened_at !== null,
             // Nomor tampilan mengikuti no_urut asli. Form yang dilewati tidak
             // membuat form setelahnya dinomori ulang (mis. 6 langsung 8).
             'currentPosition' => $visibleCurrentIndex + 1,

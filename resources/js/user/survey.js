@@ -21,6 +21,7 @@
             initializeServerValidation(form);
             initializeRankingAssessment(page);
             initializeSurveyorAutofill(form);
+            initializeUnlockedUserAutofill(form);
             initializeSurveyDraft(form);
         }
     );
@@ -649,6 +650,146 @@
                 );
             }
         );
+    }
+
+
+    function initializeUnlockedUserAutofill(form) {
+        const button = document.getElementById("unlockedUserAutofillButton");
+        if (!button) return;
+
+        button.addEventListener("click", function () {
+            const originalHtml = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Mengisi jawaban kosong...</span>';
+
+            fillEmptyRankingSelects(form);
+            fillEmptyUserRadioGroups(form);
+            fillRequiredCheckboxGroups(form);
+            fillEmptyRegularSelects(form);
+            fillEmptyUserTextFields(form);
+            fillRequiredCheckboxGroups(form);
+            fillEmptyUserTextFields(form);
+            clearAllValidation(form);
+
+            button.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>Jawaban Kosong Terisi</span>';
+
+            window.setTimeout(function () {
+                button.disabled = false;
+                button.innerHTML = originalHtml;
+            }, 1800);
+        });
+    }
+
+
+    function fillEmptyUserRadioGroups(form) {
+        const groups = new Map();
+
+        form.querySelectorAll('input[type="radio"]:not(:disabled)').forEach(function (radio) {
+            if (radio.closest('.hidden')) return;
+            if (!groups.has(radio.name)) groups.set(radio.name, []);
+            groups.get(radio.name).push(radio);
+        });
+
+        groups.forEach(function (radios, name) {
+            if (radios.some(function (radio) { return radio.checked; })) return;
+
+            const numeric = radios
+                .filter(function (radio) {
+                    return radio.value !== "" && Number.isFinite(Number(radio.value));
+                })
+                .sort(function (left, right) {
+                    return Number(right.value) - Number(left.value);
+                });
+
+            let selected = null;
+            if (numeric.length > 0) {
+                if (/\[importance\]$/.test(name)) {
+                    selected = numeric[0];
+                } else if (/\[performance\]$/.test(name)) {
+                    const topPerformanceValues = numeric.slice(0, Math.min(2, numeric.length));
+                    selected = topPerformanceValues[Math.floor(Math.random() * topPerformanceValues.length)];
+                } else {
+                    selected = numeric[Math.floor(Math.random() * numeric.length)];
+                }
+            } else if (radios.length > 0) {
+                selected = radios[Math.floor(Math.random() * radios.length)];
+            }
+
+            if (!selected) return;
+            selected.checked = true;
+            dispatchDummyEvents(selected);
+        });
+    }
+
+
+    function fillEmptyRankingSelects(form) {
+        form.querySelectorAll("[data-ranking-container]").forEach(function (container) {
+            const selects = Array.from(container.querySelectorAll("[data-ranking-select]:not(:disabled)"));
+            const usedValues = new Set(
+                selects.map(function (select) { return select.value; }).filter(Boolean)
+            );
+
+            selects.forEach(function (select) {
+                if (select.value !== "" || select.closest('.hidden')) return;
+
+                const available = Array.from(select.options).filter(function (option) {
+                    return option.value !== "" && !option.disabled && !usedValues.has(option.value);
+                });
+                if (available.length === 0) return;
+
+                const option = available[Math.floor(Math.random() * available.length)];
+                select.value = option.value;
+                usedValues.add(option.value);
+                dispatchDummyEvents(select);
+            });
+        });
+    }
+
+
+    function fillEmptyRegularSelects(form) {
+        form.querySelectorAll("select:not([data-ranking-select]):not(:disabled)").forEach(function (select) {
+            if (select.value !== "" || select.closest('.hidden')) return;
+
+            const available = Array.from(select.options).filter(function (option) {
+                return option.value !== "" && !option.disabled;
+            });
+            if (available.length === 0) return;
+
+            select.value = available[Math.floor(Math.random() * available.length)].value;
+            dispatchDummyEvents(select);
+        });
+    }
+
+
+    function fillEmptyUserTextFields(form) {
+        const selector = "input:not([type='hidden']):not([type='radio']):not([type='checkbox']):not([type='submit']):not([type='button']):not(:disabled), textarea:not(:disabled)";
+
+        form.querySelectorAll(selector).forEach(function (field) {
+            if (String(field.value || "").trim() !== "" || field.closest('.hidden')) return;
+
+            const type = (field.type || "text").toLowerCase();
+            if (type === "number" || type === "range") {
+                field.value = field.max !== "" ? field.max : "1";
+            } else if (type === "date") {
+                field.value = new Date().toISOString().slice(0, 10);
+            } else if (type === "datetime-local") {
+                field.value = new Date().toISOString().slice(0, 16);
+            } else if (type === "time") {
+                field.value = "09:00";
+            } else if (type === "email") {
+                field.value = "responden@example.com";
+            } else if (type === "tel") {
+                field.value = "081234567890";
+            } else if (type === "url") {
+                field.value = "https://example.com";
+            } else {
+                field.value = field.tagName === "TEXTAREA"
+                    ? "Pelayanan sudah baik dan perlu dipertahankan."
+                    : "Jawaban responden";
+            }
+
+            dispatchDummyEvents(field);
+        });
     }
 
 

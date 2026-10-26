@@ -19,6 +19,21 @@
         </div>
     @endif
 
+    @if ($canUseUnlockedAutofill ?? false)
+        <div class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
+            <span class="font-semibold"><i class="fa-solid fa-lock-open mr-2"></i>Akun Dibuka Kembali</span>
+            — isi otomatis hanya akan melengkapi jawaban yang masih kosong. Jawaban yang sudah tersimpan tidak diubah.
+            <div class="mt-3 flex justify-end">
+                <button id="unlockedUserAutofillButton" type="button"
+                        title="Isi pertanyaan yang masih kosong secara otomatis"
+                        class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-emerald-700">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Isi Jawaban Kosong</span>
+                </button>
+            </div>
+        </div>
+    @endif
+
 <div id="surveyPage" class="mx-auto max-w-[1600px] space-y-6">
     @include('user.survey.partials.form-header')
 
