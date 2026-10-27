@@ -5,6 +5,7 @@
     <div class="rounded-xl border border-gray-200 bg-white p-5">
         <div class="flex items-start gap-3">
             <span class="inline-flex min-w-12 justify-center rounded-lg bg-violet-100 px-2.5 py-1 text-sm font-semibold text-violet-700">{{ $question->no_header }}{{ $question->no }}</span>
+            @include('admin.units.question.partials.forms.question-id-badge', compact('question'))
             <div><h4 class="font-semibold text-gray-800">{{ $question->name }}</h4><p class="mt-1 text-xs text-gray-500">Setiap kompetitor yang dimasukkan responden dinilai dengan skala 1–7 dan 0.</p></div>
         </div>
         <div class="mt-4 flex flex-wrap items-center justify-center gap-2">

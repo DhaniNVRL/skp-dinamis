@@ -8,6 +8,7 @@
         <span class="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 px-2 text-sm font-semibold text-violet-700">
             {{ $question->no_header }}{{ $question->no }}
         </span>
+        @include('admin.units.question.partials.forms.question-id-badge', compact('question'))
 
         <div class="min-w-0 flex-1">
             <h4 class="text-sm font-semibold text-gray-800">

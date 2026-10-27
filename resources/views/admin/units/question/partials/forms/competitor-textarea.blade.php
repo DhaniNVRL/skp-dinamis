@@ -4,6 +4,7 @@
             <span class="inline-flex min-w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 px-2.5 py-1 text-sm font-semibold text-violet-700">
                 {{ $question->no_header }}{{ $question->no }}
             </span>
+            @include('admin.units.question.partials.forms.question-id-badge', compact('question'))
 
             <div>
                 <h4 class="font-semibold leading-6 text-gray-800">{{ $question->name }}</h4>

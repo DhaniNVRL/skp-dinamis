@@ -17,6 +17,7 @@
             >
                 {{ $question->no_header }}{{ $question->no }}
             </span>
+            @include('admin.units.question.partials.forms.question-id-badge', compact('question'))
 
             <div class="min-w-0">
 

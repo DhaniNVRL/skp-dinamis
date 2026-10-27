@@ -706,8 +706,11 @@
                 if (/\[importance\]$/.test(name)) {
                     selected = numeric[0];
                 } else if (/\[performance\]$/.test(name)) {
-                    const topPerformanceValues = numeric.slice(0, Math.min(2, numeric.length));
-                    selected = topPerformanceValues[Math.floor(Math.random() * topPerformanceValues.length)];
+                    const highestValue = numeric[0];
+                    const secondHighestValue = numeric[1] || highestValue;
+
+                    // Kinerja: 70% nilai tertinggi, 30% satu tingkat di bawahnya.
+                    selected = Math.random() < 0.7 ? highestValue : secondHighestValue;
                 } else {
                     selected = numeric[Math.floor(Math.random() * numeric.length)];
                 }

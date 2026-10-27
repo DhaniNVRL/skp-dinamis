@@ -24,7 +24,9 @@ class UnlockedUserAutofillTest extends TestCase
         self::assertStringContainsString('if (radios.some(function (radio) { return radio.checked; })) return;', $script);
         self::assertStringContainsString('/\\[importance\\]$/.test(name)', $script);
         self::assertStringContainsString('/\\[performance\\]$/.test(name)', $script);
-        self::assertStringContainsString('numeric.slice(0, Math.min(2, numeric.length))', $script);
+        self::assertStringContainsString('const highestValue = numeric[0];', $script);
+        self::assertStringContainsString('const secondHighestValue = numeric[1] || highestValue;', $script);
+        self::assertStringContainsString('Math.random() < 0.7 ? highestValue : secondHighestValue', $script);
         self::assertStringContainsString('if (select.value !== "" || select.closest(\'.hidden\')) return;', $script);
         self::assertStringContainsString('String(field.value || "").trim() !== ""', $script);
     }

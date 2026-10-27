@@ -10,6 +10,7 @@
             >
                 {{ $question->no_header }}{{ $question->no }}
             </span>
+            @include('admin.units.question.partials.forms.question-id-badge', compact('question'))
 
             <div>
                 <h4 class="font-semibold leading-6 text-gray-800">
