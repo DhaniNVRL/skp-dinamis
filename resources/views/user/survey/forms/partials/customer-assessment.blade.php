@@ -234,15 +234,15 @@
 
                                 @if ($questionTypeId === 2)
 
-                                    Penilaian Kepentingan dan Kinerja
+                                    Penilaian {{ $question->importance_label }} dan {{ $question->performance_label }}
 
                                 @elseif ($questionTypeId === 3)
 
-                                    Penilaian Kepentingan dan Kinerja dengan alasan
+                                    Penilaian {{ $question->importance_label }} dan {{ $question->performance_label }} dengan alasan
 
                                 @elseif ($questionTypeId === 4)
 
-                                    Penilaian Kepentingan dan Kinerja dengan pilihan alasan
+                                    Penilaian {{ $question->importance_label }} dan {{ $question->performance_label }} dengan pilihan alasan
 
                                 @elseif ($questionTypeId === 5)
 
@@ -254,11 +254,11 @@
 
                                 @elseif ($questionTypeId === 7)
 
-                                    Penilaian dengan alasan Kinerja
+                                    Penilaian dengan alasan {{ $question->performance_label }}
 
                                 @elseif ($questionTypeId === 8)
 
-                                    Alasan jika Kinerja di bawah Kepentingan
+                                    Alasan jika {{ $question->performance_label }} di bawah {{ $question->importance_label }}
 
                                 @endif
 
@@ -498,7 +498,7 @@
                                                        font-semibold
                                                        text-blue-700"
                                             >
-                                                Kepentingan
+                                                {{ $question->importance_label }}
                                             </div>
 
 
@@ -583,7 +583,7 @@
                                                        font-semibold
                                                        text-emerald-700"
                                             >
-                                                Kinerja
+                                                {{ $question->performance_label }}
                                             </div>
 
 
@@ -746,7 +746,7 @@
                                             @if ($useMeaningfulValidation)
                                                 data-meaningful-answer
                                                 data-answer-type="reason"
-                                                data-answer-label="Alasan Penilaian Kinerja"
+                                                data-answer-label="Alasan Penilaian {{ $question->performance_label }}"
                                             @endif
 
                                             @required($showReason)

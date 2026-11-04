@@ -1231,7 +1231,7 @@ class AnswerController extends Controller
                 $errors[
                     "answers.{$question->id}.{$subunitId}.importance"
                 ] =
-                    "Nilai Kepentingan {$question->name} wajib dipilih.";
+                    "Nilai {$question->importance_label} {$question->name} wajib dipilih.";
             }
 
             if (
@@ -1246,7 +1246,7 @@ class AnswerController extends Controller
                 $errors[
                     "answers.{$question->id}.{$subunitId}.performance"
                 ] =
-                    "Nilai Kinerja {$question->name} wajib dipilih.";
+                    "Nilai {$question->performance_label} {$question->name} wajib dipilih.";
             }
 
             $reasonMaximum = match ((int) $form->formtype_id) {
@@ -1279,7 +1279,7 @@ class AnswerController extends Controller
                 $errors[
                     "answers.{$question->id}.{$subunitId}.reason"
                 ] =
-                    "Alasan penilaian Kinerja {$question->name} wajib diisi.";
+                    "Alasan penilaian {$question->performance_label} {$question->name} wajib diisi.";
             }
 
             if (
@@ -1309,7 +1309,7 @@ class AnswerController extends Controller
                     $errors[
                         "answers.{$question->id}.{$subunitId}.reasons"
                     ] =
-                        "Pilih minimal satu alasan penilaian Kinerja {$question->name}.";
+                        "Pilih minimal satu alasan penilaian {$question->performance_label} {$question->name}.";
                 } else {
                     $validOptions =
                         $question

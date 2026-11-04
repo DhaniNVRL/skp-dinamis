@@ -42,7 +42,7 @@
             {{-- Kepentingan --}}
             <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
                 <h5 class="mb-4 text-center font-semibold text-blue-800">
-                    Kepentingan
+                    {{ $question->importance_label }}
                 </h5>
 
                 <div class="flex flex-wrap justify-center gap-3">
@@ -69,7 +69,7 @@
             {{-- Kinerja --}}
             <div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
                 <h5 class="mb-4 text-center font-semibold text-emerald-800">
-                    Kinerja
+                    {{ $question->performance_label }}
                 </h5>
 
                 <div class="flex flex-wrap justify-center gap-3">

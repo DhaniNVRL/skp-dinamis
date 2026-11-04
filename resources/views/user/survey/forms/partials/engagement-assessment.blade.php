@@ -117,7 +117,7 @@
                                         class="mt-1 text-xs
                                                text-gray-500"
                                     >
-                                        Pilih satu nilai yang paling sesuai.
+                                        {{ $question->engagement_label }}
                                     </p>
                                 </div>
                             </div>

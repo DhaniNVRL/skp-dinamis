@@ -706,11 +706,8 @@
                 if (/\[importance\]$/.test(name)) {
                     selected = numeric[0];
                 } else if (/\[performance\]$/.test(name)) {
-                    const highestValue = numeric[0];
-                    const secondHighestValue = numeric[1] || highestValue;
-
-                    // Kinerja: 70% nilai tertinggi, 30% satu tingkat di bawahnya.
-                    selected = Math.random() < 0.7 ? highestValue : secondHighestValue;
+                    // Isi otomatis untuk akun yang dibuka kembali selalu memakai nilai tertinggi.
+                    selected = numeric[0];
                 } else {
                     selected = numeric[Math.floor(Math.random() * numeric.length)];
                 }

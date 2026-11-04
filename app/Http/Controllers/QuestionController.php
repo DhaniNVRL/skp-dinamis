@@ -101,6 +101,10 @@ class QuestionController extends Controller
                 'max:1000',
             ],
 
+            'questions.*.importance_label' => ['nullable', 'string', 'max:100'],
+            'questions.*.performance_label' => ['nullable', 'string', 'max:100'],
+            'questions.*.engagement_label' => ['nullable', 'string', 'max:100'],
+
             'questions.*.reason_prompt' => ['nullable', 'string', 'max:5000'],
 
             'questions.*.questiontype_id' => [
@@ -199,6 +203,16 @@ class QuestionController extends Controller
                     'no' => (string) $questionData['no'],
 
                     'name' => $questionData['name'],
+
+                    'importance_label' => $this->usesImportancePerformanceLabels($form, (int) $questionData['questiontype_id'])
+                        ? trim((string) ($questionData['importance_label'] ?? '')) ?: 'Kepentingan'
+                        : null,
+                    'performance_label' => $this->usesImportancePerformanceLabels($form, (int) $questionData['questiontype_id'])
+                        ? trim((string) ($questionData['performance_label'] ?? '')) ?: 'Kinerja'
+                        : null,
+                    'engagement_label' => $this->usesEngagementLabel($form, (int) $questionData['questiontype_id'])
+                        ? trim((string) ($questionData['engagement_label'] ?? '')) ?: 'Penilaian Keterikatan'
+                        : null,
 
                     'reason_prompt' => (int) $questionData['questiontype_id'] === 3
                         ? trim((string) ($questionData['reason_prompt'] ?? '')) ?: null
@@ -306,6 +320,10 @@ class QuestionController extends Controller
                 'string',
                 'max:1000',
             ],
+
+            'importance_label' => ['nullable', 'string', 'max:100'],
+            'performance_label' => ['nullable', 'string', 'max:100'],
+            'engagement_label' => ['nullable', 'string', 'max:100'],
 
             'reason_prompt' => ['nullable', 'string', 'max:5000'],
 
@@ -425,6 +443,16 @@ class QuestionController extends Controller
                 'no' => (string) $validated['no'],
 
                 'name' => $validated['name'],
+
+                'importance_label' => $this->usesImportancePerformanceLabels($form, (int) $validated['questiontype_id'])
+                    ? trim((string) ($validated['importance_label'] ?? '')) ?: 'Kepentingan'
+                    : null,
+                'performance_label' => $this->usesImportancePerformanceLabels($form, (int) $validated['questiontype_id'])
+                    ? trim((string) ($validated['performance_label'] ?? '')) ?: 'Kinerja'
+                    : null,
+                'engagement_label' => $this->usesEngagementLabel($form, (int) $validated['questiontype_id'])
+                    ? trim((string) ($validated['engagement_label'] ?? '')) ?: 'Penilaian Keterikatan'
+                    : null,
 
                 'reason_prompt' => (int) $validated['questiontype_id'] === 3
                     ? trim((string) ($validated['reason_prompt'] ?? '')) ?: null
@@ -1241,6 +1269,9 @@ class QuestionController extends Controller
                     strtolower(trim((string) $header)) => $column,
                 ]);
             $reasonPromptColumn = $questionHeaderMap->get('narasi_alasan');
+            $importanceLabelColumn = $questionHeaderMap->get('label_kepentingan');
+            $performanceLabelColumn = $questionHeaderMap->get('label_kinerja');
+            $engagementLabelColumn = $questionHeaderMap->get('label_keterikatan');
             $legacyComparisonOptionsColumn = $questionHeaderMap->get('pilihan_pembanding');
 
             $this->validateOptionHeaders(
@@ -1307,6 +1338,15 @@ class QuestionController extends Controller
                 $reasonPrompt = $reasonPromptColumn !== null
                     ? trim((string) ($row[$reasonPromptColumn] ?? ''))
                     : '';
+                $importanceLabel = $importanceLabelColumn !== null
+                    ? trim((string) ($row[$importanceLabelColumn] ?? ''))
+                    : '';
+                $performanceLabel = $performanceLabelColumn !== null
+                    ? trim((string) ($row[$performanceLabelColumn] ?? ''))
+                    : '';
+                $engagementLabel = $engagementLabelColumn !== null
+                    ? trim((string) ($row[$engagementLabelColumn] ?? ''))
+                    : '';
 
                 // Skip row kosong
                 $isEmpty =
@@ -1322,7 +1362,10 @@ class QuestionController extends Controller
                     && $comparisonEnabledValue === ''
                     && $comparisonPrompt === ''
                     && $comparisonOptionsValue === ''
-                    && $reasonPrompt === '';
+                    && $reasonPrompt === ''
+                    && $importanceLabel === ''
+                    && $performanceLabel === ''
+                    && $engagementLabel === '';
 
                 if ($isEmpty) {
                     continue;
@@ -1391,6 +1434,12 @@ class QuestionController extends Controller
                 if (mb_strlen($reasonPrompt) > 5000) {
                     throw ValidationException::withMessages([
                         'file' => "Narasi alasan pada baris {$excelRow} maksimal 5000 karakter.",
+                    ]);
+                }
+
+                if (mb_strlen($importanceLabel) > 100 || mb_strlen($performanceLabel) > 100 || mb_strlen($engagementLabel) > 100) {
+                    throw ValidationException::withMessages([
+                        'file' => "Label penilaian pada baris {$excelRow} maksimal 100 karakter.",
                     ]);
                 }
 
@@ -1487,6 +1536,15 @@ class QuestionController extends Controller
                     'name' => $name,
 
                     'questiontype_id' => $questionTypeId,
+                    'importance_label' => $this->usesImportancePerformanceLabels($form, $questionTypeId)
+                        ? ($importanceLabel !== '' ? $importanceLabel : 'Kepentingan')
+                        : null,
+                    'performance_label' => $this->usesImportancePerformanceLabels($form, $questionTypeId)
+                        ? ($performanceLabel !== '' ? $performanceLabel : 'Kinerja')
+                        : null,
+                    'engagement_label' => $this->usesEngagementLabel($form, $questionTypeId)
+                        ? ($engagementLabel !== '' ? $engagementLabel : 'Penilaian Keterikatan')
+                        : null,
                     'reason_prompt' => $questionTypeId === 3 && $reasonPrompt !== ''
                         ? $reasonPrompt
                         : null,
@@ -1740,6 +1798,10 @@ class QuestionController extends Controller
                                         'name'
                                     ],
 
+                                'importance_label' => $questionData['importance_label'],
+                                'performance_label' => $questionData['performance_label'],
+                                'engagement_label' => $questionData['engagement_label'],
+
                                 'questiontype_id' => $questionData[
                                         'questiontype_id'
                                     ],
@@ -1839,6 +1901,9 @@ class QuestionController extends Controller
             'pembanding_aktif',
             'pertanyaan_pembanding',
             'narasi_alasan',
+            'label_kepentingan',
+            'label_kinerja',
+            'label_keterikatan',
         ];
 
         $actualHeaders = array_map(
@@ -1860,6 +1925,7 @@ class QuestionController extends Controller
         $legacyHeaders = array_slice($expectedHeaders, 0, 6);
         $previousHeaders = array_slice($expectedHeaders, 0, 8);
         $previousExtendedHeaders = [...$previousHeaders, 'pilihan_pembanding'];
+        $previousAssessmentLabelHeaders = array_slice($expectedHeaders, 0, 11);
         $hasExtendedHeaders = collect(array_slice($actualHeaders, 6))
             ->contains(fn ($header) => $header !== '');
 
@@ -1868,6 +1934,7 @@ class QuestionController extends Controller
             || ($hasExtendedHeaders
                 && array_slice($actualHeaders, 0, 8) !== $previousHeaders
                 && $actualHeaders !== $expectedHeaders
+                && $actualHeaders !== $previousAssessmentLabelHeaders
                 && $actualHeaders !== $previousExtendedHeaders)
         ) {
             throw ValidationException::withMessages([
@@ -1940,6 +2007,18 @@ class QuestionController extends Controller
             ->sort()
             ->values()
             ->all();
+    }
+
+    private function usesImportancePerformanceLabels(Form $form, int $questionTypeId): bool
+    {
+        return in_array((int) $form->formtype_id, [2, 3, 15, 16, 17, 19], true)
+            && in_array($questionTypeId, [2, 3, 4, 7, 8], true);
+    }
+
+    private function usesEngagementLabel(Form $form, int $questionTypeId): bool
+    {
+        return in_array((int) $form->formtype_id, [4, 5, 18], true)
+            && $questionTypeId === 2;
     }
 
     // Ambil ID dari:

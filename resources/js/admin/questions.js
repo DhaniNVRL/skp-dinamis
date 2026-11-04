@@ -262,6 +262,36 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function updateCreateAssessmentLabelConfig(row) {
+        const select = row?.querySelector("[data-question-type-select]");
+        const config = row?.querySelector("[data-assessment-label-config]");
+        if (!select || !config) return;
+
+        const customerTypes = [2, 3, 15, 16, 17, 19];
+        const enabled = customerTypes.includes(Number(formTypeInput?.value))
+            && [2, 3, 4, 7, 8].includes(Number(select.value));
+
+        config.classList.toggle("hidden", !enabled);
+        config.querySelectorAll("input").forEach(function (input) {
+            input.disabled = !enabled;
+        });
+    }
+
+    function updateCreateEngagementLabelConfig(row) {
+        const select = row?.querySelector("[data-question-type-select]");
+        const config = row?.querySelector("[data-engagement-label-config]");
+        if (!select || !config) return;
+
+        const engagementTypes = [4, 5, 18];
+        const enabled = engagementTypes.includes(Number(formTypeInput?.value))
+            && Number(select.value) === 2;
+
+        config.classList.toggle("hidden", !enabled);
+        config.querySelectorAll("input").forEach(function (input) {
+            input.disabled = !enabled;
+        });
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Tambah baris
@@ -318,6 +348,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         updateCreateScaleConfig(row);
         updateCreateReasonPromptConfig(row);
+        updateCreateAssessmentLabelConfig(row);
+        updateCreateEngagementLabelConfig(row);
 
         createBody.appendChild(fragment);
 
@@ -546,6 +578,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             updateCreateScaleConfig(row);
             updateCreateReasonPromptConfig(row);
+            updateCreateAssessmentLabelConfig(row);
+            updateCreateEngagementLabelConfig(row);
         }
     );
 
@@ -645,6 +679,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const scaleRightLabel = document.getElementById("edit_scale_right_label");
     const reasonPromptConfig = document.getElementById("edit_reason_prompt_config");
     const reasonPrompt = document.getElementById("edit_reason_prompt");
+    const assessmentLabelConfig = document.getElementById("edit_assessment_label_config");
+    const importanceLabel = document.getElementById("edit_importance_label");
+    const performanceLabel = document.getElementById("edit_performance_label");
+    const engagementLabelConfig = document.getElementById("edit_engagement_label_config");
+    const engagementLabel = document.getElementById("edit_engagement_label");
 
     // Sinkronkan field konfigurasi skala pada modal edit.
     function updateEditScaleConfig() {
@@ -665,6 +704,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
         reasonPromptConfig?.classList.toggle("hidden", !enabled);
         if (reasonPrompt) reasonPrompt.disabled = !enabled;
+    }
+
+    function updateEditAssessmentLabelConfig() {
+        const customerTypes = [2, 3, 15, 16, 17, 19];
+        const enabled = customerTypes.includes(Number(formTypeInput?.value))
+            && [2, 3, 4, 7, 8].includes(Number(typeInput?.value));
+
+        assessmentLabelConfig?.classList.toggle("hidden", !enabled);
+        [importanceLabel, performanceLabel].forEach(function (input) {
+            if (input) input.disabled = !enabled;
+        });
+    }
+
+    function updateEditEngagementLabelConfig() {
+        const engagementTypes = [4, 5, 18];
+        const enabled = engagementTypes.includes(Number(formTypeInput?.value))
+            && Number(typeInput?.value) === 2;
+
+        engagementLabelConfig?.classList.toggle("hidden", !enabled);
+        if (engagementLabel) engagementLabel.disabled = !enabled;
     }
 
     const comparisonConfig = document.getElementById("edit_comparison_config");
@@ -953,6 +1012,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 reasonPrompt.value = editQuestionTrigger.dataset.reasonPrompt || "";
             }
             updateEditReasonPromptConfig();
+            if (importanceLabel) {
+                importanceLabel.value = editQuestionTrigger.dataset.importanceLabel || "Kepentingan";
+            }
+            if (performanceLabel) {
+                performanceLabel.value = editQuestionTrigger.dataset.performanceLabel || "Kinerja";
+            }
+            updateEditAssessmentLabelConfig();
+            if (engagementLabel) {
+                engagementLabel.value = editQuestionTrigger.dataset.engagementLabel || "Penilaian Keterikatan";
+            }
+            updateEditEngagementLabelConfig();
 
             const supportsComparison = [2, 3, 15, 16, 17, 19].includes(Number(formTypeInput.value));
             comparisonConfig?.classList.remove("hidden");
@@ -996,6 +1066,8 @@ document.addEventListener("DOMContentLoaded", function () {
             updateQuestionTypeHelp();
             updateEditScaleConfig();
             updateEditReasonPromptConfig();
+            updateEditAssessmentLabelConfig();
+            updateEditEngagementLabelConfig();
 
             const originalValue = String(
                 typeInput.dataset.originalValue || ""

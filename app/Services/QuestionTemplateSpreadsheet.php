@@ -88,6 +88,9 @@ class QuestionTemplateSpreadsheet
             'pembanding_aktif',
             'pertanyaan_pembanding',
             'narasi_alasan',
+            'label_kepentingan',
+            'label_kinerja',
+            'label_keterikatan',
         ];
 
         $sheet->fromArray(
@@ -210,14 +213,26 @@ class QuestionTemplateSpreadsheet
             'Opsional. Diisi untuk tipe Kepentingan & Kinerja dengan Alasan.'
         );
 
+        $sheet->getComment('J1')->getText()->createTextRun(
+            'Opsional untuk tipe penilaian Kepentingan & Kinerja. Kosongkan untuk memakai default: Kepentingan.'
+        );
+
+        $sheet->getComment('K1')->getText()->createTextRun(
+            'Opsional untuk tipe penilaian Kepentingan & Kinerja. Kosongkan untuk memakai default: Kinerja.'
+        );
+
+        $sheet->getComment('L1')->getText()->createTextRun(
+            'Opsional untuk pertanyaan Form Keterikatan. Kosongkan untuk memakai default: Penilaian Keterikatan.'
+        );
+
         $this->styleHeader(
             $sheet,
-            'A1:I1',
+            'A1:L1',
             '2563EB'
         );
 
         $sheet->freezePane('A2');
-        $sheet->setAutoFilter('A1:I'.$lastRow);
+        $sheet->setAutoFilter('A1:L'.$lastRow);
 
         $sheet->getColumnDimension('A')->setWidth(22);
         $sheet->getColumnDimension('B')->setWidth(42);
@@ -228,6 +243,9 @@ class QuestionTemplateSpreadsheet
         $sheet->getColumnDimension('G')->setWidth(24);
         $sheet->getColumnDimension('H')->setWidth(65);
         $sheet->getColumnDimension('I')->setWidth(75);
+        $sheet->getColumnDimension('J')->setWidth(28);
+        $sheet->getColumnDimension('K')->setWidth(28);
+        $sheet->getColumnDimension('L')->setWidth(32);
 
         $sheet->getStyle('A2:A'.$lastRow)
             ->getFill()
@@ -235,13 +253,13 @@ class QuestionTemplateSpreadsheet
             ->getStartColor()
             ->setRGB('FEF3C7');
 
-        $sheet->getStyle('C2:I'.$lastRow)
+        $sheet->getStyle('C2:K'.$lastRow)
             ->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()
             ->setRGB('FEFCE8');
 
-        $sheet->getStyle('E2:I'.$lastRow)
+        $sheet->getStyle('E2:K'.$lastRow)
             ->getAlignment()
             ->setWrapText(true);
 
@@ -252,7 +270,7 @@ class QuestionTemplateSpreadsheet
 
         $this->addBorders(
             $sheet,
-            'A1:I'.$lastRow
+            'A1:K'.$lastRow
         );
     }
 
@@ -677,6 +695,14 @@ class QuestionTemplateSpreadsheet
             [
                 16,
                 'Jika pembanding aktif, isi pertanyaan_pembanding lalu masukkan minimal dua pilihan pada sheet INPUT_PEMBANDING, satu pilihan per baris.',
+            ],
+            [
+                17,
+                'Untuk tipe penilaian dua nilai, label_kepentingan dan label_kinerja dapat diisi sesuai istilah yang diinginkan. Kosong berarti memakai Kepentingan dan Kinerja.',
+            ],
+            [
+                18,
+                'Untuk Form Keterikatan, label_keterikatan dapat diisi sesuai istilah yang diinginkan. Kosong berarti memakai Penilaian Keterikatan.',
             ],
         ];
 

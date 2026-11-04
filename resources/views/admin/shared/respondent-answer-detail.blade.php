@@ -38,6 +38,7 @@
 
             <dl class="grid gap-x-8 gap-y-5 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach ([
+                    'User ID' => $user?->id,
                     'Username' => $user?->username,
                     'Nama Lengkap' => $profile?->fullname,
                     'Email' => $profile?->email,

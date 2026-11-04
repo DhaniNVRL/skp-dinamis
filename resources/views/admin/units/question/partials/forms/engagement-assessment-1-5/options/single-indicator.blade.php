@@ -18,7 +18,7 @@
                 </h4>
 
                 <p class="mt-1 text-xs text-gray-500">
-                    Penilaian satu indikator
+                    {{ $question->engagement_label }}
                 </p>
             </div>
         </div>

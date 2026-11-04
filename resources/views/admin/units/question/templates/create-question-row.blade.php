@@ -92,6 +92,26 @@
                 </label>
                 <p class="mt-1 text-xs text-amber-700">Ditampilkan di atas textarea alasan responden.</p>
             </div>
+
+            <div data-assessment-label-config class="mt-3 hidden rounded-lg border border-blue-200 bg-blue-50 p-3">
+                <p class="mb-2 text-xs font-semibold text-blue-800">Label Penilaian</p>
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <label class="text-xs text-blue-800">Label nilai pertama
+                        <input type="text" maxlength="100" value="Kepentingan" data-question-field="importance_label" class="mt-1 w-full rounded border border-blue-200 bg-white px-2 py-1.5 text-sm text-gray-700">
+                    </label>
+                    <label class="text-xs text-emerald-800">Label nilai kedua
+                        <input type="text" maxlength="100" value="Kinerja" data-question-field="performance_label" class="mt-1 w-full rounded border border-emerald-200 bg-white px-2 py-1.5 text-sm text-gray-700">
+                    </label>
+                </div>
+                <p class="mt-2 text-xs text-blue-700">Default: Kepentingan dan Kinerja.</p>
+            </div>
+
+            <div data-engagement-label-config class="mt-3 hidden rounded-lg border border-violet-200 bg-violet-50 p-3">
+                <label class="text-xs font-semibold text-violet-800">Keterangan pilihan
+                    <input type="text" maxlength="100" value="Penilaian Keterikatan" data-question-field="engagement_label" class="mt-1 w-full rounded border border-violet-200 bg-white px-2 py-1.5 text-sm text-gray-700">
+                </label>
+                <p class="mt-2 text-xs text-violet-700">Ditampilkan pada Form Keterikatan. Kosongkan untuk memakai default: Penilaian Keterikatan.</p>
+            </div>
         </td>
 
         {{-- Aksi --}}

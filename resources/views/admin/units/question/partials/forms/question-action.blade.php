@@ -31,6 +31,9 @@
         data-header="{{ $question->no_header }}"
         data-no="{{ $question->no }}"
         data-name="{{ $question->name }}"
+        data-importance-label="{{ $question->importance_label }}"
+        data-performance-label="{{ $question->performance_label }}"
+        data-engagement-label="{{ $question->engagement_label }}"
         data-reason-prompt="{{ $question->reason_prompt }}"
 
         data-question-type-id="{{

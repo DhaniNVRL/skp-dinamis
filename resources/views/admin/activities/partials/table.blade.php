@@ -10,6 +10,7 @@
                     <th class="w-24 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">ID</th>
                     <th class="min-w-[220px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Activity</th>
                     <th class="min-w-[320px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Description</th>
+                    <th class="w-44 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Tanggal Input</th>
                     <th class="w-36 px-4 py-3 text-center text-xs font-semibold uppercase text-gray-600">Aksi</th>
                 </tr>
             </thead>
@@ -35,13 +36,16 @@
                         <td class="px-4 py-3 text-sm text-gray-500">{{ $activity->id }}</td>
                         <td class="px-4 py-3 text-sm font-medium text-gray-800">{{ $activity->name }}</td>
                         <td class="px-4 py-3 text-sm text-gray-600">{{ $activity->description ?: '-' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                            {{ $activity->created_at?->format('d-m-Y H:i') ?? '-' }}
+                        </td>
                         <td class="px-4 py-3 text-center">
                             @include('admin.activities.partials.row-action', ['activity' => $activity])
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-12 text-center text-sm text-gray-500">
+                        <td colspan="7" class="px-4 py-12 text-center text-sm text-gray-500">
                             <i class="fa-regular fa-folder-open mb-2 block text-2xl text-gray-400"></i>
                             Belum ada data Activity.
                         </td>

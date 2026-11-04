@@ -17,6 +17,7 @@
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <dl class="grid gap-0 sm:grid-cols-2">
             @foreach ([
+                'User ID' => $profile->user?->id,
                 'Username' => $profile->user?->username,
                 'Nama Lengkap' => $profile->fullname,
                 'Email' => $profile->email,

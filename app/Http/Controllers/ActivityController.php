@@ -18,7 +18,8 @@ class ActivityController extends Controller
     public function index()
     {
         $activities = Activity::query()
-            ->orderBy('name')
+            ->latest('created_at')
+            ->latest('id')
             ->get();
 
         return view('admin.activities.index', compact('activities'));

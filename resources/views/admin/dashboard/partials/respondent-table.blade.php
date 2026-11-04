@@ -7,6 +7,11 @@
                     No
                 </th>
 
+                {{-- USER ID --}}
+                <th class="w-24 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                    User ID
+                </th>
+
                 {{-- RESPONDEN: SORT BERDASARKAN USERNAME --}}
                 <th class="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">
                     <div class="flex items-center gap-2">
@@ -97,6 +102,7 @@
                 @endphp
                 <tr class="transition hover:bg-gray-50">
                     <td class="px-4 py-3 text-sm text-gray-500">{{ $respondents->firstItem() + $loop->index }}</td>
+                    <td class="px-4 py-3 text-sm font-medium text-gray-600">{{ $profile->user_id ?: '-' }}</td>
                     <td class="px-4 py-3">
                         <p class="text-sm font-semibold text-gray-800">{{ $profile->fullname ?: $profile->user?->username }}</p>
                         <p class="mt-0.5 text-xs text-gray-500">{{ $profile->user?->username }}</p>
@@ -122,7 +128,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="8" class="px-4 py-14 text-center text-sm text-gray-500"><i class="fa-regular fa-folder-open mb-2 block text-3xl text-gray-300"></i>Tidak ada responden sesuai filter.</td></tr>
+                <tr><td colspan="9" class="px-4 py-14 text-center text-sm text-gray-500"><i class="fa-regular fa-folder-open mb-2 block text-3xl text-gray-300"></i>Tidak ada responden sesuai filter.</td></tr>
             @endforelse
         </tbody>
     </table>

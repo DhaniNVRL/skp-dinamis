@@ -13,6 +13,9 @@ class Question extends Model
         'no_header',
         'no',
         'name',
+        'importance_label',
+        'performance_label',
+        'engagement_label',
         'reason_prompt',
         'questiontype_id',
         'scale_min',
@@ -34,6 +37,21 @@ class Question extends Model
         'scale_include_zero' => 'boolean',
         'scale_child_values' => 'array',
     ];
+
+    public function getImportanceLabelAttribute(?string $value): string
+    {
+        return filled($value) ? $value : 'Kepentingan';
+    }
+
+    public function getPerformanceLabelAttribute(?string $value): string
+    {
+        return filled($value) ? $value : 'Kinerja';
+    }
+
+    public function getEngagementLabelAttribute(?string $value): string
+    {
+        return filled($value) ? $value : 'Penilaian Keterikatan';
+    }
 
     // Urutan baku pertanyaan pada seluruh halaman admin dan survei.
     // Kolom no_header dan no bertipe varchar, tetapi harus ditampilkan

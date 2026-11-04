@@ -221,6 +221,27 @@
                             <p class="mt-1 text-xs text-amber-700">Berlaku untuk tipe Kepentingan &amp; Kinerja dengan Alasan.</p>
                         </div>
 
+                        <div id="edit_assessment_label_config" class="hidden md:col-span-12 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                            <p class="mb-3 text-sm font-semibold text-blue-800">Label Penilaian</p>
+                            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                <label class="text-sm text-blue-800">Label nilai pertama
+                                    <input id="edit_importance_label" name="importance_label" type="text" maxlength="100" value="Kepentingan" class="mt-1 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-gray-700">
+                                </label>
+                                <label class="text-sm text-emerald-800">Label nilai kedua
+                                    <input id="edit_performance_label" name="performance_label" type="text" maxlength="100" value="Kinerja" class="mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-gray-700">
+                                </label>
+                            </div>
+                            <p class="mt-2 text-xs text-blue-700">Kosongkan untuk memakai default: Kepentingan dan Kinerja.</p>
+                        </div>
+
+                        <div id="edit_engagement_label_config" class="hidden md:col-span-12 rounded-lg border border-violet-200 bg-violet-50 p-4">
+                            <label for="edit_engagement_label" class="mb-2 block text-sm font-semibold text-violet-800">
+                                Keterangan pilihan
+                            </label>
+                            <input id="edit_engagement_label" name="engagement_label" type="text" maxlength="100" value="Penilaian Keterikatan" class="w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm text-gray-700">
+                            <p class="mt-2 text-xs text-violet-700">Berlaku untuk pertanyaan Form Keterikatan. Kosongkan untuk memakai default: Penilaian Keterikatan.</p>
+                        </div>
+
                     </div>
 
                     {{-- Peringatan perubahan tipe --}}

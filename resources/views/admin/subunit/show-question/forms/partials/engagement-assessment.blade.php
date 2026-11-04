@@ -34,7 +34,7 @@
                             <div>
                                 <h3 class="font-semibold leading-relaxed text-gray-900">{{ $question->name }}</h3>
                                 <p class="mt-1 text-xs text-gray-500">
-                                    Penilaian Keterikatan Skala 1–{{ $maximumScale }}
+                                    {{ $question->engagement_label }} Skala 1–{{ $maximumScale }}
                                 </p>
                             </div>
                         </div>
