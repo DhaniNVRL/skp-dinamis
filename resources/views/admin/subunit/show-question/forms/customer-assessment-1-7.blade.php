@@ -71,7 +71,7 @@
                             </h3>
 
                             <p class="mt-1 text-xs text-gray-500">
-                                Penilaian Kepentingan dan Kinerja
+                                Penilaian {{ $question->importance_label }} dan {{ $question->performance_label }}
                             </p>
                         </div>
                     </div>
@@ -107,7 +107,7 @@
                             </h3>
 
                             <p class="mt-1 text-xs text-gray-500">
-                                Penilaian Kepentingan dan Kinerja dengan alasan
+                                Penilaian {{ $question->importance_label }} dan {{ $question->performance_label }} dengan alasan
                             </p>
                         </div>
                     </div>
@@ -133,7 +133,7 @@
                         </label>
 
                         <p class="mb-3 text-xs text-gray-500">
-                            Alasan muncul karena nilai Kinerja berada pada rentang 1–{{ $reasonMaximumScore }}.
+                            Alasan muncul karena nilai {{ $question->performance_label }} berada pada rentang 1–{{ $reasonMaximumScore }}.
                         </p>
 
                         <textarea
@@ -168,7 +168,7 @@
                             </h3>
 
                             <p class="mt-1 text-xs text-gray-500">
-                                Penilaian Kepentingan dan Kinerja dengan pilihan alasan
+                                Penilaian {{ $question->importance_label }} dan {{ $question->performance_label }} dengan pilihan alasan
                             </p>
                         </div>
                     </div>

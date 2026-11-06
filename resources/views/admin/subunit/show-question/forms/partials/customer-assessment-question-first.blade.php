@@ -83,19 +83,19 @@
 
                                 <p class="mt-1 text-xs text-gray-500">
                                     @if ($questionTypeId === 2)
-                                        Penilaian Kepentingan dan Kinerja
+                                        Penilaian {{ $question->importance_label }} dan {{ $question->performance_label }}
                                     @elseif ($questionTypeId === 3)
-                                        Penilaian Kepentingan dan Kinerja dengan alasan
+                                        Penilaian {{ $question->importance_label }} dan {{ $question->performance_label }} dengan alasan
                                     @elseif ($questionTypeId === 4)
-                                        Penilaian Kepentingan dan Kinerja dengan pilihan alasan
+                                        Penilaian {{ $question->importance_label }} dan {{ $question->performance_label }} dengan pilihan alasan
                                     @elseif ($questionTypeId === 5)
                                         Penilaian satu indikator
                                     @elseif ($questionTypeId === 6)
                                         Jawaban penilaian
                                     @elseif ($questionTypeId === 7)
-                                        Penilaian dengan alasan ketika Kinerja lebih dari 0
+                                        Penilaian dengan alasan ketika {{ $question->performance_label }} lebih dari 0
                                     @elseif ($questionTypeId === 8)
-                                        Alasan ketika Kinerja lebih rendah daripada Kepentingan
+                                        Alasan ketika {{ $question->performance_label }} lebih rendah daripada {{ $question->importance_label }}
                                     @endif
                                 </p>
                             </div>
@@ -224,7 +224,7 @@
                                                     rows="3"
                                                     x-bind:disabled="!showReason"
                                                     class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                                                    placeholder="Tuliskan alasan penilaian Kinerja..."
+                                                    placeholder="Tuliskan alasan penilaian {{ $question->performance_label }}..."
                                                 ></textarea>
                                             </div>
                                         @endif

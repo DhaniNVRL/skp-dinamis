@@ -41,7 +41,10 @@
                     </div>
 
                     <div class="p-5">
-                        <div class="rounded-xl border border-violet-200 bg-violet-50/50 p-4">
+                        <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
+                            <h4 class="mb-4 text-center font-semibold text-blue-800">
+                                {{ $question->engagement_label }}
+                            </h4>
                             <div class="flex flex-wrap items-center justify-center gap-3">
                                 @foreach ($scaleValues as $value)
                                     <label
@@ -57,7 +60,7 @@
                                         >
 
                                         <span
-                                            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-violet-300 bg-white text-sm font-semibold text-violet-700 transition hover:border-violet-500 hover:bg-violet-100 peer-checked:border-violet-600 peer-checked:bg-violet-600 peer-checked:text-white peer-focus:ring-2 peer-focus:ring-violet-200"
+                                            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-300 bg-white text-sm font-semibold text-blue-700 transition hover:border-blue-500 hover:bg-blue-100 peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white peer-focus:ring-2 peer-focus:ring-blue-200"
                                         >
                                             {{ $value }}
                                         </span>

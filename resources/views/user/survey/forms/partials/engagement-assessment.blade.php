@@ -128,9 +128,12 @@
                             <div
                                 data-option-group
                                 class="rounded-xl border
-                                       border-indigo-200
-                                       bg-indigo-50 p-5"
+                                       border-blue-200
+                                       bg-blue-50 p-5"
                             >
+                                <h4 class="mb-4 text-center font-semibold text-blue-800">
+                                    {{ $question->engagement_label }}
+                                </h4>
                                 <div
                                     class="flex flex-wrap
                                            items-center justify-center
@@ -159,18 +162,18 @@
                                                        items-center
                                                        justify-center
                                                        rounded-full border
-                                                       border-indigo-300
+                                                       border-blue-300
                                                        bg-white text-sm
                                                        font-medium
-                                                       text-indigo-700
+                                                       text-blue-700
                                                        transition
-                                                       hover:border-indigo-500
-                                                       hover:bg-indigo-100
-                                                       peer-checked:border-indigo-600
-                                                       peer-checked:bg-indigo-600
+                                                       hover:border-blue-500
+                                                       hover:bg-blue-100
+                                                       peer-checked:border-blue-600
+                                                       peer-checked:bg-blue-600
                                                        peer-checked:text-white
                                                        peer-focus:ring-2
-                                                       peer-focus:ring-indigo-200"
+                                                       peer-focus:ring-blue-200"
                                             >
                                                 {{ $value }}
                                             </span>

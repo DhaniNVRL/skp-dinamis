@@ -37,14 +37,17 @@
 
     <div class="p-5">
 
-        <div class="rounded-xl border border-violet-200 bg-violet-50/50 p-4">
+        <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
+            <h5 class="mb-4 text-center font-semibold text-blue-800">
+                {{ $question->engagement_label }}
+            </h5>
             <div class="flex flex-wrap justify-center gap-3">
 
                 @foreach ([1, 2, 3, 4, 5] as $value)
                     <label
                         class="inline-flex h-10 w-10 items-center justify-center
-                               rounded-full border border-violet-300 bg-white
-                               text-sm font-semibold text-violet-700"
+                               rounded-full border border-blue-300 bg-white
+                               text-sm font-semibold text-blue-700"
                     >
                         <input
                             type="radio"

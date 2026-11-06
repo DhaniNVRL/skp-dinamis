@@ -233,6 +233,6 @@
 @push('scripts')
     <script src="{{ asset('js/units-page-fixes.js') }}?v=20260806-2"></script>
     <script src="{{ asset('js/unit-question-crud-fixes.js') }}?v=20260806-1"></script>
-    <script src="{{ asset('js/question-bulk-selection.js') }}?v=20261004-1"></script>
+    <script src="{{ asset('js/question-bulk-selection.js') }}?v=20261106-1"></script>
 @endpush
 

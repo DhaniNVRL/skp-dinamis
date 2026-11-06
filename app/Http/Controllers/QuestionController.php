@@ -745,7 +745,8 @@ class QuestionController extends Controller
         }
     }
 
-    // Edit beberapa pertanyaan terpilih tanpa mengubah tipe dan konfigurasi jawabannya.
+    // Edit beberapa pertanyaan terpilih, termasuk tipe dan label penilaian
+    // untuk Form Penilaian Pelanggan serta Form Keterikatan.
     public function bulkUpdate(Request $request)
     {
         $validated = $request->validate([
@@ -760,6 +761,10 @@ class QuestionController extends Controller
                 'regex:/^[\pL\pN]+(?:[.\-_\/][\pL\pN]+)*$/u',
             ],
             'questions.*.name' => ['required', 'string', 'max:1000'],
+            'questions.*.questiontype_id' => ['nullable', 'integer'],
+            'questions.*.importance_label' => ['nullable', 'string', 'max:100'],
+            'questions.*.performance_label' => ['nullable', 'string', 'max:100'],
+            'questions.*.engagement_label' => ['nullable', 'string', 'max:100'],
         ]);
 
         $form = Form::query()->findOrFail($validated['form_id']);
@@ -782,19 +787,77 @@ class QuestionController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($validated, $questions): void {
+        $supportsAssessmentBulkEdit = in_array((int) $form->formtype_id, [2, 3, 15, 16, 17, 19, 4, 5, 18], true);
+        $allowedQuestionTypeIds = $this->getQuestionTypesByForm($form)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        foreach ($validated['questions'] as $index => $data) {
+            if (! $supportsAssessmentBulkEdit) {
+                continue;
+            }
+
+            $questionTypeId = (int) ($data['questiontype_id'] ?? 0);
+
+            if (! in_array($questionTypeId, $allowedQuestionTypeIds, true)) {
+                throw ValidationException::withMessages([
+                    "questions.{$index}.questiontype_id" => 'Tipe pertanyaan tidak sesuai dengan tipe form yang dipilih.',
+                ]);
+            }
+        }
+
+        $changedTypeQuestionIds = collect($validated['questions'])
+            ->filter(function (array $data) use ($questions, $supportsAssessmentBulkEdit): bool {
+                if (! $supportsAssessmentBulkEdit) {
+                    return false;
+                }
+
+                return (int) $questions->get((int) $data['id'])->questiontype_id
+                    !== (int) $data['questiontype_id'];
+            })
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+
+        DB::transaction(function () use ($validated, $questions, $form, $supportsAssessmentBulkEdit, $changedTypeQuestionIds): void {
+            if ($changedTypeQuestionIds !== []) {
+                Answer::query()
+                    ->whereIn('question_id', $changedTypeQuestionIds)
+                    ->delete();
+            }
+
             foreach ($validated['questions'] as $data) {
-                $questions->get((int) $data['id'])->update([
+                $question = $questions->get((int) $data['id']);
+                $questionTypeId = $supportsAssessmentBulkEdit
+                    ? (int) $data['questiontype_id']
+                    : (int) $question->questiontype_id;
+
+                $question->update([
                     'no_header' => trim((string) ($data['no_header'] ?? '')) ?: null,
                     'no' => (string) $data['no'],
                     'name' => $data['name'],
+                    'questiontype_id' => $questionTypeId,
+                    'importance_label' => $this->usesImportancePerformanceLabels($form, $questionTypeId)
+                        ? trim((string) ($data['importance_label'] ?? '')) ?: 'Kepentingan'
+                        : null,
+                    'performance_label' => $this->usesImportancePerformanceLabels($form, $questionTypeId)
+                        ? trim((string) ($data['performance_label'] ?? '')) ?: 'Kinerja'
+                        : null,
+                    'engagement_label' => $this->usesEngagementLabel($form, $questionTypeId)
+                        ? trim((string) ($data['engagement_label'] ?? '')) ?: 'Penilaian Keterikatan'
+                        : null,
+                    'reason_prompt' => $questionTypeId === 3
+                        ? $question->reason_prompt
+                        : null,
                 ]);
             }
         });
 
         return redirect()
             ->route('admin.units', ['id' => $form->group_id, 'tab' => 'question'])
-            ->with('success', $questionIds->count().' pertanyaan berhasil diperbarui sekaligus.');
+            ->with('success', $questionIds->count().' pertanyaan berhasil diperbarui sekaligus.'.($changedTypeQuestionIds !== [] ? ' Jawaban pada pertanyaan dengan tipe yang diubah telah dihapus.' : ''));
     }
 
     // Question Type berdasarkan Form Type.

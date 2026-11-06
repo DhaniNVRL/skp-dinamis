@@ -25,6 +25,7 @@
                     data-question-bulk-edit
                     data-modal-open="bulkEditQuestionModal"
                     data-form-id="{{ $form->id }}"
+                    data-form-type-id="{{ $form->formtype_id }}"
                     data-action="{{ route('questions.bulk-update') }}"
                     class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
                 >

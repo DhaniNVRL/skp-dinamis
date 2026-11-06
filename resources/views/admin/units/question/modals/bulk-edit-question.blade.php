@@ -3,7 +3,7 @@
         <div class="flex items-start justify-between border-b border-gray-200 px-6 py-4">
             <div>
                 <h2 class="text-lg font-semibold text-gray-800">Edit Pertanyaan Terpilih</h2>
-                <p class="mt-1 text-sm text-gray-500">Ubah header, nomor, dan narasi beberapa pertanyaan sekaligus.</p>
+                <p class="mt-1 text-sm text-gray-500">Ubah header, nomor, pertanyaan, tipe, dan label penilaian beberapa pertanyaan sekaligus.</p>
             </div>
             <button type="button" data-modal-close="bulkEditQuestionModal" class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100">
                 <i class="fa-solid fa-xmark"></i>
@@ -18,7 +18,7 @@
             <div class="min-h-0 flex-1 overflow-auto p-6">
                 <div class="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
                     <i class="fa-solid fa-circle-info mr-2"></i>
-                    Tipe jawaban, option, dan jawaban responden tidak berubah.
+                    Perubahan tipe pertanyaan akan menghapus jawaban responden pada pertanyaan tersebut. Option yang sudah ada tetap dipertahankan.
                 </div>
                 <div class="overflow-x-auto rounded-lg border border-gray-200">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -28,6 +28,8 @@
                                 <th class="w-32 px-4 py-3">Header</th>
                                 <th class="w-32 px-4 py-3">Nomor</th>
                                 <th class="min-w-96 px-4 py-3">Pertanyaan</th>
+                                <th data-bulk-question-type-column class="min-w-56 px-4 py-3">Tipe Pertanyaan</th>
+                                <th data-bulk-question-label-column class="min-w-72 px-4 py-3">Label Penilaian</th>
                             </tr>
                         </thead>
                         <tbody id="bulkEditQuestionBody" class="divide-y divide-gray-200 bg-white"></tbody>

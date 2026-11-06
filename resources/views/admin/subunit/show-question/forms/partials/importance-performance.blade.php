@@ -3,7 +3,7 @@
     <div class="rounded-xl border border-blue-200 bg-blue-50 p-5">
         <div class="mb-4 text-center">
             <h4 class="font-semibold text-blue-700">
-                Kepentingan
+                {{ $question->importance_label }}
             </h4>
         </div>
 
@@ -27,7 +27,7 @@
     <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
         <div class="mb-4 text-center">
             <h4 class="font-semibold text-emerald-700">
-                Kinerja
+                {{ $question->performance_label }}
             </h4>
         </div>
 

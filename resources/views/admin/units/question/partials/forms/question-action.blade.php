@@ -14,6 +14,10 @@
             data-question-header="{{ $question->no_header }}"
             data-question-no="{{ $question->no }}"
             data-question-name="{{ $question->name }}"
+            data-question-type-id="{{ $question->questiontype_id }}"
+            data-importance-label="{{ $question->importance_label }}"
+            data-performance-label="{{ $question->performance_label }}"
+            data-engagement-label="{{ $question->engagement_label }}"
             class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
             aria-label="Pilih pertanyaan {{ $question->name }}"
         >
