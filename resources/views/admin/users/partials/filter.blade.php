@@ -29,6 +29,16 @@
                 </select>
             </div>
 
+            <div class="xl:col-span-3">
+                <label for="perPageFilter" class="mb-1 block text-sm font-medium text-gray-700">Tampilkan data</label>
+                <select id="perPageFilter" name="per_page" onchange="this.form.requestSubmit()" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-blue-500">
+                    @foreach ([10, 20, 50, 100] as $pageSize)
+                        <option value="{{ $pageSize }}" @selected((string) ($perPageOption ?? request('per_page', '20')) === (string) $pageSize)>{{ $pageSize }} data</option>
+                    @endforeach
+                    <option value="all" @selected(($perPageOption ?? request('per_page', '20')) === 'all')>Semua data</option>
+                </select>
+            </div>
+
             <div class="flex gap-2 xl:col-span-3">
                 <button type="submit" class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-magnifying-glass"></i>Cari</button>
                 <a href="{{ route('admin.datauser', ['reset_filters' => 1]) }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"><i class="fa-solid fa-rotate-left"></i>Reset</a>

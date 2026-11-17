@@ -42,6 +42,17 @@
                 <i class="fa-solid fa-trash"></i>
                 Hapus yang Dipilih
             </button>
+
+            <button
+                id="btnDeleteDisplayed"
+                type="button"
+                @disabled($userProfiles->isEmpty())
+                class="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
+                title="Menghapus seluruh user yang tampil pada halaman ini"
+            >
+                <i class="fa-solid fa-trash-can"></i>
+                Hapus Semua yang Tampil ({{ $userProfiles->count() }})
+            </button>
         </div>
     </div>
 </div>

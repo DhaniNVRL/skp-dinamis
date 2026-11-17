@@ -6,14 +6,14 @@
 
             <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900">Hapus Akun Terpilih</h3>
+                    <h3 id="bulkDeleteTitle" class="text-lg font-semibold text-gray-900">Hapus Akun Terpilih</h3>
                     <p class="mt-1 text-sm text-gray-500">Tindakan ini tidak dapat dibatalkan.</p>
                 </div>
                 <button type="button" data-modal-close="bulkDeleteModal" class="text-gray-400 hover:text-red-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
 
             <div class="p-6">
-                <p class="text-sm text-gray-700">Yakin ingin menghapus <strong id="bulkDeleteCount">0</strong> akun?</p>
+                <p id="bulkDeletePrompt" class="text-sm text-gray-700">Yakin ingin menghapus <strong id="bulkDeleteCount">0</strong> akun?</p>
                 <p class="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">Profil, seluruh jawaban, dan progres survei akun terpilih juga akan dihapus permanen.</p>
                 <ul id="bulkDeleteUserList" class="mt-3 max-h-48 list-disc space-y-1 overflow-y-auto pl-5 text-sm text-gray-600"></ul>
             </div>

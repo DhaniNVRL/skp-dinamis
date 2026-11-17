@@ -13,9 +13,12 @@ class DataUserFilterPersistenceTest extends TestCase
 
         $this->assertStringContainsString("private const FILTER_SESSION_KEY = 'admin.datauser.filters';", $controller);
         $this->assertStringContainsString("'sort_direction'", $controller);
+        $this->assertStringContainsString("'per_page'", $controller);
+        $this->assertStringContainsString("['10', '20', '50', '100', 'all']", $controller);
         $this->assertStringContainsString("'page'", $controller);
         $this->assertStringContainsString('session()->put(self::FILTER_SESSION_KEY', $controller);
         $this->assertStringContainsString('session()->get(self::FILTER_SESSION_KEY', $controller);
         $this->assertStringContainsString("['reset_filters' => 1]", $filter);
+        $this->assertStringContainsString('id="perPageFilter"', $filter);
     }
 }

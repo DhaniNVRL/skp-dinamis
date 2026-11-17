@@ -46,6 +46,7 @@ class DataUserController extends Controller
             'unit',
             'sort_by',
             'sort_direction',
+            'per_page',
             'page',
         ];
 
@@ -227,8 +228,16 @@ class DataUserController extends Controller
 
         // Pagination
 
+        $perPageOption = (string) $request->input('per_page', '20');
+        $perPageOption = in_array($perPageOption, ['10', '20', '50', '100', 'all'], true)
+            ? $perPageOption
+            : '20';
+        $perPage = $perPageOption === 'all'
+            ? max(1, (clone $query)->count())
+            : (int) $perPageOption;
+
         $userProfiles = $query
-            ->paginate(20)
+            ->paginate($perPage)
             ->withQueryString();
 
         $userCreateStartNumber = UserProfile::query()
@@ -243,7 +252,8 @@ class DataUserController extends Controller
             'activities',
             'groups',
             'units',
-            'userCreateStartNumber'
+            'userCreateStartNumber',
+            'perPageOption'
         ));
     }
 
@@ -1317,6 +1327,18 @@ class DataUserController extends Controller
 
             if (Schema::hasTable('survey_sessions')) {
                 DB::table('survey_sessions')
+                    ->whereIn('user_id', $ids)
+                    ->delete();
+            }
+
+            if (Schema::hasTable('survey_drafts')) {
+                SurveyDraft::query()
+                    ->whereIn('user_id', $ids)
+                    ->delete();
+            }
+
+            if (Schema::hasTable('respondent_competitors')) {
+                RespondentCompetitor::query()
                     ->whereIn('user_id', $ids)
                     ->delete();
             }

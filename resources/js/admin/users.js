@@ -743,13 +743,13 @@ const UserPage = {
     bindEvents() {
 
         const btn = document.getElementById("btnDeleteSelected");
+        const btnDeleteDisplayed = document.getElementById("btnDeleteDisplayed");
 
-        if (!btn) {
+        if (!btn && !btnDeleteDisplayed) {
             return;
         }
 
-        btn.addEventListener("click", () => {
-
+        const openBulkDelete = (scope = "selected") => {
             const ids = BulkSelect.getSelectedIds();
 
             if (!ids.length) {
@@ -757,8 +757,19 @@ const UserPage = {
                 return;
             }
 
+            const form = document.getElementById("bulkDeleteForm");
+            if (form) form.dataset.scope = scope;
             Modal.open("bulkDeleteModal");
+        };
 
+        btn?.addEventListener("click", () => openBulkDelete("selected"));
+
+        btnDeleteDisplayed?.addEventListener("click", () => {
+            document.querySelectorAll("#userTable .bulk-checkbox").forEach((checkbox) => {
+                checkbox.checked = true;
+            });
+            BulkSelect.updateState();
+            openBulkDelete("displayed");
         });
 
     },
@@ -793,12 +804,25 @@ document.addEventListener("modal:opened", (e) => {
 
     const checked = document.querySelectorAll(".bulk-checkbox:checked");
 
-    document.getElementById("bulkDeleteCount").textContent = checked.length;
-
     const list = document.getElementById("bulkDeleteUserList");
     list.innerHTML = "";
 
     const form = document.getElementById("bulkDeleteForm");
+    const isDisplayedScope = form.dataset.scope === "displayed";
+    const title = document.getElementById("bulkDeleteTitle");
+    const prompt = document.getElementById("bulkDeletePrompt");
+
+    if (title) {
+        title.textContent = isDisplayedScope
+            ? "Hapus Semua Akun yang Tampil"
+            : "Hapus Akun Terpilih";
+    }
+    if (prompt) {
+        prompt.innerHTML = isDisplayedScope
+            ? 'Yakin ingin menghapus seluruh <strong id="bulkDeleteCount">0</strong> akun yang tampil pada halaman ini?'
+            : 'Yakin ingin menghapus <strong id="bulkDeleteCount">0</strong> akun?';
+    }
+    document.getElementById("bulkDeleteCount").textContent = checked.length;
 
     // Hapus input lama
     form.querySelectorAll("input[name='ids[]']").forEach(input => input.remove());
