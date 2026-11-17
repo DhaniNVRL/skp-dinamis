@@ -2,14 +2,17 @@ window.BulkSelect = {
 
     selectAlls: [],
     checkboxes: [],
+    onlyVisible: false,
 
     init({
         selectAll = '.bulk-select-all',
-        checkbox = '.bulk-checkbox'
+        checkbox = '.bulk-checkbox',
+        onlyVisible = false
     } = {}) {
 
         this.selectAlls = document.querySelectorAll(selectAll);
         this.checkboxes = document.querySelectorAll(checkbox);
+        this.onlyVisible = onlyVisible;
 
         if (!this.selectAlls.length || !this.checkboxes.length) {
             return;
@@ -19,7 +22,7 @@ window.BulkSelect = {
 
             selectAll.addEventListener('change', (e) => {
 
-                this.checkboxes.forEach(cb => {
+                this.getAvailableCheckboxes().forEach(cb => {
                     cb.checked = e.target.checked;
                 });
 
@@ -43,9 +46,11 @@ window.BulkSelect = {
 
     updateState() {
 
-        const checked = [...this.checkboxes].filter(cb => cb.checked);
+        const availableCheckboxes = this.getAvailableCheckboxes();
+        const checked = availableCheckboxes.filter(cb => cb.checked);
 
-        const allChecked = checked.length === this.checkboxes.length;
+        const allChecked = availableCheckboxes.length > 0
+            && checked.length === availableCheckboxes.length;
         const indeterminate =
             checked.length > 0 &&
             checked.length < this.checkboxes.length;
@@ -63,9 +68,30 @@ window.BulkSelect = {
 
     getSelectedIds() {
 
-        return [...this.checkboxes]
+        return this.getAvailableCheckboxes()
             .filter(cb => cb.checked)
             .map(cb => cb.value);
+
+    },
+
+    getSelectedCheckboxes() {
+
+        return this.getAvailableCheckboxes()
+            .filter(cb => cb.checked);
+
+    },
+
+    getAvailableCheckboxes() {
+
+        if (!this.onlyVisible) {
+            return [...this.checkboxes];
+        }
+
+        return [...this.checkboxes].filter((checkbox) => {
+            const row = checkbox.closest('tr');
+
+            return !row || row.style.display !== 'none';
+        });
 
     },
 

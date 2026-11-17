@@ -64,6 +64,8 @@ window.autoFilterTable = function ({
 
         });
 
+        tableElement.dispatchEvent(new CustomEvent("table:filtered"));
+
     }
 
     search?.addEventListener("input", filterTable);

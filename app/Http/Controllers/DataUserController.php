@@ -1309,14 +1309,29 @@ class DataUserController extends Controller
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
             'ids.*' => ['required', 'integer', 'distinct', 'exists:users,id'],
+            'filters' => ['nullable', 'array'],
+            'filters.search' => ['nullable', 'string', 'max:255'],
+            'filters.activity' => ['nullable', 'integer', 'exists:activities,id'],
+            'filters.role' => ['nullable', 'integer', 'exists:roles,id'],
+            'filters.group' => ['nullable', 'integer', 'exists:groups,id'],
+            'filters.unit' => ['nullable', 'integer', 'exists:units,id'],
         ]);
 
-        if (in_array((int) auth()->id(), array_map('intval', $validated['ids']), true)) {
+        $requestedIds = array_map('intval', $validated['ids']);
+        $ids = $this->filterBulkDeletionIds(
+            $requestedIds,
+            $validated['filters'] ?? []
+        );
+
+        if ($ids === []) {
+            return back()->with('error', 'Tidak ada akun terpilih yang sesuai dengan filter aktif. Tidak ada data yang dihapus.');
+        }
+
+        if (in_array((int) auth()->id(), $ids, true)) {
             return back()->with('error', 'Akun yang sedang digunakan tidak dapat dihapus.');
         }
 
-        $result = DB::transaction(function () use ($validated): array {
-            $ids = array_map('intval', $validated['ids']);
+        $result = DB::transaction(function () use ($ids, $requestedIds): array {
             $answerCount = Answer::query()
                 ->whereIn('user_id', $ids)
                 ->count();
@@ -1357,13 +1372,57 @@ class DataUserController extends Controller
                 ->whereIn('id', $ids)
                 ->delete();
 
-            return [count($ids), $answerCount];
+            return [count($ids), $answerCount, count($requestedIds) - count($ids)];
         });
 
-        return redirect()->back()->with(
-            'successdelete',
-            $result[0].' akun beserta '.$result[1].' data jawaban berhasil dihapus.'
-        );
+        $message = $result[0].' akun beserta '.$result[1].' data jawaban berhasil dihapus.';
+        if ($result[2] > 0) {
+            $message .= ' '.$result[2].' akun lain tidak dihapus karena tidak sesuai dengan filter aktif.';
+        }
+
+        return redirect()->back()->with('successdelete', $message);
+    }
+
+    /**
+     * Batasi aksi hapus pada akun yang benar-benar ada dalam hasil filter aktif.
+     * Ini mencegah checkbox tersembunyi oleh filter browser ikut terhapus.
+     *
+     * @param  array<int, int>  $userIds
+     * @param  array<string, mixed>  $filters
+     * @return array<int, int>
+     */
+    private function filterBulkDeletionIds(array $userIds, array $filters): array
+    {
+        $query = UserProfile::query()
+            ->whereHas('user')
+            ->whereIn('user_id', $userIds);
+
+        if (filled($filters['search'] ?? null)) {
+            $search = trim((string) $filters['search']);
+            $query->where(function ($profileQuery) use ($search) {
+                $profileQuery->where('fullname', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('username', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if (filled($filters['role'] ?? null)) {
+            $query->whereHas('user.role', function ($roleQuery) use ($filters) {
+                $roleQuery->where('id', $filters['role']);
+            });
+        }
+
+        foreach (['activity', 'group', 'unit'] as $filter) {
+            if (filled($filters[$filter] ?? null)) {
+                $query->where($filter.'_id', $filters[$filter]);
+            }
+        }
+
+        return $query->pluck('user_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     public function bulkResetAccount(Request $request)

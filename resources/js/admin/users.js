@@ -11,6 +11,10 @@ document.addEventListener("DOMContentLoaded", () => {
     UserPage.init();
     initializeBulkUserEdit();
     initializeBulkSurveyActions();
+
+    document.querySelector("#userTable")?.addEventListener("table:filtered", () => {
+        BulkSelect.updateState();
+    });
 });
 
 /* =========================
@@ -765,7 +769,7 @@ const UserPage = {
         btn?.addEventListener("click", () => openBulkDelete("selected"));
 
         btnDeleteDisplayed?.addEventListener("click", () => {
-            document.querySelectorAll("#userTable .bulk-checkbox").forEach((checkbox) => {
+            BulkSelect.getAvailableCheckboxes().forEach((checkbox) => {
                 checkbox.checked = true;
             });
             BulkSelect.updateState();
@@ -777,7 +781,8 @@ const UserPage = {
     initBulkSelect() {
         BulkSelect.init({
         selectAll: '.bulk-select-all',
-        checkbox: '.bulk-checkbox'
+        checkbox: '.bulk-checkbox',
+        onlyVisible: true
     });
 
     },
@@ -802,7 +807,7 @@ document.addEventListener("modal:opened", (e) => {
         return;
     }
 
-    const checked = document.querySelectorAll(".bulk-checkbox:checked");
+    const checked = BulkSelect.getSelectedCheckboxes();
 
     const list = document.getElementById("bulkDeleteUserList");
     list.innerHTML = "";
@@ -826,6 +831,17 @@ document.addEventListener("modal:opened", (e) => {
 
     // Hapus input lama
     form.querySelectorAll("input[name='ids[]']").forEach(input => input.remove());
+    form.querySelectorAll("input[data-bulk-filter]").forEach(input => input.remove());
+
+    ["search", "activity", "role", "group", "unit"].forEach((key) => {
+        const source = document.querySelector(`[name="${key}"]`);
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = `filters[${key}]`;
+        input.value = source?.value ?? "";
+        input.dataset.bulkFilter = "true";
+        form.appendChild(input);
+    });
 
     checked.forEach(cb => {
 
