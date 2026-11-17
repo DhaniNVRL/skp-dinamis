@@ -45,7 +45,8 @@ class UnitFormVisibilityService
                 ->where('form_id', $formId)
                 ->value('is_visible');
 
-            $this->visibilityCache[$key] = $value === null || (bool) $value;
+            // Form yang belum dikonfigurasi sengaja dimulai dalam keadaan tersembunyi.
+            $this->visibilityCache[$key] = $value !== null && (bool) $value;
         }
 
         return $this->visibilityCache[$key];
@@ -63,7 +64,8 @@ class UnitFormVisibilityService
             ->pluck('is_visible', 'form_id');
 
         return $forms->mapWithKeys(function (Form $form) use ($configured, $unitId): array {
-            $visible = !$configured->has($form->id) || (bool) $configured->get($form->id);
+            // Form baru perlu diaktifkan terlebih dahulu dari menu Hide and Show.
+            $visible = $configured->has($form->id) && (bool) $configured->get($form->id);
             $this->visibilityCache[$unitId.'-'.$form->id] = $visible;
 
             return [(int) $form->id => $visible];

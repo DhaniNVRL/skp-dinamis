@@ -12,9 +12,10 @@ class UserImportCapacityTest extends TestCase
         $filter = new UserImportReadFilter();
 
         $this->assertTrue($filter->readCell('A', 1, 'Template Import'));
-        $this->assertTrue($filter->readCell('F', 1001, 'Template Import'));
+        $this->assertTrue($filter->readCell('H', 1001, 'Template Import'));
         $this->assertTrue($filter->readCell('A', 1002, 'Template Import'));
-        $this->assertFalse($filter->readCell('G', 2, 'Template Import'));
+        $this->assertTrue($filter->readCell('G', 2, 'Template Import'));
+        $this->assertFalse($filter->readCell('I', 2, 'Template Import'));
         $this->assertFalse($filter->readCell('A', 1003, 'Template Import'));
     }
 

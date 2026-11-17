@@ -12,7 +12,7 @@ class GroupsTableSeeder extends Seeder
         DB::table('groups')->upsert([[
             'id' => 1,
             'activity_id' => 1,
-            'name' => 'test',
+            'name' => 'Group Uji Coba',
             'created_at' => now(),
             'updated_at' => now(),
         ]], ['id'], ['activity_id', 'name', 'updated_at']);

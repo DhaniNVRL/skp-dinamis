@@ -258,8 +258,12 @@ class DataUserController extends Controller
         $sheet->setCellValue('D1','id_activity');
         $sheet->setCellValue('E1','id_group (opsional)');
         $sheet->setCellValue('F1','id_unit (opsional)');
+        $sheet->setCellValue('G1','fullname (opsional)');
+        $sheet->setCellValue('H1','email (opsional)');
         $sheet->getComment('E1')->getText()->createTextRun('Boleh dikosongkan. Jika diisi, Group harus sesuai dengan Activity.');
         $sheet->getComment('F1')->getText()->createTextRun('Boleh dikosongkan. Jika diisi, Unit harus sesuai dengan Group.');
+        $sheet->getComment('G1')->getText()->createTextRun('Boleh dikosongkan. Nama lengkap pengguna.');
+        $sheet->getComment('H1')->getText()->createTextRun('Boleh dikosongkan. Alamat email pengguna.');
         $master = $spreadsheet->createSheet();
         $master->setTitle('Master Data');
         $master->setCellValue('A1','ROLE');
@@ -415,7 +419,9 @@ class DataUserController extends Controller
 
         $groupValidation = $sheet->getCell('E2')->getDataValidation();
         $groupValidation->setType(DataValidation::TYPE_LIST);
-        $groupValidation->setErrorStyle(DataValidation::STYLE_STOP);
+        // Group dan Unit bukan data wajib. Gunakan peringatan saja agar Excel
+        // tidak menghalangi penyimpanan saat kedua kolom tersebut dikosongkan.
+        $groupValidation->setErrorStyle(DataValidation::STYLE_INFORMATION);
         $groupValidation->setAllowBlank(true);
         $groupValidation->setShowDropDown(true);
         $groupValidation->setShowErrorMessage(true);
@@ -428,7 +434,7 @@ class DataUserController extends Controller
 
         $unitValidation = $sheet->getCell('F2')->getDataValidation();
         $unitValidation->setType(DataValidation::TYPE_LIST);
-        $unitValidation->setErrorStyle(DataValidation::STYLE_STOP);
+        $unitValidation->setErrorStyle(DataValidation::STYLE_INFORMATION);
         $unitValidation->setAllowBlank(true);
         $unitValidation->setShowDropDown(true);
         $unitValidation->setShowErrorMessage(true);
@@ -438,7 +444,7 @@ class DataUserController extends Controller
             'INDIRECT(IF($E2="","EMPTY_LIST","GRP_"&IFERROR(LEFT($E2,FIND(" |",$E2)-1),$E2)))'
         );
         $unitValidation->setSqref('F2:F1000');
-        foreach (range('A', 'F') as $column) {
+        foreach (range('A', 'H') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
         foreach (['A','B','D','E','G','H','I','J','L','M','N','O','P','Q'] as $column) {
@@ -464,7 +470,7 @@ class DataUserController extends Controller
             $spreadsheet = $reader->load($request->file('file')->getRealPath());
             $sheet = $spreadsheet->getSheetByName('Template Import') ?? $spreadsheet->getSheet(0);
             $lastRow = min(1002, max(1, $sheet->getHighestDataRow()));
-            $rows = $sheet->rangeToArray('A1:F'.$lastRow, null, true, false);
+            $rows = $sheet->rangeToArray('A1:H'.$lastRow, null, true, false);
             $data = [];
             $seenUsernames = [];
             $candidateUsernames = collect($rows)
@@ -499,6 +505,8 @@ class DataUserController extends Controller
                     'activity_id' => $this->templateReferenceId($row[3] ?? null),
                     'group_id' => $this->templateReferenceId($row[4] ?? null),
                     'unit_id' => $this->templateReferenceId($row[5] ?? null),
+                    'fullname' => trim((string) ($row[6] ?? '')) ?: null,
+                    'email' => trim((string) ($row[7] ?? '')) ?: null,
                 ];
 
                 $roleId = (int) $item['role_id'];
@@ -517,6 +525,8 @@ class DataUserController extends Controller
                     'activity_id' => ['nullable', 'integer'],
                     'group_id' => ['nullable', 'integer'],
                     'unit_id' => ['nullable', 'integer'],
+                    'fullname' => ['nullable', 'string', 'max:255'],
+                    'email' => ['nullable', 'email', 'max:255'],
                 ], [
                     'username.required' => 'Username wajib diisi.',
                     'password.required' => 'Password wajib diisi.',
@@ -546,19 +556,6 @@ class DataUserController extends Controller
                     ]);
                 }
 
-                if (in_array($roleId, [1, 3], true)) {
-                    $passwordValidator = Validator::make(
-                        ['password' => $item['password']],
-                        ['password' => ['required', 'string', Password::min(10)->mixedCase()->numbers()->symbols()]]
-                    );
-
-                    if ($passwordValidator->fails()) {
-                        throw ValidationException::withMessages([
-                            'file' => 'Data user pada baris '.($index + 1).' tidak valid: Password akun Admin dan Monitoring minimal 10 karakter serta harus memiliki huruf besar, huruf kecil, angka, dan simbol.',
-                        ]);
-                    }
-                }
-
                 if ($item['activity_id'] && ! isset($validActivityIds[$item['activity_id']])) {
                     throw ValidationException::withMessages([
                         'file' => 'Data user pada baris '.($index + 1).' tidak valid: Activity tidak ditemukan.',
@@ -577,14 +574,16 @@ class DataUserController extends Controller
                     ]);
                 }
 
-                if ($item['group_id'] && (! isset($groupActivities[$item['group_id']])
+                // Empat kolom terakhir pada template bersifat opsional. Validasi
+                // relasi hanya dijalankan bila Group atau Unit memang diisi.
+                if ($item['group_id'] !== null && (! isset($groupActivities[$item['group_id']])
                     || ! $item['activity_id']
                     || $groupActivities[$item['group_id']] !== (int) $item['activity_id'])) {
                     throw ValidationException::withMessages([
                         'file' => 'Data user pada baris '.($index + 1).' tidak valid: Group tidak sesuai dengan Activity. Group boleh dikosongkan.',
                     ]);
                 }
-                if ($item['unit_id'] && (! isset($unitGroups[$item['unit_id']])
+                if ($item['unit_id'] !== null && (! isset($unitGroups[$item['unit_id']])
                     || ! $item['group_id']
                     || $unitGroups[$item['unit_id']] !== (int) $item['group_id'])) {
                     throw ValidationException::withMessages([
@@ -637,9 +636,9 @@ class DataUserController extends Controller
                         'user_id' => $userId,
                         'group_id' => $item['group_id'],
                         'unit_id' => $item['unit_id'],
-                        'fullname' => null,
+                        'fullname' => $item['fullname'],
                         'no_handphone' => null,
-                        'email' => 'pending-user-'.$userId.'@invalid.local',
+                        'email' => $item['email'],
                         'activity_id' => $item['activity_id'],
                         'created_at' => $now,
                         'updated_at' => $now,
@@ -673,6 +672,10 @@ class DataUserController extends Controller
             'group_id.*' => ['nullable', 'exists:groups,id'],
             'unit_id' => ['nullable', 'array'],
             'unit_id.*' => ['nullable', 'exists:units,id'],
+            'fullname' => ['nullable', 'array'],
+            'fullname.*' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'array'],
+            'email.*' => ['nullable', 'email', 'max:255'],
         ]);
 
         $rowCount = count($request->username);
@@ -700,6 +703,8 @@ class DataUserController extends Controller
         $activities = array_pad($request->input('activity_id', []), $rowCount, null);
         $groups = array_pad($request->input('group_id', []), $rowCount, null);
         $units = array_pad($request->input('unit_id', []), $rowCount, null);
+        $fullnames = array_pad($request->input('fullname', []), $rowCount, null);
+        $emails = array_pad($request->input('email', []), $rowCount, null);
 
         foreach ($request->role_id as $index => $roleId) {
             $roleId = (int) $roleId;
@@ -721,7 +726,7 @@ class DataUserController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $activities, $groups, $units, $rowCount): void {
+        DB::transaction(function () use ($request, $activities, $groups, $units, $fullnames, $emails, $rowCount): void {
             for ($index = 0; $index < $rowCount; $index++) {
                 $user = User::create([
                     'username' => $request->username[$index],
@@ -733,9 +738,9 @@ class DataUserController extends Controller
                     'activity_id' => $activities[$index],
                     'group_id' => $groups[$index],
                     'unit_id' => $units[$index],
-                    'fullname' => null,
+                    'fullname' => filled($fullnames[$index]) ? trim($fullnames[$index]) : null,
                     'no_handphone' => null,
-                    'email' => 'pending-user-'.$user->id.'@invalid.local',
+                    'email' => filled($emails[$index]) ? trim($emails[$index]) : null,
                 ]);
             }
         });
@@ -884,6 +889,8 @@ class DataUserController extends Controller
             'activity_id' => $user->profile?->activity_id,
             'group_id' => $user->profile?->group_id,
             'unit_id' => $user->profile?->unit_id,
+            'fullname' => $user->profile?->fullname,
+            'email' => $user->profile?->email,
         ]);
     }
 
@@ -954,6 +961,18 @@ class DataUserController extends Controller
             'unit_id' => [
                 'nullable',
                 'exists:units,id',
+            ],
+
+            'fullname' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
             ],
         ]);
 
@@ -1075,11 +1094,13 @@ class DataUserController extends Controller
                     'activity_id' => $activityId,
                     'group_id' => $groupId,
                     'unit_id' => $unitId,
+                    'fullname' => filled($validated['fullname'] ?? null)
+                        ? trim($validated['fullname'])
+                        : null,
+                    'email' => filled($validated['email'] ?? null)
+                        ? trim($validated['email'])
+                        : null,
 
-                    'email' => $user->profile?->email
-                        ?? 'pending-user-'
-                        . $user->id
-                        . '@invalid.local',
                 ]
             );
         });

@@ -11,8 +11,8 @@ class ActivityTableSeeder extends Seeder
     {
         DB::table('activities')->upsert([[
             'id' => 1,
-            'name' => 'test',
-            'description' => 'Activity test untuk mencoba seluruh tipe form dan pertanyaan.',
+            'name' => 'General Setting Uji Coba',
+            'description' => 'Data uji coba untuk reset General Setting dan seluruh tipe form/pertanyaan.',
             'created_at' => now(),
             'updated_at' => now(),
         ]], ['id'], ['name', 'description', 'updated_at']);

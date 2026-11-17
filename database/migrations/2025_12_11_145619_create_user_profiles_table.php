@@ -26,7 +26,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('units')
                 ->nullOnDelete();
-            $table->string('email')->nullable()->unique();
+            $table->string('email')->nullable();
             $table->string('fullname')->nullable();
             $table->string('no_handphone')->nullable();
 

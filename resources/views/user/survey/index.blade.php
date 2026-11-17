@@ -4,9 +4,9 @@
 @section('suppressGlobalValidationErrors', true)
 
 @section('content')
-    @if (auth()->user()?->hasRole('surveyor'))
+    @if (auth()->user()?->isSimulationAccount())
         <div class="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-800">
-            <span class="font-semibold"><i class="fa-solid fa-person-chalkboard mr-2"></i>Mode Simulasi Surveyor</span>
+            <span class="font-semibold"><i class="fa-solid fa-person-chalkboard mr-2"></i>Mode Simulasi {{ ucfirst(strtolower(auth()->user()?->role?->name ?? 'Surveyor')) }}</span>
             — jawaban pada halaman ini merupakan contoh tata cara pengisian dan tidak dihitung sebagai responden.
             <div class="mt-3 flex justify-end">
                 <button id="surveyorAutofillButton" type="button"

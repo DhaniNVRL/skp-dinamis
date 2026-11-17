@@ -86,4 +86,13 @@ class User extends Authenticatable
         return strtolower($this->role?->name ?? '')
             === strtolower($role);
     }
+
+    public function isSimulationAccount(): bool
+    {
+        return in_array(
+            strtolower((string) $this->role?->name),
+            ['surveyor', 'dummy'],
+            true
+        );
+    }
 }

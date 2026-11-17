@@ -26,6 +26,11 @@ class DemoSurveySeeder extends Seeder
                 12 => 'Demo Description',
                 13 => 'Demo Pembanding 1-7',
                 14 => 'Demo Pembanding Tanpa Nama Competitor',
+                15 => 'Demo Penilaian Pelanggan 1-5 Tanpa Nilai 0',
+                16 => 'Demo Penilaian Pelanggan 1-7 Tanpa Nilai 0',
+                17 => 'Demo Penilaian Pelanggan 1-10 dengan Nilai 0',
+                18 => 'Demo Keterikatan 1-10',
+                19 => 'Demo Penilaian Pelanggan 1-10 Tanpa Nilai 0',
             ];
 
             $forms = [];
@@ -69,6 +74,11 @@ class DemoSurveySeeder extends Seeder
                 ['id' => 20, 'form_id' => 11, 'no_header' => 'K', 'no' => '1', 'name' => 'Contoh penilaian kompetitor skala 1-5', 'questiontype_id' => 2],
                 ['id' => 21, 'form_id' => 13, 'no_header' => 'L', 'no' => '1', 'name' => 'Contoh penilaian kompetitor skala 1-7', 'questiontype_id' => 2],
                 ['id' => 22, 'form_id' => 14, 'no_header' => 'M', 'no' => '1', 'name' => 'Contoh penilaian kompetitor yang ditentukan responden', 'questiontype_id' => 2],
+                ['id' => 23, 'form_id' => 15, 'no_header' => 'N', 'no' => '1', 'name' => 'Contoh penilaian pelanggan skala 1-5 tanpa nilai 0', 'questiontype_id' => 2],
+                ['id' => 24, 'form_id' => 16, 'no_header' => 'O', 'no' => '1', 'name' => 'Contoh penilaian pelanggan skala 1-7 tanpa nilai 0', 'questiontype_id' => 2],
+                ['id' => 25, 'form_id' => 17, 'no_header' => 'P', 'no' => '1', 'name' => 'Contoh penilaian pelanggan skala 1-10 dengan nilai 0', 'questiontype_id' => 2],
+                ['id' => 26, 'form_id' => 18, 'no_header' => 'Q', 'no' => '1', 'name' => 'Contoh penilaian keterikatan skala 1-10', 'questiontype_id' => 2],
+                ['id' => 27, 'form_id' => 19, 'no_header' => 'R', 'no' => '1', 'name' => 'Contoh penilaian pelanggan skala 1-10 tanpa nilai 0', 'questiontype_id' => 2],
             ];
 
             foreach ($questions as &$question) {

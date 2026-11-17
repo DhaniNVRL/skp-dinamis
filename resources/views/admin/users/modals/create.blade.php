@@ -47,7 +47,7 @@
                         data-dynamic-table
                         data-template="createUserRowTemplate"
                         data-start-number="{{ $userCreateStartNumber }}"
-                        class="min-w-[1500px] w-full border-collapse"
+                        class="min-w-[1850px] w-full border-collapse"
                     >
 
                         <thead class="bg-gray-100">
@@ -64,6 +64,18 @@
                                     class="min-w-64 border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600"
                                 >
                                     Username
+                                </th>
+
+                                <th
+                                    class="min-w-64 border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600"
+                                >
+                                    Nama Lengkap <span class="normal-case text-gray-400">(opsional)</span>
+                                </th>
+
+                                <th
+                                    class="min-w-64 border-b border-r border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600"
+                                >
+                                    Email <span class="normal-case text-gray-400">(opsional)</span>
                                 </th>
 
                                 <th

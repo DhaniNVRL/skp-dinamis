@@ -38,9 +38,9 @@ class ProfileController extends Controller
         }
 
         abort_if(
-            auth()->user()?->hasRole('surveyor'),
+            auth()->user()?->isSimulationAccount(),
             403,
-            'Activity akun Surveyor belum ditentukan oleh administrator.'
+            'Activity akun simulasi belum ditentukan oleh administrator.'
         );
 
         $groups = Group::with('activity')
@@ -237,7 +237,7 @@ class ProfileController extends Controller
 
         $canSelectActivity = $this->canSelectActivity();
         $canEditProfile = $this->canEditProfile();
-        $isSurveyor = auth()->user()?->hasRole('surveyor') ?? false;
+        $isSimulationAccount = auth()->user()?->isSimulationAccount() ?? false;
 
         if ($isProfileComplete && ! $canEditProfile) {
             return redirect()
@@ -321,8 +321,8 @@ class ProfileController extends Controller
             ->route('profile.show')
             ->with(
                 'success',
-                $isSurveyor
-                    ? 'Profil simulasi Surveyor berhasil diperbarui.'
+                $isSimulationAccount
+                    ? 'Profil akun simulasi berhasil diperbarui.'
                     : 'Profil responden berhasil dilengkapi.'
             );
     }
@@ -451,13 +451,13 @@ class ProfileController extends Controller
         ]);
     }
 
-    // Reset mandiri hanya untuk akun Surveyor yang sedang login.
+    // Reset mandiri hanya untuk akun simulasi yang sedang login.
     public function resetOwnAccount()
     {
         abort_unless(
-            auth()->user()?->hasRole('surveyor'),
+            auth()->user()?->isSimulationAccount(),
             403,
-            'Reset Account mandiri hanya tersedia untuk Surveyor.'
+            'Reset Account mandiri hanya tersedia untuk akun simulasi.'
         );
 
         $userId = (int) auth()->id();
@@ -486,7 +486,6 @@ class ProfileController extends Controller
             UserProfile::query()
                 ->where('user_id', $userId)
                 ->update([
-                    'activity_id' => null,
                     'group_id' => null,
                     'unit_id' => null,
                 ]);
@@ -494,7 +493,7 @@ class ProfileController extends Controller
 
         return redirect()
             ->route('user.dashboard')
-            ->with('success', 'Reset Account berhasil. Seluruh jawaban, progres survei, dan pilihan profil telah dihapus.');
+            ->with('success', 'Reset Account berhasil. Seluruh jawaban, progres survei, serta pilihan Group dan Unit telah dihapus. Activity akun tetap terkunci.');
     }
 
     // Ambil profil responden login
@@ -669,6 +668,6 @@ class ProfileController extends Controller
     {
         $roleName = strtolower((string) auth()->user()?->role?->name);
 
-        return in_array($roleName, ['user', 'surveyor'], true);
+        return in_array($roleName, ['user', 'surveyor', 'dummy'], true);
     }
 }

@@ -162,6 +162,16 @@
                 (int) $second->id;
         })
         ->values();
+
+    $allSubunitIds = $allSubunits->pluck('id')->map(fn ($id) => (int) $id);
+    $areAllQuestionsVisible = $sortedQuestions->isNotEmpty()
+        && $allSubunitIds->isNotEmpty()
+        && $sortedQuestions->every(function ($question) use ($activeMapSubUnit, $allSubunitIds, $form) {
+            $activeIds = collect($activeMapSubUnit[$form->id.'-'.$question->id] ?? [])
+                ->map(fn ($id) => (int) $id);
+
+            return $allSubunitIds->every(fn ($id) => $activeIds->contains($id));
+        });
 @endphp
 
 
@@ -243,6 +253,40 @@
 
     {{-- QUESTIONS --}}
     <div class="space-y-4 p-5">
+
+        @if ($sortedQuestions->isNotEmpty())
+            <div class="flex justify-end {{ $isFormVisible ? '' : 'hidden' }}" data-show-all-questions-panel>
+                <div class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Tampilkan Semua Pertanyaan
+                        </div>
+                        <div
+                            data-show-all-status
+                            class="text-xs font-medium {{ $areAllQuestionsVisible ? 'text-green-600' : 'text-gray-500' }}"
+                        >
+                            {{ $areAllQuestionsVisible ? 'Semua ditampilkan' : 'Aktifkan seluruh pertanyaan' }}
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        data-show-all-questions
+                        data-unit-id="{{ $unitId }}"
+                        data-form-id="{{ $form->id }}"
+                        data-active="{{ $areAllQuestionsVisible ? '1' : '0' }}"
+                        aria-pressed="{{ $areAllQuestionsVisible ? 'true' : 'false' }}"
+                        class="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition {{ $areAllQuestionsVisible ? 'bg-green-500' : 'bg-gray-300' }}"
+                    >
+                        <span
+                            data-show-all-knob
+                            class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform {{ $areAllQuestionsVisible ? 'translate-x-6' : 'translate-x-1' }}"
+                        ></span>
+                        <span class="sr-only">Tampilkan semua pertanyaan</span>
+                    </button>
+                </div>
+            </div>
+        @endif
 
         @forelse ($sortedQuestions as $question)
 

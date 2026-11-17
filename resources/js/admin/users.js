@@ -326,6 +326,8 @@ document.addEventListener("click", function (e) {
 
     const id = button.dataset.id;
     const username = button.dataset.username;
+    const fullname = button.dataset.fullname;
+    const email = button.dataset.email;
     const role = button.dataset.role;
     const activity = button.dataset.activity;
     const group = button.dataset.group;
@@ -336,6 +338,8 @@ document.addEventListener("click", function (e) {
 
     const idInput = document.getElementById("edit_user_id");
     const usernameInput = document.getElementById("edit_username");
+    const fullnameInput = document.getElementById("edit_fullname");
+    const emailInput = document.getElementById("edit_email");
     const passwordInput = document.getElementById("edit_password");
 
     const roleInput = document.getElementById("edit_role");
@@ -347,6 +351,8 @@ document.addEventListener("click", function (e) {
         !form ||
         !idInput ||
         !usernameInput ||
+        !fullnameInput ||
+        !emailInput ||
         !roleInput ||
         !activityInput ||
         !groupInput ||
@@ -367,6 +373,8 @@ document.addEventListener("click", function (e) {
 
     idInput.value = id ?? "";
     usernameInput.value = username ?? "";
+    fullnameInput.value = fullname ?? "";
+    emailInput.value = email ?? "";
 
     roleInput.value = String(role ?? "");
     activityInput.value = String(activity ?? "");

@@ -70,6 +70,54 @@
 
                 </div>
 
+                {{-- FULL NAME --}}
+                <div>
+
+                    <label
+                        for="edit_fullname"
+                        class="mb-2 block text-sm font-medium text-gray-700"
+                    >
+                        Nama Lengkap
+                        <span class="font-normal text-gray-400">(opsional)</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        name="fullname"
+                        id="edit_fullname"
+                        maxlength="255"
+                        autocomplete="off"
+                        placeholder="Nama lengkap"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2
+                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+
+                </div>
+
+                {{-- EMAIL --}}
+                <div>
+
+                    <label
+                        for="edit_email"
+                        class="mb-2 block text-sm font-medium text-gray-700"
+                    >
+                        Email
+                        <span class="font-normal text-gray-400">(opsional)</span>
+                    </label>
+
+                    <input
+                        type="email"
+                        name="email"
+                        id="edit_email"
+                        maxlength="255"
+                        autocomplete="email"
+                        placeholder="Email"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2
+                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+
+                </div>
+
                 {{-- PASSWORD --}}
                 <div>
 

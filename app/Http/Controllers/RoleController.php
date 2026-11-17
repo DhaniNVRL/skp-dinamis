@@ -14,7 +14,7 @@ use Throwable;
 
 class RoleController extends Controller
 {
-    private const SYSTEM_ROLES = ['admin', 'pm', 'surveyor', 'monitoring', 'user'];
+    private const SYSTEM_ROLES = ['admin', 'pm', 'surveyor', 'dummy', 'monitoring', 'user'];
 
     // Display a listing of the resource.
     public function index()

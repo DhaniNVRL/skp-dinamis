@@ -50,6 +50,8 @@
         data-modal-open="editUserModal"
         data-id="{{ $profileUser->id }}"
         data-username="{{ $profileUser->username }}"
+        data-fullname="{{ $profile->fullname }}"
+        data-email="{{ $profile->email }}"
         data-role="{{ $profileUser->role_id }}"
         data-activity="{{ $profile->activity_id }}"
         data-action="{{ route('admin.datauser.update', $profileUser->id) }}"

@@ -20,12 +20,15 @@ function initializeHideAndShow() {
     const formToggleUrl =
         page.dataset.formToggleUrl;
 
+    const showAllUrl =
+        page.dataset.showAllUrl;
+
     const csrfToken =
         document.getElementById(
             "hideShowCsrfToken"
         )?.value;
 
-    if (!toggleUrl || !formToggleUrl || !csrfToken) {
+    if (!toggleUrl || !formToggleUrl || !showAllUrl || !csrfToken) {
         console.error(
             "URL toggle atau CSRF token Hide and Show tidak ditemukan."
         );
@@ -142,6 +145,9 @@ function initializeHideAndShow() {
                     button,
                     Boolean(result.is_active)
                 );
+                syncShowAllQuestionsState(
+                    button.closest("[data-form-visibility-card]")
+                );
 
                 const scopeType =
                     button.dataset.scopeType ||
@@ -183,6 +189,75 @@ function initializeHideAndShow() {
     );
     page.querySelectorAll("[data-form-visibility-card]").forEach(function (card) {
         syncFormQuestionToggles(card, card.dataset.formVisible === "1");
+        syncShowAllQuestionsState(card);
+    });
+
+    page.addEventListener("click", async function (event) {
+        const button = event.target.closest("[data-show-all-questions]");
+
+        if (!button || button.disabled) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const unitId = Number(button.dataset.unitId);
+        const formId = Number(button.dataset.formId);
+        const card = button.closest("[data-form-visibility-card]");
+
+        if (!unitId || !formId || card?.dataset.formVisible !== "1") {
+            showHideShowNotification("Aktifkan form terlebih dahulu.", "error");
+            return;
+        }
+
+        const currentActive = button.dataset.active === "1";
+        const nextActive = !currentActive;
+
+        setToggleLoading(button, true);
+
+        try {
+            const response = await fetch(showAllUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "X-CSRF-TOKEN": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+                body: JSON.stringify({
+                    unit_id: unitId,
+                    form_id: formId,
+                    is_active: nextActive,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(getResponseError(result));
+            }
+
+            card.querySelectorAll("[data-hide-show-toggle]").forEach(function (toggle) {
+                updateToggleState(toggle, Boolean(result.is_active));
+            });
+            updateShowAllQuestionsState(button, Boolean(result.is_active));
+
+            showHideShowNotification(
+                result.message,
+                result.is_active ? "success" : "removed",
+                result.is_active
+                    ? "Semua pertanyaan ditampilkan"
+                    : "Semua pertanyaan disembunyikan"
+            );
+        } catch (error) {
+            console.error(error);
+            showHideShowNotification(
+                error.message || "Gagal menampilkan semua pertanyaan.",
+                "error"
+            );
+        } finally {
+            setToggleLoading(button, false);
+        }
     });
 
     page.addEventListener("click", async function (event) {
@@ -271,6 +346,57 @@ function syncFormQuestionToggles(card, isFormVisible) {
         toggle.classList.toggle("cursor-not-allowed", !isFormVisible);
         toggle.classList.toggle("opacity-50", !isFormVisible);
     });
+
+    card.querySelectorAll("[data-show-all-questions-panel]").forEach(function (panel) {
+        panel.classList.toggle("hidden", !isFormVisible);
+        panel.querySelectorAll("[data-show-all-questions]").forEach(function (button) {
+            button.disabled = !isFormVisible;
+        });
+    });
+}
+
+function updateShowAllQuestionsState(button, isActive) {
+    const knob = button.querySelector("[data-show-all-knob]");
+    const container = button.closest(".flex.items-center.justify-between");
+    const status = container?.querySelector("[data-show-all-status]");
+
+    button.dataset.active = isActive ? "1" : "0";
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    button.classList.toggle("bg-green-500", isActive);
+    button.classList.toggle("bg-gray-300", !isActive);
+
+    if (knob) {
+        knob.classList.toggle("translate-x-6", isActive);
+        knob.classList.toggle("translate-x-1", !isActive);
+    }
+
+    if (status) {
+        status.textContent = isActive
+            ? "Semua ditampilkan"
+            : "Aktifkan seluruh pertanyaan";
+        status.classList.toggle("text-green-600", isActive);
+        status.classList.toggle("text-gray-500", !isActive);
+    }
+}
+
+function syncShowAllQuestionsState(card) {
+    if (!card) {
+        return;
+    }
+
+    const button = card.querySelector("[data-show-all-questions]");
+    const questionToggles = Array.from(
+        card.querySelectorAll("[data-hide-show-toggle]")
+    );
+
+    if (!button || questionToggles.length === 0) {
+        return;
+    }
+
+    updateShowAllQuestionsState(
+        button,
+        questionToggles.every((toggle) => toggle.dataset.active === "1")
+    );
 }
 
 function updateToggleState(

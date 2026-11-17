@@ -45,6 +45,7 @@ class LoginController extends Controller
                 case 'admin':
                     return redirect()->route('admin.dashboard');
                 case 'surveyor':
+                case 'dummy':
                     return redirect()->route('user.dashboard');
                 case 'pm':
                     return redirect()->route('pm.dashboard');

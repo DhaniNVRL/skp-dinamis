@@ -7,6 +7,7 @@
     $profile = $profile ?? null;
     $surveySession = $surveySession ?? null;
     $user = $user ?? auth()->user();
+    $isSimulationAccount = $user?->isSimulationAccount() ?? false;
 
     $profileComplete = $profile
         && filled($profile->activity_id)
@@ -15,7 +16,7 @@
 
     $status = $surveySession?->status ?? 'not_started';
     $surveyLocked = $status === 'completed'
-        && ($user?->hasRole('user') || $user?->hasRole('surveyor'));
+        && ($user?->hasRole('user') || $isSimulationAccount);
 
     $statusLabel = match ($status) {
         'in_progress' => 'Sedang Berjalan',
@@ -32,9 +33,9 @@
 
 <div class="mx-auto max-w-6xl space-y-6">
 
-    @if ($user?->hasRole('surveyor'))
+    @if ($isSimulationAccount)
         <div class="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-800">
-            <div class="font-semibold"><i class="fa-solid fa-person-chalkboard mr-2"></i>Mode Contoh Surveyor</div>
+            <div class="font-semibold"><i class="fa-solid fa-person-chalkboard mr-2"></i>Mode Contoh {{ ucfirst(strtolower($user?->role?->name ?? 'Surveyor')) }}</div>
             <p class="mt-1">Akun ini digunakan untuk memperagakan tata cara pengisian. Jawaban contoh tidak dihitung sebagai responden.</p>
         </div>
     @endif
@@ -69,7 +70,7 @@
                     <i class="fa-solid fa-pen-to-square"></i>
                     Lengkapi Profil
                 </a>
-            @elseif ($user?->hasRole('surveyor'))
+            @elseif ($isSimulationAccount)
                 <button
                     type="button"
                     data-modal-open="surveyorResetAccountModal"
@@ -253,7 +254,7 @@
                         Activity, group, dan unit wajib dilengkapi.
                     </p>                @elseif ($status === 'completed')
                     <p class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-center text-sm font-medium text-green-700">
-                        {{ $user?->hasRole('surveyor')
+                        {{ $isSimulationAccount
                             ? 'Simulasi telah selesai dan dikunci sampai Admin melakukan Reset Account.'
                             : 'Pengisian survei telah selesai dan dikunci.' }}
                     </p>                @elseif ($status === 'in_progress')
@@ -281,7 +282,7 @@
         </div>
     </div>
 </div>
-@if ($user?->hasRole('surveyor') && $profileComplete)
+@if ($isSimulationAccount && $profileComplete)
     <div id="surveyorResetAccountModal" data-modal class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
         <div class="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-xl">
             <form method="POST" action="{{ route('surveyor.reset-account') }}">
@@ -299,7 +300,7 @@
                             <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
                             <div>
                                 <p class="font-semibold">Apakah Anda yakin?</p>
-                                <p class="mt-2">Karena seluruh jawaban, progres survei, Activity, Group, dan Unit akan terhapus untuk <strong class="text-red-900">{{ $user->username }}</strong>.</p>
+                                <p class="mt-2">Karena seluruh jawaban, progres survei, Group, dan Unit akan terhapus untuk <strong class="text-red-900">{{ $user->username }}</strong>. Activity tetap terkunci.</p>
                             </div>
                         </div>
                     </div>

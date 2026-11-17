@@ -13,7 +13,7 @@ class CheckUserProfile
 
         if ($user && in_array(
             strtolower($user->role->name ?? ''),
-            ['user', 'surveyor'],
+            ['user', 'surveyor', 'dummy'],
             true
         )) {
 

@@ -105,7 +105,7 @@ class SubUnitController extends Controller
         $unitFormVisibilityMap = app(UnitFormVisibilityService::class)
             ->visibilityMap($forms, (int) $unit->id);
         $visibleForms = $forms
-            ->filter(fn (Form $form) => $unitFormVisibilityMap[(int) $form->id] ?? true)
+            ->filter(fn (Form $form) => $unitFormVisibilityMap[(int) $form->id] ?? false)
             ->values();
 
         $allCompetitors = Competitor::query()

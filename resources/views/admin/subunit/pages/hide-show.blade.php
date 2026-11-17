@@ -1,6 +1,7 @@
 <div
     id="hideShowPage"
     data-toggle-url="{{ route('subunit-question.toggle') }}"
+    data-show-all-url="{{ route('subunit-question.show-all') }}"
     data-form-toggle-url="{{ route('unit-form-visibility.toggle') }}"
     class="space-y-6"
 >
@@ -67,7 +68,7 @@
                     'activeMapSubUnit' => $activeMapSubUnit,
                     'unitName' => $units->name,
                     'unitId' => $units->id,
-                    'isFormVisible' => $unitFormVisibilityMap[(int) $form->id] ?? true,
+                    'isFormVisible' => $unitFormVisibilityMap[(int) $form->id] ?? false,
                 ]
             )
         @endforeach

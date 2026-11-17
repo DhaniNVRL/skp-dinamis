@@ -18,11 +18,12 @@
 @php
     $layoutUser = auth()->user();
     $isMonitoring = $layoutUser?->hasRole('monitoring');
-    $isSurveyor = $layoutUser?->hasRole('surveyor');
+    $isSurveyor = $layoutUser?->isSimulationAccount();
+    $canAccessSurveyorMonitoring = $layoutUser?->hasRole('surveyor');
     $layoutProfile = $layoutUser?->profile;
     $profileComplete = $layoutProfile && filled($layoutProfile->activity_id) && filled($layoutProfile->group_id) && filled($layoutProfile->unit_id);
     $surveyLocked = ($layoutUser?->hasRole('user') || $isSurveyor) && $layoutUser?->surveySession?->status === 'completed';
-    $roleTitle = $isMonitoring ? 'Monitoring' : ($isSurveyor ? 'Surveyor · Akun Contoh' : 'Responden');
+    $roleTitle = $isMonitoring ? 'Monitoring' : ($isSurveyor ? ucfirst(strtolower($layoutUser?->role?->name ?? 'Surveyor')).' · Akun Contoh' : 'Responden');
 @endphp
 <body class="min-h-screen bg-slate-50 text-slate-900" x-data="{ sidebarOpen:false, profileOpen:false }">
 <div class="min-h-screen lg:flex">
@@ -46,7 +47,7 @@
                     @endunless
                     @if($isMonitoring)
                     <a href="{{ route('monitoring.dashboard') }}" class="flex items-center gap-3 rounded-xl bg-white/15 px-3 py-2.5 text-sm font-semibold ring-1 ring-white/10"><span class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10"><i class="fa-solid fa-chart-line"></i></span>Dashboard Monitoring</a>
-                    @elseif($isSurveyor && Route::has('surveyor.dashboard'))
+                    @elseif($canAccessSurveyorMonitoring && Route::has('surveyor.dashboard'))
                     <a href="{{ route('surveyor.dashboard') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold {{ request()->routeIs('surveyor.dashboard') ? 'bg-white/15 ring-1 ring-white/10' : 'hover:bg-white/10' }}"><span class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10"><i class="fa-solid fa-chart-column"></i></span>Dashboard Monitoring</a>
                     @endif
                 </div>

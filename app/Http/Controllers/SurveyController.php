@@ -330,7 +330,7 @@ class SurveyController extends Controller
 
     private function isSurveyor(): bool
     {
-        return Auth::user()?->hasRole('surveyor') ?? false;
+        return Auth::user()?->isSimulationAccount() ?? false;
     }
 
     private function firstIncompleteForm(UserProfile $profile): ?Form

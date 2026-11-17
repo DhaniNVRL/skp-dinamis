@@ -29,6 +29,38 @@
         </td>
 
 
+        {{-- FULL NAME --}}
+        <td class="border-r border-gray-200 p-3">
+
+            <input
+                type="text"
+                name="fullname[]"
+                maxlength="255"
+                autocomplete="off"
+                placeholder="Nama lengkap (opsional)"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2
+                       focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+
+        </td>
+
+
+        {{-- EMAIL --}}
+        <td class="border-r border-gray-200 p-3">
+
+            <input
+                type="email"
+                name="email[]"
+                maxlength="255"
+                autocomplete="email"
+                placeholder="Email (opsional)"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2
+                       focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+
+        </td>
+
+
         {{-- PASSWORD --}}
         <td class="border-r border-gray-200 p-3">
 

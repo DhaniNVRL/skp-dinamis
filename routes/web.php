@@ -498,6 +498,11 @@ Route::delete('/groups/{group}/branch-rules/{rule}', [SurveyBranchRuleController
 
         Route::prefix('subunit-questions')->group(function () {
             Route::post(
+                '/show-all',
+                [SubUnitQuestionController::class, 'showAll']
+            )->name('subunit-question.show-all');
+
+            Route::post(
                 '/toggle',
                 [SubUnitQuestionController::class, 'toggle']
             )->name('subunit-question.toggle');
@@ -540,7 +545,7 @@ Route::delete('/groups/{group}/branch-rules/{rule}', [SurveyBranchRuleController
                 ->name('get-groups');
         });
 
-        Route::middleware('role:user,surveyor')->group(function () {
+        Route::middleware('role:user,surveyor,dummy')->group(function () {
             Route::get(
                 '/user/dashboard',
                 [UserDashboardController::class, 'index']
@@ -625,7 +630,7 @@ Route::get('/', function () {
     return match ($role) {
         'admin' => redirect()->route('admin.dashboard'),
         'pm' => redirect()->route('pm.dashboard'),
-        'surveyor' => redirect()->route('user.dashboard'),
+        'surveyor', 'dummy' => redirect()->route('user.dashboard'),
         'monitoring' => redirect()->route('monitoring.dashboard'),
         'user' => redirect()->route('user.dashboard'),
         default => abort(403, 'Role tidak dikenali.'),
