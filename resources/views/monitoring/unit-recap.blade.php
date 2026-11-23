@@ -17,38 +17,6 @@
         </div>
     </section>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <form method="GET" action="{{ route('monitoring.unit-recap') }}" class="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
-            @if ($recapStatus !== 'all')
-                <input type="hidden" name="unit_status" value="{{ $recapStatus }}">
-            @endif
-            <label class="block text-sm font-semibold text-slate-700" for="recapGroup">
-                Group
-                <select id="recapGroup" name="group_id" class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                    <option value="">Semua Group</option>
-                    @foreach ($groups as $group)
-                        <option value="{{ $group->id }}" {{ (string) ($recapFilters['group_id'] ?? '') === (string) $group->id ? 'selected' : '' }}>{{ $group->name }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <label class="block text-sm font-semibold text-slate-700" for="recapUnit">
-                Unit
-                <select id="recapUnit" name="unit_id" class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                    <option value="">Semua Unit</option>
-                    @foreach ($units as $unit)
-                        <option value="{{ $unit->id }}" data-group-id="{{ $unit->group_id }}" {{ (string) ($recapFilters['unit_id'] ?? '') === (string) $unit->id ? 'selected' : '' }}>{{ $unit->name }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <div class="flex gap-2">
-                <button type="submit" class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"><i class="fa-solid fa-filter"></i>Terapkan</button>
-                @if (($recapFilters['group_id'] ?? null) || ($recapFilters['unit_id'] ?? null) || $recapStatus !== 'all')
-                    <a href="{{ route('monitoring.unit-recap') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></a>
-                @endif
-            </div>
-        </form>
-    </section>
-
     @php
         $recapBaseQuery = [];
         if ($recapFilters['group_id'] ?? null) {
@@ -84,6 +52,38 @@
             <p class="mt-2 text-3xl font-bold text-violet-950">{{ number_format($completionPercentage, 2, ',', '.') }}%</p>
             <p class="mt-2 text-xs text-violet-700">Unit sudah 100% ÷ total unit</p>
         </section>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <form method="GET" action="{{ route('monitoring.unit-recap') }}" class="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+            @if ($recapStatus !== 'all')
+                <input type="hidden" name="unit_status" value="{{ $recapStatus }}">
+            @endif
+            <label class="block text-sm font-semibold text-slate-700" for="recapGroup">
+                Group
+                <select id="recapGroup" name="group_id" class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    <option value="">Semua Group</option>
+                    @foreach ($groups as $group)
+                        <option value="{{ $group->id }}" {{ (string) ($recapFilters['group_id'] ?? '') === (string) $group->id ? 'selected' : '' }}>{{ $group->name }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="block text-sm font-semibold text-slate-700" for="recapUnit">
+                Unit
+                <select id="recapUnit" name="unit_id" class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    <option value="">Semua Unit</option>
+                    @foreach ($units as $unit)
+                        <option value="{{ $unit->id }}" data-group-id="{{ $unit->group_id }}" {{ (string) ($recapFilters['unit_id'] ?? '') === (string) $unit->id ? 'selected' : '' }}>{{ $unit->name }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <div class="flex gap-2">
+                <button type="submit" class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"><i class="fa-solid fa-filter"></i>Terapkan</button>
+                @if (($recapFilters['group_id'] ?? null) || ($recapFilters['unit_id'] ?? null) || $recapStatus !== 'all')
+                    <a href="{{ route('monitoring.unit-recap') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></a>
+                @endif
+            </div>
+        </form>
     </section>
 
     @php
