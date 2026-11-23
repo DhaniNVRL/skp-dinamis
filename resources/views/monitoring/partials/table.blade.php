@@ -13,8 +13,13 @@
             ));
         };
     @endphp
-    <div class="border-b border-gray-200 px-5 py-4">
+    <div class="flex flex-col gap-3 border-b border-gray-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 class="font-semibold text-gray-900">Daftar Responden</h2>
+        @if (auth()->user()?->hasRole('monitoring'))
+            <a href="{{ route('monitoring.dashboard.export', request()->only(['username', 'group_id', 'unit_id', 'status'])) }}" class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                <i class="fa-solid fa-file-excel"></i>Export Excel
+            </a>
+        @endif
     </div>
 
     <div class="overflow-x-auto">

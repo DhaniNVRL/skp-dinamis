@@ -95,6 +95,11 @@ Route::get(
         )->name('monitoring.dashboard');
 
         Route::get(
+            '/monitoring/dashboard/export',
+            [MonitoringController::class, 'exportDashboardRespondents']
+        )->name('monitoring.dashboard.export');
+
+        Route::get(
             '/monitoring/unit-recap',
             [MonitoringController::class, 'unitRecap']
         )->name('monitoring.unit-recap');

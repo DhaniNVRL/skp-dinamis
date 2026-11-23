@@ -24,6 +24,11 @@ class MonitoringUnitRecapTest extends TestCase
         $this->assertStringContainsString('function unitRecap()', $controller);
         $this->assertStringContainsString('function exportUnitRecap()', $controller);
         $this->assertStringContainsString('function unitRecapFilters(', $controller);
+        $this->assertStringContainsString('completedUnitCount', $controller);
+        $this->assertStringContainsString('inProgressUnitCount', $controller);
+        $this->assertStringContainsString("unit_status", $controller);
+        $this->assertStringContainsString("not_started", $controller);
+        $this->assertStringContainsString('notStartedUnitCount', $controller);
         $this->assertStringContainsString('Belum & Sedang Mengisi', $controller);
         $this->assertStringContainsString('completion_percentage', $controller);
         $this->assertStringContainsString('Grafik Rekap Unit', $layout);
@@ -40,5 +45,10 @@ class MonitoringUnitRecapTest extends TestCase
         $this->assertStringContainsString('max: 100', $view);
         $this->assertStringContainsString("return value + '%';", $view);
         $this->assertStringContainsString('xl:grid-cols-2', $view);
+        $this->assertStringContainsString('Total Unit', $view);
+        $this->assertStringContainsString('Unit Sudah 100%', $view);
+        $this->assertStringContainsString('Unit On Progress', $view);
+        $this->assertStringContainsString('Unit Belum Mengisi', $view);
+        $this->assertStringContainsString('Persentase Penyelesaian Unit', $view);
     }
 }

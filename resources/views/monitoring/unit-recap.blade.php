@@ -19,6 +19,9 @@
 
     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <form method="GET" action="{{ route('monitoring.unit-recap') }}" class="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+            @if ($recapStatus !== 'all')
+                <input type="hidden" name="unit_status" value="{{ $recapStatus }}">
+            @endif
             <label class="block text-sm font-semibold text-slate-700" for="recapGroup">
                 Group
                 <select id="recapGroup" name="group_id" class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
@@ -39,26 +42,48 @@
             </label>
             <div class="flex gap-2">
                 <button type="submit" class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"><i class="fa-solid fa-filter"></i>Terapkan</button>
-                @if (($recapFilters['group_id'] ?? null) || ($recapFilters['unit_id'] ?? null))
+                @if (($recapFilters['group_id'] ?? null) || ($recapFilters['unit_id'] ?? null) || $recapStatus !== 'all')
                     <a href="{{ route('monitoring.unit-recap') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></a>
                 @endif
             </div>
         </form>
     </section>
 
-    <section class="grid gap-4 sm:grid-cols-3">
-        <div class="rounded-2xl border border-blue-100 bg-blue-50 p-5">
-            <p class="text-sm font-semibold text-blue-700">Total Responden</p>
-            <p class="mt-2 text-3xl font-bold text-blue-950">{{ number_format($totalRespondents) }}</p>
-        </div>
-        <div class="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
-            <p class="text-sm font-semibold text-emerald-700">Sudah Mengisi</p>
-            <p class="mt-2 text-3xl font-bold text-emerald-950">{{ number_format($totalCompleted) }}</p>
-        </div>
-        <div class="rounded-2xl border border-violet-100 bg-violet-50 p-5">
-            <p class="text-sm font-semibold text-violet-700">Persentase Pengisian</p>
+    @php
+        $recapBaseQuery = [];
+        if ($recapFilters['group_id'] ?? null) {
+            $recapBaseQuery['group_id'] = $recapFilters['group_id'];
+        }
+        if ($recapFilters['unit_id'] ?? null) {
+            $recapBaseQuery['unit_id'] = $recapFilters['unit_id'];
+        }
+    @endphp
+    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <a href="{{ route('monitoring.unit-recap', $recapBaseQuery) }}" class="rounded-2xl border border-blue-100 bg-blue-50 p-5 transition hover:-translate-y-0.5 hover:shadow-sm {{ $recapStatus === 'all' ? 'ring-2 ring-blue-300' : '' }}">
+            <p class="text-sm font-semibold text-blue-700">Total Unit</p>
+            <p class="mt-2 text-3xl font-bold text-blue-950">{{ number_format($totalUnits) }}</p>
+            <p class="mt-2 text-xs text-blue-700">Klik untuk menampilkan semua unit</p>
+        </a>
+        <a href="{{ route('monitoring.unit-recap', array_merge($recapBaseQuery, ['unit_status' => 'completed'])) }}" class="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 transition hover:-translate-y-0.5 hover:shadow-sm {{ $recapStatus === 'completed' ? 'ring-2 ring-emerald-300' : '' }}">
+            <p class="text-sm font-semibold text-emerald-700">Unit Sudah 100%</p>
+            <p class="mt-2 text-3xl font-bold text-emerald-950">{{ number_format($completedUnitCount) }}</p>
+            <p class="mt-2 text-xs text-emerald-700">Klik untuk filter unit selesai</p>
+        </a>
+        <a href="{{ route('monitoring.unit-recap', array_merge($recapBaseQuery, ['unit_status' => 'in_progress'])) }}" class="rounded-2xl border border-amber-100 bg-amber-50 p-5 transition hover:-translate-y-0.5 hover:shadow-sm {{ $recapStatus === 'in_progress' ? 'ring-2 ring-amber-300' : '' }}">
+            <p class="text-sm font-semibold text-amber-700">Unit On Progress</p>
+            <p class="mt-2 text-3xl font-bold text-amber-950">{{ number_format($inProgressUnitCount) }}</p>
+            <p class="mt-2 text-xs text-amber-700">Klik untuk filter unit berjalan</p>
+        </a>
+        <a href="{{ route('monitoring.unit-recap', array_merge($recapBaseQuery, ['unit_status' => 'not_started'])) }}" class="rounded-2xl border border-red-100 bg-red-50 p-5 transition hover:-translate-y-0.5 hover:shadow-sm {{ $recapStatus === 'not_started' ? 'ring-2 ring-red-300' : '' }}">
+            <p class="text-sm font-semibold text-red-700">Unit Belum Mengisi</p>
+            <p class="mt-2 text-3xl font-bold text-red-950">{{ number_format($notStartedUnitCount) }}</p>
+            <p class="mt-2 text-xs text-red-700">Klik untuk filter unit belum mulai</p>
+        </a>
+        <section class="rounded-2xl border border-violet-100 bg-violet-50 p-5">
+            <p class="text-sm font-semibold text-violet-700">Persentase Penyelesaian Unit</p>
             <p class="mt-2 text-3xl font-bold text-violet-950">{{ number_format($completionPercentage, 2, ',', '.') }}%</p>
-        </div>
+            <p class="mt-2 text-xs text-violet-700">Unit sudah 100% ÷ total unit</p>
+        </section>
     </section>
 
     @php

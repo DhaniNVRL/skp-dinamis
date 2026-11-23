@@ -102,18 +102,47 @@ class MonitoringController extends Controller
                 return $unit;
             });
 
-        $totalRespondents = $unitRecaps->sum('respondent_count');
-        $totalCompleted = $unitRecaps->sum('completed_count');
-        $completionPercentage = $totalRespondents > 0
-            ? round(($totalCompleted / $totalRespondents) * 100, 2)
+        $totalUnits = $unitRecaps->count();
+        $completedUnitCount = $unitRecaps
+            ->filter(fn (Unit $unit): bool => $unit->respondent_count > 0
+                && $unit->completion_percentage >= 100)
+            ->count();
+        $inProgressUnitCount = $unitRecaps
+            ->filter(fn (Unit $unit): bool => $unit->completion_percentage > 0
+                && $unit->completion_percentage < 100)
+            ->count();
+        $notStartedUnitCount = $unitRecaps
+            ->filter(fn (Unit $unit): bool => $unit->completion_percentage <= 0)
+            ->count();
+        $completionPercentage = $totalUnits > 0
+            ? round(($completedUnitCount / $totalUnits) * 100, 2)
             : 0;
+
+        $recapStatus = $recapFilters['unit_status'] ?? 'all';
+        $unitRecaps = match ($recapStatus) {
+            'completed' => $unitRecaps->filter(
+                fn (Unit $unit): bool => $unit->respondent_count > 0
+                    && $unit->completion_percentage >= 100
+            )->values(),
+            'in_progress' => $unitRecaps->filter(
+                fn (Unit $unit): bool => $unit->completion_percentage > 0
+                    && $unit->completion_percentage < 100
+            )->values(),
+            'not_started' => $unitRecaps->filter(
+                fn (Unit $unit): bool => $unit->completion_percentage <= 0
+            )->values(),
+            default => $unitRecaps,
+        };
 
         return view('monitoring.unit-recap', compact(
             'activity',
             'unitRecaps',
-            'totalRespondents',
-            'totalCompleted',
+            'totalUnits',
+            'completedUnitCount',
+            'inProgressUnitCount',
+            'notStartedUnitCount',
             'completionPercentage',
+            'recapStatus',
             'groups',
             'units',
             'recapFilters'
@@ -252,6 +281,10 @@ class MonitoringController extends Controller
                 'nullable',
                 'integer',
                 Rule::exists('units', 'id')->whereIn('group_id', $activityGroupIds->all()),
+            ],
+            'unit_status' => [
+                'nullable',
+                Rule::in(['all', 'completed', 'in_progress', 'not_started']),
             ],
         ]);
 
@@ -561,6 +594,9 @@ class MonitoringController extends Controller
                 - $completedCount
                 - $inProgressCount
         );
+        $completionPercentage = $totalRespondents > 0
+            ? round(($completedCount / $totalRespondents) * 100, 2)
+            : 0;
 
         // Query List Responden
 
@@ -742,11 +778,131 @@ class MonitoringController extends Controller
                 'completedCount',
                 'inProgressCount',
                 'notStartedCount',
+                'completionPercentage',
                 'filters',
                 'dashboardRoute',
                 'isSurveyor'
             )
         );
+    }
+
+    /**
+     * Export daftar responden Dashboard Monitoring sesuai filter aktif.
+     */
+    public function exportDashboardRespondents(Request $request)
+    {
+        $user = auth()->user();
+        abort_unless($user?->hasRole('monitoring'), 403);
+
+        $activityId = (int) ($user->profile?->activity_id ?? 0);
+        abort_unless(
+            $activityId > 0,
+            403,
+            'Activity akun monitoring belum ditentukan.'
+        );
+
+        $activityGroupIds = Group::query()
+            ->where('activity_id', $activityId)
+            ->pluck('id');
+
+        $filters = $request->validate([
+            'username' => ['nullable', 'string', 'max:255'],
+            'group_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('groups', 'id')->where('activity_id', $activityId),
+            ],
+            'unit_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('units', 'id')->whereIn('group_id', $activityGroupIds->all()),
+            ],
+            'status' => [
+                'nullable',
+                Rule::in(['completed', 'in_progress', 'not_started']),
+            ],
+        ]);
+
+        if (
+            ($filters['group_id'] ?? null)
+            && ($filters['unit_id'] ?? null)
+            && ! Unit::query()
+                ->whereKey($filters['unit_id'])
+                ->where('group_id', $filters['group_id'])
+                ->exists()
+        ) {
+            throw ValidationException::withMessages([
+                'unit_id' => 'Unit yang dipilih tidak termasuk dalam group tersebut.',
+            ]);
+        }
+
+        $respondentsQuery = $this->respondentQuery($filters, $activityId)
+            ->with([
+                'group:id,name',
+                'unit:id,name',
+                'user' => function ($query): void {
+                    $query
+                        ->select('id', 'username', 'role_id')
+                        ->with('surveySession')
+                        ->withCount('answers');
+                },
+            ]);
+
+        $this->applyStatusFilter($respondentsQuery, $filters['status'] ?? null);
+
+        $respondents = $respondentsQuery
+            ->orderBy('user_profiles.user_id')
+            ->get()
+            ->map(function (UserProfile $profile): array {
+                $session = $profile->user?->surveySession;
+                $status = $this->resolveStatus(
+                    $session?->status,
+                    $session?->started_at,
+                    (int) ($profile->user?->answers_count ?? 0)
+                );
+
+                return [
+                    'id_user' => $profile->user_id,
+                    'username' => $profile->user?->username ?? '-',
+                    'fullname' => $profile->fullname ?: '-',
+                    'email' => $profile->email ?: '-',
+                    'group' => $profile->group?->name ?? '-',
+                    'unit' => $profile->unit?->name ?? '-',
+                    'status' => match ($status) {
+                        'completed' => 'Sudah Mengisi',
+                        'in_progress' => 'Sedang Mengisi',
+                        default => 'Belum Mengisi',
+                    },
+                    'started_at' => $session?->started_at?->format('d-m-Y H:i') ?? '-',
+                    'finished_at' => $session?->finished_at?->format('d-m-Y H:i') ?? '-',
+                ];
+            });
+
+        $activity = Activity::query()
+            ->select('id', 'name')
+            ->findOrFail($activityId);
+
+        $spreadsheet = new Spreadsheet();
+        $this->writeUnitRecapSheet(
+            $spreadsheet->getActiveSheet(),
+            'Daftar Responden',
+            $activity->name,
+            $respondents,
+            true
+        );
+
+        $filename = 'daftar_responden_monitoring_'.now()->format('Ymd_His').'.xlsx';
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer, $spreadsheet): void {
+            try {
+                $writer->save('php://output');
+            } finally {
+                $spreadsheet->disconnectWorksheets();
+            }
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
 
 
