@@ -18,6 +18,13 @@ class LoginController extends Controller
 
     public function login(Request $request)
     {
+        // Input hasil copy-paste sering membawa spasi di awal atau akhir.
+        // Hanya spasi di tepi yang dihapus; isi di tengah tetap dipertahankan.
+        $request->merge([
+            'username' => trim((string) $request->input('username', '')),
+            'password' => trim((string) $request->input('password', '')),
+        ]);
+
         // Validasi input
         $credentials = $request->validate([
             'username' => ['required', 'string'],
