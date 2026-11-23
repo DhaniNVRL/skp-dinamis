@@ -11,10 +11,376 @@ use App\Models\UserProfile;
 use App\Services\AnswerReviewFormatter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class MonitoringController extends Controller
 {
+    /**
+     * Rekap progres seluruh unit pada activity akun Monitoring.
+     *
+     * "Sudah mengisi" mengikuti definisi dashboard: survey session dengan
+     * status completed. Persentase dihitung dari data tersebut dibagi total
+     * responden pada unit yang sama.
+     */
+    public function unitRecap(Request $request)
+    {
+        $user = auth()->user();
+        abort_unless($user?->hasRole('monitoring'), 403);
+
+        $activityId = (int) ($user->profile?->activity_id ?? 0);
+        abort_unless(
+            $activityId > 0,
+            403,
+            'Activity akun monitoring belum ditentukan.'
+        );
+
+        $activity = Activity::query()
+            ->select('id', 'name')
+            ->findOrFail($activityId);
+
+        [$recapFilters, $groups, $units] = $this->unitRecapFilters(
+            $request,
+            $activityId
+        );
+
+        $unitRecaps = Unit::query()
+            ->select([
+                'units.id',
+                'units.name',
+                'groups.name as group_name',
+            ])
+            ->selectRaw(
+                'COUNT(DISTINCT CASE WHEN LOWER(roles.name) = ? THEN user_profiles.user_id END) as respondent_count',
+                ['user']
+            )
+            ->selectRaw(
+                'COUNT(DISTINCT CASE WHEN LOWER(roles.name) = ? AND survey_sessions.status = ? THEN user_profiles.user_id END) as completed_count',
+                ['user', 'completed']
+            )
+            ->join('groups', 'groups.id', '=', 'units.group_id')
+            ->leftJoin('user_profiles', function ($join) use ($activityId): void {
+                $join->on('user_profiles.unit_id', '=', 'units.id')
+                    ->where('user_profiles.activity_id', '=', $activityId);
+            })
+            ->leftJoin('users', 'users.id', '=', 'user_profiles.user_id')
+            ->leftJoin('roles', 'roles.id', '=', 'users.role_id')
+            ->leftJoin(
+                'survey_sessions',
+                'survey_sessions.user_id',
+                '=',
+                'user_profiles.user_id'
+            )
+            ->where('groups.activity_id', $activityId)
+            ->when(
+                $recapFilters['group_id'] ?? null,
+                fn (Builder $query, $groupId) => $query->where('units.group_id', $groupId)
+            )
+            ->when(
+                $recapFilters['unit_id'] ?? null,
+                fn (Builder $query, $unitId) => $query->where('units.id', $unitId)
+            )
+            ->groupBy('units.id', 'units.name', 'groups.name')
+            ->orderBy('groups.name')
+            ->orderBy('units.name')
+            ->get()
+            ->map(function (Unit $unit): Unit {
+                $unit->respondent_count = (int) $unit->respondent_count;
+                $unit->completed_count = (int) $unit->completed_count;
+                $unit->completion_percentage = $unit->respondent_count > 0
+                    ? round(
+                        ($unit->completed_count / $unit->respondent_count) * 100,
+                        2
+                    )
+                    : 0;
+
+                return $unit;
+            });
+
+        $totalRespondents = $unitRecaps->sum('respondent_count');
+        $totalCompleted = $unitRecaps->sum('completed_count');
+        $completionPercentage = $totalRespondents > 0
+            ? round(($totalCompleted / $totalRespondents) * 100, 2)
+            : 0;
+
+        return view('monitoring.unit-recap', compact(
+            'activity',
+            'unitRecaps',
+            'totalRespondents',
+            'totalCompleted',
+            'completionPercentage',
+            'groups',
+            'units',
+            'recapFilters'
+        ));
+    }
+
+    /**
+     * Export detail respondents for the Monitoring unit recap.
+     *
+     * Sheet one contains completed surveys. Sheet two contains respondents
+     * who have not started or are still filling the survey, with their status.
+     */
+    public function exportUnitRecap(Request $request)
+    {
+        $user = auth()->user();
+        abort_unless($user?->hasRole('monitoring'), 403);
+
+        $activityId = (int) ($user->profile?->activity_id ?? 0);
+        abort_unless(
+            $activityId > 0,
+            403,
+            'Activity akun monitoring belum ditentukan.'
+        );
+
+        $activity = Activity::query()
+            ->select('id', 'name')
+            ->findOrFail($activityId);
+
+        [$recapFilters] = $this->unitRecapFilters($request, $activityId);
+
+        $respondents = UserProfile::query()
+            ->where('activity_id', $activityId)
+            ->whereHas('user.role', function (Builder $query): void {
+                $query->whereRaw('LOWER(name) = ?', ['user']);
+            })
+            ->with([
+                'group:id,name',
+                'unit:id,name',
+                'user' => function ($query): void {
+                    $query
+                        ->select('id', 'username', 'role_id')
+                        ->with('surveySession')
+                        ->withCount('answers');
+                },
+            ])
+            ->when(
+                $recapFilters['group_id'] ?? null,
+                fn (Builder $query, $groupId) => $query->where('group_id', $groupId)
+            )
+            ->when(
+                $recapFilters['unit_id'] ?? null,
+                fn (Builder $query, $unitId) => $query->where('unit_id', $unitId)
+            )
+            ->orderBy('group_id')
+            ->orderBy('unit_id')
+            ->orderBy('user_id')
+            ->get()
+            ->map(function (UserProfile $profile): array {
+                $session = $profile->user?->surveySession;
+                $status = $this->resolveStatus(
+                    $session?->status,
+                    $session?->started_at,
+                    (int) ($profile->user?->answers_count ?? 0)
+                );
+
+                return [
+                    'id_user' => $profile->user_id,
+                    'username' => $profile->user?->username ?? '-',
+                    'fullname' => $profile->fullname ?: '-',
+                    'email' => $profile->email ?: '-',
+                    'group' => $profile->group?->name ?? '-',
+                    'unit' => $profile->unit?->name ?? '-',
+                    'status' => match ($status) {
+                        'completed' => 'Sudah Mengisi',
+                        'in_progress' => 'Sedang Mengisi',
+                        default => 'Belum Mengisi',
+                    },
+                    'started_at' => $session?->started_at?->format('d-m-Y H:i') ?? '-',
+                    'finished_at' => $session?->finished_at?->format('d-m-Y H:i') ?? '-',
+                ];
+            });
+
+        $completed = $respondents
+            ->filter(fn (array $respondent): bool => $respondent['status'] === 'Sudah Mengisi')
+            ->values();
+
+        $uncompleted = $respondents
+            ->reject(fn (array $respondent): bool => $respondent['status'] === 'Sudah Mengisi')
+            ->values();
+
+        $spreadsheet = new Spreadsheet();
+        $this->writeUnitRecapSheet(
+            $spreadsheet->getActiveSheet(),
+            'Sudah Mengisi',
+            $activity->name,
+            $completed,
+            false
+        );
+
+        $this->writeUnitRecapSheet(
+            $spreadsheet->createSheet(),
+            'Belum & Sedang Mengisi',
+            $activity->name,
+            $uncompleted,
+            true
+        );
+
+        $spreadsheet->setActiveSheetIndex(0);
+        $filename = 'rekap_responden_unit_'.now()->format('Ymd_His').'.xlsx';
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer, $spreadsheet): void {
+            try {
+                $writer->save('php://output');
+            } finally {
+                $spreadsheet->disconnectWorksheets();
+            }
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    private function unitRecapFilters(Request $request, int $activityId): array
+    {
+        $activityGroupIds = Group::query()
+            ->where('activity_id', $activityId)
+            ->pluck('id');
+
+        $recapFilters = $request->validate([
+            'group_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('groups', 'id')->where('activity_id', $activityId),
+            ],
+            'unit_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('units', 'id')->whereIn('group_id', $activityGroupIds->all()),
+            ],
+        ]);
+
+        if (
+            ($recapFilters['group_id'] ?? null)
+            && ($recapFilters['unit_id'] ?? null)
+            && ! Unit::query()
+                ->whereKey($recapFilters['unit_id'])
+                ->where('group_id', $recapFilters['group_id'])
+                ->exists()
+        ) {
+            throw ValidationException::withMessages([
+                'unit_id' => 'Unit yang dipilih tidak termasuk dalam group tersebut.',
+            ]);
+        }
+
+        $groups = Group::query()
+            ->select('id', 'name')
+            ->where('activity_id', $activityId)
+            ->orderBy('name')
+            ->get();
+
+        $units = Unit::query()
+            ->select('id', 'group_id', 'name')
+            ->whereIn('group_id', $activityGroupIds)
+            ->orderBy('name')
+            ->get();
+
+        return [$recapFilters, $groups, $units];
+    }
+
+    private function writeUnitRecapSheet(
+        \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet,
+        string $title,
+        string $activityName,
+        Collection $respondents,
+        bool $includeStatus
+    ): void {
+        $headers = [
+            'No.',
+            'ID User',
+            'Username',
+            'Nama Lengkap',
+            'Email',
+            'Group',
+            'Unit',
+        ];
+
+        if ($includeStatus) {
+            $headers[] = 'Status';
+        }
+
+        $headers[] = 'Waktu Mulai';
+        $headers[] = 'Waktu Selesai';
+        $lastColumn = $includeStatus ? 'J' : 'I';
+
+        $sheet->setTitle($title);
+        $sheet->mergeCells("A1:{$lastColumn}1");
+        $sheet->setCellValue('A1', $title.' - '.$activityName);
+        $sheet->mergeCells("A2:{$lastColumn}2");
+        $sheet->setCellValue('A2', 'Diekspor pada '.now()->format('d-m-Y H:i'));
+        $sheet->fromArray($headers, null, 'A3');
+
+        $sheet->getStyle("A1:{$lastColumn}1")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 14],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => '1D4ED8']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+        $sheet->getStyle("A2:{$lastColumn}2")->applyFromArray([
+            'font' => ['italic' => true, 'color' => ['rgb' => '475569']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+        $sheet->getStyle("A3:{$lastColumn}3")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => '2563EB']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+
+        $rowNumber = 4;
+        foreach ($respondents as $index => $respondent) {
+            $row = [
+                $index + 1,
+                $respondent['id_user'],
+                $respondent['username'],
+                $respondent['fullname'],
+                $respondent['email'],
+                $respondent['group'],
+                $respondent['unit'],
+            ];
+
+            if ($includeStatus) {
+                $row[] = $respondent['status'];
+            }
+
+            $row[] = $respondent['started_at'];
+            $row[] = $respondent['finished_at'];
+            $sheet->fromArray($row, null, "A{$rowNumber}");
+            $rowNumber++;
+        }
+
+        if ($respondents->isEmpty()) {
+            $sheet->mergeCells("A4:{$lastColumn}4");
+            $sheet->setCellValue('A4', 'Tidak ada data responden.');
+            $sheet->getStyle('A4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        } else {
+            $sheet->setAutoFilter("A3:{$lastColumn}".($rowNumber - 1));
+        }
+
+        foreach ([
+            'A' => 8,
+            'B' => 12,
+            'C' => 22,
+            'D' => 26,
+            'E' => 30,
+            'F' => 24,
+            'G' => 30,
+            'H' => 18,
+            'I' => 20,
+            'J' => 20,
+        ] as $column => $width) {
+            $sheet->getColumnDimension($column)->setWidth($width);
+        }
+
+        $sheet->freezePane('A4');
+        $sheet->getStyle("A3:{$lastColumn}".max(3, $rowNumber - 1))
+            ->getAlignment()
+            ->setVertical(Alignment::VERTICAL_CENTER);
+    }
+
     public function index(Request $request)
     {
         // User Monitoring Login

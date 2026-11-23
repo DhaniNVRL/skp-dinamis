@@ -23,12 +23,15 @@ function initializeHideAndShow() {
     const showAllUrl =
         page.dataset.showAllUrl;
 
+    const showAllUnitUrl =
+        page.dataset.showAllUnitUrl;
+
     const csrfToken =
         document.getElementById(
             "hideShowCsrfToken"
         )?.value;
 
-    if (!toggleUrl || !formToggleUrl || !showAllUrl || !csrfToken) {
+    if (!toggleUrl || !formToggleUrl || !showAllUrl || !showAllUnitUrl || !csrfToken) {
         console.error(
             "URL toggle atau CSRF token Hide and Show tidak ditemukan."
         );
@@ -148,6 +151,8 @@ function initializeHideAndShow() {
                 syncShowAllQuestionsState(
                     button.closest("[data-form-visibility-card]")
                 );
+                syncHideShowSummary(page);
+                syncShowAllUnitState(page);
 
                 const scopeType =
                     button.dataset.scopeType ||
@@ -191,6 +196,8 @@ function initializeHideAndShow() {
         syncFormQuestionToggles(card, card.dataset.formVisible === "1");
         syncShowAllQuestionsState(card);
     });
+    syncHideShowSummary(page);
+    syncShowAllUnitState(page);
 
     page.addEventListener("click", async function (event) {
         const button = event.target.closest("[data-show-all-questions]");
@@ -241,6 +248,8 @@ function initializeHideAndShow() {
                 updateToggleState(toggle, Boolean(result.is_active));
             });
             updateShowAllQuestionsState(button, Boolean(result.is_active));
+            syncHideShowSummary(page);
+            syncShowAllUnitState(page);
 
             showHideShowNotification(
                 result.message,
@@ -315,6 +324,7 @@ function initializeHideAndShow() {
             updateToggleState(button, isVisible);
             card?.setAttribute("data-form-visible", isVisible ? "1" : "0");
             syncFormQuestionToggles(card, isVisible);
+            syncShowAllUnitState(page);
 
             showHideShowNotification(
                 result.message,
@@ -327,10 +337,87 @@ function initializeHideAndShow() {
             updateToggleState(button, previousVisible);
             card?.setAttribute("data-form-visible", previousVisible ? "1" : "0");
             syncFormQuestionToggles(card, previousVisible);
+            syncShowAllUnitState(page);
             showHideShowNotification(
                 error.message || "Status form gagal diperbarui.",
                 "error"
             );
+        }
+    });
+
+    page.addEventListener("click", async function (event) {
+        const button = event.target.closest("[data-show-all-unit]");
+
+        if (!button || button.disabled) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const unitId = Number(button.dataset.unitId);
+        if (!unitId) {
+            showHideShowNotification("Data Unit belum lengkap.", "error");
+            return;
+        }
+
+        const nextVisible = button.dataset.active !== "1";
+        setToggleLoading(button, true);
+
+        try {
+            const response = await fetch(showAllUnitUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "X-CSRF-TOKEN": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+                body: JSON.stringify({
+                    unit_id: unitId,
+                    is_visible: nextVisible,
+                }),
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(getResponseError(result));
+            }
+
+            const isVisible = Boolean(result.is_visible);
+            page.querySelectorAll("[data-form-visibility-card]").forEach(function (card) {
+                const formToggle = card.querySelector("[data-form-visibility-toggle]");
+                if (formToggle) {
+                    updateToggleState(formToggle, isVisible);
+                }
+                card.dataset.formVisible = isVisible ? "1" : "0";
+                syncFormQuestionToggles(card, isVisible);
+
+                card.querySelectorAll("[data-hide-show-toggle]").forEach(function (toggle) {
+                    updateToggleState(toggle, isVisible);
+                });
+                card.querySelectorAll("[data-show-all-questions]").forEach(function (questionToggle) {
+                    updateShowAllQuestionsState(questionToggle, isVisible);
+                });
+            });
+
+            updateShowAllUnitState(button, isVisible);
+            syncHideShowSummary(page);
+
+            showHideShowNotification(
+                result.message,
+                isVisible ? "success" : "removed",
+                isVisible
+                    ? "Seluruh form ditampilkan"
+                    : "Seluruh form disembunyikan"
+            );
+        } catch (error) {
+            console.error(error);
+            showHideShowNotification(
+                error.message || "Gagal memperbarui seluruh form dan pertanyaan.",
+                "error"
+            );
+        } finally {
+            setToggleLoading(button, false);
         }
     });
 }
@@ -397,6 +484,73 @@ function syncShowAllQuestionsState(card) {
         button,
         questionToggles.every((toggle) => toggle.dataset.active === "1")
     );
+}
+
+function syncHideShowSummary(page) {
+    if (!page) {
+        return;
+    }
+
+    const toggles = Array.from(
+        page.querySelectorAll("[data-hide-show-toggle]")
+    );
+    const shown = toggles.filter((toggle) => toggle.dataset.active === "1").length;
+    const hidden = toggles.length - shown;
+
+    const totalElement = page.querySelector("[data-hide-show-total]");
+    const shownElement = page.querySelector("[data-hide-show-shown]");
+    const hiddenElement = page.querySelector("[data-hide-show-hidden]");
+
+    if (totalElement) totalElement.textContent = String(toggles.length);
+    if (shownElement) shownElement.textContent = String(shown);
+    if (hiddenElement) hiddenElement.textContent = String(hidden);
+}
+
+function syncShowAllUnitState(page) {
+    if (!page) {
+        return;
+    }
+
+    const button = page.querySelector("[data-show-all-unit]");
+    const formToggles = Array.from(
+        page.querySelectorAll("[data-form-visibility-toggle]")
+    );
+    const questionToggles = Array.from(
+        page.querySelectorAll("[data-hide-show-toggle]")
+    );
+
+    if (!button || formToggles.length === 0) {
+        return;
+    }
+
+    const isActive = formToggles.every((toggle) => toggle.dataset.active === "1")
+        && questionToggles.every((toggle) => toggle.dataset.active === "1");
+
+    updateShowAllUnitState(button, isActive);
+}
+
+function updateShowAllUnitState(button, isActive) {
+    const knob = button.querySelector("[data-show-all-unit-knob]");
+    const container = button.closest(".flex.items-center.justify-between");
+    const status = container?.querySelector("[data-show-all-unit-status]");
+
+    button.dataset.active = isActive ? "1" : "0";
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    button.classList.toggle("bg-green-500", isActive);
+    button.classList.toggle("bg-gray-300", !isActive);
+
+    if (knob) {
+        knob.classList.toggle("translate-x-6", isActive);
+        knob.classList.toggle("translate-x-1", !isActive);
+    }
+
+    if (status) {
+        status.textContent = isActive
+            ? "Semua form dan pertanyaan ditampilkan"
+            : "Aktifkan semua form dan pertanyaan";
+        status.classList.toggle("text-green-600", isActive);
+        status.classList.toggle("text-gray-500", !isActive);
+    }
 }
 
 function updateToggleState(

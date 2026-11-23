@@ -3,6 +3,7 @@
     data-toggle-url="{{ route('subunit-question.toggle') }}"
     data-show-all-url="{{ route('subunit-question.show-all') }}"
     data-form-toggle-url="{{ route('unit-form-visibility.toggle') }}"
+    data-show-all-unit-url="{{ route('unit-form-visibility.toggle-all') }}"
     class="space-y-6"
 >
     <input
@@ -29,6 +30,59 @@
                     Seluruh Sub Unit langsung ditampilkan tanpa perlu memilih
                     Sub Unit terlebih dahulu.
                 </p>
+            </div>
+        </div>
+    </div>
+
+    {{-- RINGKASAN HIDE AND SHOW --}}
+    <div
+        data-hide-show-summary
+        class="rounded-xl border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-amber-800 shadow-sm"
+    >
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="space-y-1 leading-relaxed">
+                <p>
+                    Jumlah Pertanyaan Keseluruhan:
+                    <span data-hide-show-total class="font-bold">{{ $questionVisibilitySummary['total'] ?? 0 }}</span>
+                </p>
+                <p>
+                    Jumlah Show:
+                    <span data-hide-show-shown class="font-bold text-green-700">{{ $questionVisibilitySummary['shown'] ?? 0 }}</span>
+                </p>
+                <p>
+                    Jumlah Hide:
+                    <span data-hide-show-hidden class="font-bold text-red-600">{{ $questionVisibilitySummary['hidden'] ?? 0 }}</span>
+                </p>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 rounded-lg border border-yellow-300 bg-white px-3 py-2 text-gray-700">
+                <div>
+                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Tampilkan Semua
+                    </div>
+                    <div
+                        data-show-all-unit-status
+                        class="text-xs font-medium {{ ($allFormsAndQuestionsVisible ?? false) ? 'text-green-600' : 'text-gray-500' }}"
+                    >
+                        {{ ($allFormsAndQuestionsVisible ?? false) ? 'Semua form dan pertanyaan ditampilkan' : 'Aktifkan semua form dan pertanyaan' }}
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    data-show-all-unit
+                    data-unit-id="{{ $units->id }}"
+                    data-active="{{ ($allFormsAndQuestionsVisible ?? false) ? '1' : '0' }}"
+                    aria-pressed="{{ ($allFormsAndQuestionsVisible ?? false) ? 'true' : 'false' }}"
+                    @disabled($forms->isEmpty() || $allSubunits->isEmpty())
+                    class="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition {{ ($allFormsAndQuestionsVisible ?? false) ? 'bg-green-500' : 'bg-gray-300' }} disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <span
+                        data-show-all-unit-knob
+                        class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform {{ ($allFormsAndQuestionsVisible ?? false) ? 'translate-x-6' : 'translate-x-1' }}"
+                    ></span>
+                    <span class="sr-only">Tampilkan seluruh form dan pertanyaan</span>
+                </button>
             </div>
         </div>
     </div>

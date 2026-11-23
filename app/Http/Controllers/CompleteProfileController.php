@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\CompleteProfile;
+use Illuminate\Support\Facades\Cache;
 
 class CompleteProfileController extends Controller
 {
@@ -29,6 +30,8 @@ class CompleteProfileController extends Controller
                 'unit_question' => $validated['pertanyaan_unit'][0],
             ]
         );
+
+        $this->forgetDashboardCache((int) $validated['id_activities']);
 
         return back()
             ->with(
@@ -58,6 +61,8 @@ class CompleteProfileController extends Controller
 
         ]);
 
+        $this->forgetDashboardCache((int) $completeProfile->activity_id);
+
 
         return back()->with(
             'success',
@@ -69,11 +74,22 @@ class CompleteProfileController extends Controller
     {
         $cprofile = CompleteProfile::findOrFail($id);
 
+        $activityId = (int) $cprofile->activity_id;
+
         $cprofile->delete();
+
+        $this->forgetDashboardCache($activityId);
 
         return back()->with(
             'success',
             'Pertanyaan berhasil diperbarui.'
+        );
+    }
+
+    private function forgetDashboardCache(int $activityId): void
+    {
+        Cache::forget(
+            "respondent-dashboard:complete-profile:activity:{$activityId}"
         );
     }
 

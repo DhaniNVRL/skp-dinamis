@@ -93,6 +93,16 @@ Route::get(
             '/monitoring/dashboard',
             [MonitoringController::class, 'index']
         )->name('monitoring.dashboard');
+
+        Route::get(
+            '/monitoring/unit-recap',
+            [MonitoringController::class, 'unitRecap']
+        )->name('monitoring.unit-recap');
+
+        Route::get(
+            '/monitoring/unit-recap/export',
+            [MonitoringController::class, 'exportUnitRecap']
+        )->name('monitoring.unit-recap.export');
     });
 
     Route::middleware('role:Admin')->group(function () {
@@ -507,6 +517,11 @@ Route::delete('/groups/{group}/branch-rules/{rule}', [SurveyBranchRuleController
                 [SubUnitQuestionController::class, 'toggle']
             )->name('subunit-question.toggle');
         });
+
+        Route::post(
+            '/unit-form-visibility/toggle-all',
+            [UnitFormVisibilityController::class, 'toggleAll']
+        )->name('unit-form-visibility.toggle-all');
 
         Route::post(
             '/unit-form-visibility/toggle',

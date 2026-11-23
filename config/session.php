@@ -64,7 +64,10 @@ return [
     // rid of old sessions from storage. Here are the chances that it will
     // happen on a given request. By default, the odds are 2 out of 100.
 
-    'lottery' => [2, 100],
+    'lottery' => [
+        (int) env('SESSION_LOTTERY_NUMERATOR', 2),
+        max(1, (int) env('SESSION_LOTTERY_DENOMINATOR', 100)),
+    ],
 
     // Session Cookie Name
     // Here you may change the name of the session cookie that is created by

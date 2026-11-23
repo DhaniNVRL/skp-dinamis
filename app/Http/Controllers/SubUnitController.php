@@ -108,6 +108,63 @@ class SubUnitController extends Controller
             ->filter(fn (Form $form) => $unitFormVisibilityMap[(int) $form->id] ?? false)
             ->values();
 
+        // Ringkasan mengikuti jumlah kontrol Hide and Show yang dapat diatur:
+        // pertanyaan per Sub Unit dihitung per Sub Unit, sedangkan pertanyaan
+        // global dihitung satu kali untuk seluruh Unit.
+        $perSubUnitFormTypeIds = [2, 3, 15, 16, 8, 9, 10];
+        $questionVisibilitySummary = [
+            'total' => 0,
+            'shown' => 0,
+            'hidden' => 0,
+        ];
+        $allSubunitIds = $allSubunits
+            ->pluck('id')
+            ->map(fn ($subunitId) => (int) $subunitId);
+
+        foreach ($forms as $form) {
+            $formTypeId = (int) ($form->formtype_id ?? $form->id_formtype ?? 0);
+
+            foreach ($form->questions as $question) {
+                $questionTypeId = (int) ($question->questiontype_id ?? $question->id_questiontypes ?? 0);
+                $usesSingleHeaderToggle = $questionTypeId === 1
+                    && in_array($formTypeId, [2, 3, 15, 16, 17, 19], true);
+                $usesPerSubUnitToggle = in_array($formTypeId, $perSubUnitFormTypeIds, true)
+                    && ! $usesSingleHeaderToggle;
+                $activeSubunitIds = collect($activeMapSubUnit[$form->id.'-'.$question->id] ?? [])
+                    ->map(fn ($subunitId) => (int) $subunitId);
+
+                if ($usesPerSubUnitToggle) {
+                    $questionVisibilitySummary['total'] += $allSubunitIds->count();
+                    $questionVisibilitySummary['shown'] += $allSubunitIds
+                        ->filter(fn ($subunitId) => $activeSubunitIds->contains($subunitId))
+                        ->count();
+
+                    continue;
+                }
+
+                if ($allSubunitIds->isNotEmpty()) {
+                    $questionVisibilitySummary['total']++;
+
+                    if ($allSubunitIds->every(fn ($subunitId) => $activeSubunitIds->contains($subunitId))) {
+                        $questionVisibilitySummary['shown']++;
+                    }
+                }
+            }
+        }
+
+        $questionVisibilitySummary['hidden'] = max(
+            0,
+            $questionVisibilitySummary['total'] - $questionVisibilitySummary['shown']
+        );
+        $allFormsAndQuestionsVisible = $forms->isNotEmpty()
+            && $forms->every(
+                fn (Form $form) => $unitFormVisibilityMap[(int) $form->id] ?? false
+            )
+            && (
+                $questionVisibilitySummary['total'] === 0
+                || $questionVisibilitySummary['shown'] === $questionVisibilitySummary['total']
+            );
+
         $allCompetitors = Competitor::query()
             ->where('group_id', $unit->group_id)
             ->orderBy('name')
@@ -155,6 +212,8 @@ class SubUnitController extends Controller
             'selectedCompetitorIds' => $selectedCompetitorIds,
             'competitorVisibilityConfigured' => $competitorVisibilityConfigured,
             'activeMapSubUnit' => $activeMapSubUnit,
+            'questionVisibilitySummary' => $questionVisibilitySummary,
+            'allFormsAndQuestionsVisible' => $allFormsAndQuestionsVisible,
             'activeTab' => $activeTab,
         ]);
     }
