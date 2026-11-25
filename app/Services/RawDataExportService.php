@@ -22,12 +22,11 @@ use ZipArchive;
 
 class RawDataExportService
 {
-    public function download(Activity $activity, Group $group): StreamedResponse
+    public function download(Activity $activity, Collection $groups): StreamedResponse
     {
-        abort_unless((int) $group->activity_id === (int) $activity->id, 422);
-
-        $path = $this->writeStreamingWorkbook($activity, $group);
-        $filename = 'raw_data_'.str($activity->name.'_'.$group->name)->slug('_').'_'.now()->format('Ymd_His').'.xlsx';
+        abort_if($groups->isEmpty() || $groups->contains(fn (Group $group) => (int) $group->activity_id !== (int) $activity->id), 422);
+        $path = $this->writeActivityWorkbook($activity, $groups);
+        $filename = 'raw_data_'.str($activity->name)->slug('_').'_'.now()->format('Ymd_His').'.xlsx';
 
         return response()->streamDownload(function () use ($path): void {
             $stream = fopen($path, 'rb');
@@ -40,6 +39,88 @@ class RawDataExportService
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Cache-Control' => 'max-age=0, no-cache, no-store, must-revalidate',
         ]);
+    }
+
+    private function writeActivityWorkbook(Activity $activity, Collection $groups): string
+    {
+        $workbooks = [];
+        $sheets = [];
+        $result = null;
+        try {
+            foreach ($groups as $group) {
+                $workbooks[] = $this->writeStreamingWorkbook($activity, $group);
+            }
+
+            $result = array_shift($workbooks);
+            $zip = new ZipArchive();
+            if ($zip->open($result) !== true) {
+                throw new \RuntimeException('File Excel tidak dapat dibuka.');
+            }
+
+            try {
+                $names = [];
+                $sheetXml = '';
+                $relationships = '';
+                $overrides = '';
+                foreach ($groups->values() as $index => $group) {
+                    $number = $index + 1;
+                    $name = preg_replace('/[\\\\\/\?\*\[\]:]/u', ' ', $this->cleanXmlText($group->name)) ?? '';
+                    $name = trim($name, " '\t\n\r\0\x0B");
+                    $base = mb_substr($name !== '' ? $name : 'Group', 0, 31);
+                    $name = $base;
+                    $suffix = 2;
+                    while (in_array(mb_strtolower($name), $names, true)) {
+                        $ending = ' ('.$suffix++.')';
+                        $name = mb_substr($base, 0, 31 - mb_strlen($ending)).$ending;
+                    }
+                    $names[] = mb_strtolower($name);
+                    $safeName = htmlspecialchars($name, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+                    $sheetXml .= '<sheet name="'.$safeName.'" sheetId="'.$number.'" r:id="rId'.$number.'"/>';
+                    $relationships .= '<Relationship Id="rId'.$number.'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'.$number.'.xml"/>';
+                    $overrides .= '<Override PartName="/xl/worksheets/sheet'.$number.'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+
+                    if ($index > 0) {
+                        $source = new ZipArchive();
+                        if ($source->open($workbooks[$index - 1]) !== true) {
+                            throw new \RuntimeException('Sheet group tidak dapat dibuka.');
+                        }
+                        $sheetPath = tempnam(sys_get_temp_dir(), 'skp_sheet_');
+                        if ($sheetPath === false) {
+                            $source->close();
+                            throw new \RuntimeException('File sementara sheet tidak dapat dibuat.');
+                        }
+                        $sheets[] = $sheetPath;
+                        $input = $source->getStream('xl/worksheets/sheet1.xml');
+                        $output = fopen($sheetPath, 'wb');
+                        if ($input === false || $output === false) {
+                            if (is_resource($input)) fclose($input);
+                            if (is_resource($output)) fclose($output);
+                            $source->close();
+                            throw new \RuntimeException('Sheet group tidak dapat disalin.');
+                        }
+                        stream_copy_to_stream($input, $output);
+                        fclose($input);
+                        fclose($output);
+                        $source->close();
+                        $zip->addFile($sheetPath, 'xl/worksheets/sheet'.$number.'.xml');
+                    }
+                }
+                $styleId = $groups->count() + 1;
+                $relationships .= '<Relationship Id="rId'.$styleId.'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>';
+                $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'.$sheetXml.'</sheets></workbook>');
+                $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'.$relationships.'</Relationships>');
+                $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'.$overrides.'<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>');
+            } finally {
+                $zip->close();
+            }
+
+            return $result;
+        } catch (\Throwable $exception) {
+            if ($result !== null) @unlink($result);
+            throw $exception;
+        } finally {
+            foreach (array_merge($workbooks, $sheets) as $path) @unlink($path);
+        }
     }
 
     private function writeStreamingWorkbook(Activity $activity, Group $group): string

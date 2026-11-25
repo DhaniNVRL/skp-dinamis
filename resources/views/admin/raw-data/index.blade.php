@@ -29,7 +29,7 @@
     <form method="GET" action="{{ route('admin.raw-data.download') }}" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
             <h2 class="font-semibold text-gray-900">Pilih Data Survey</h2>
-            <p class="mt-1 text-sm text-gray-500">Activity dan Group wajib dipilih sebelum proses download.</p>
+            <p class="mt-1 text-sm text-gray-500">Pilih activity. Setiap group akan tersedia dalam sheet terpisah pada satu file Excel.</p>
         </div>
 
         <div class="grid gap-5 p-6 md:grid-cols-2">
@@ -43,15 +43,6 @@
                 </select>
             </div>
 
-            <div>
-                <label for="rawGroup" class="mb-2 block text-sm font-semibold text-gray-700">Group</label>
-                <select id="rawGroup" name="group_id" required disabled class="w-full rounded-lg border border-blue-300 bg-white px-4 py-3 text-gray-800 outline-none transition hover:bg-gray-50 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100">
-                    <option value="">Pilih Group</option>
-                    @foreach ($groups as $group)
-                        <option value="{{ $group->id }}" data-activity="{{ $group->activity_id }}" @selected((string) old('group_id', request('group_id')) === (string) $group->id)>{{ $group->name }}</option>
-                    @endforeach
-                </select>
-            </div>
         </div>
 
         <div class="border-t border-gray-200 bg-gray-50 px-6 py-4">
@@ -68,28 +59,4 @@
     </form>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const activity = document.getElementById('rawActivity');
-    const group = document.getElementById('rawGroup');
-    const options = Array.from(group.querySelectorAll('option[data-activity]'));
-    const syncGroups = () => {
-        const activityId = activity.value;
-        let selectedVisible = false;
-        options.forEach((option) => {
-            const visible = activityId !== '' && option.dataset.activity === activityId;
-            option.hidden = !visible;
-            option.disabled = !visible;
-            if (visible && option.selected) selectedVisible = true;
-        });
-        group.disabled = activityId === '';
-        if (!selectedVisible) group.value = '';
-    };
-    activity.addEventListener('change', syncGroups);
-    syncGroups();
-});
-</script>
-@endpush
 

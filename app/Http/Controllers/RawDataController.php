@@ -6,7 +6,7 @@ use App\Models\Activity;
 use App\Models\Group;
 use App\Services\RawDataExportService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class RawDataController extends Controller
 {
@@ -14,7 +14,6 @@ class RawDataController extends Controller
     {
         return view('admin.raw-data.index', [
             'activities' => Activity::query()->orderBy('name')->get(['id', 'name']),
-            'groups' => Group::query()->orderBy('name')->get(['id', 'activity_id', 'name']),
         ]);
     }
 
@@ -22,18 +21,14 @@ class RawDataController extends Controller
     {
         $validated = $request->validate([
             'activity_id' => ['required', 'integer', 'exists:activities,id'],
-            'group_id' => [
-                'required',
-                'integer',
-                Rule::exists('groups', 'id')->where(
-                    fn ($query) => $query->where('activity_id', $request->integer('activity_id'))
-                ),
-            ],
         ]);
 
         $activity = Activity::query()->findOrFail($validated['activity_id']);
-        $group = Group::query()->findOrFail($validated['group_id']);
+        $groups = Group::query()->where('activity_id', $activity->id)->orderBy('name')->orderBy('id')->get();
+        if ($groups->isEmpty()) {
+            throw ValidationException::withMessages(['activity_id' => 'Activity ini belum memiliki group.']);
+        }
 
-        return $exporter->download($activity, $group);
+        return $exporter->download($activity, $groups);
     }
 }
